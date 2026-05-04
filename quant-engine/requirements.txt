@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+pydantic
+scikit-learn
+statsmodels
+arch
+yfinance
+shap
+numpy
+pandas
+hmmlearn
+python-dotenv

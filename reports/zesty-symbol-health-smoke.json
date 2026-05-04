@@ -1,0 +1,34 @@
+{
+  "base": "https://trademind-rose.vercel.app",
+  "generatedAt": "2026-04-29T18:51:38.718Z",
+  "totals": {
+    "chart_ok": 2,
+    "fallback_ok": 0,
+    "daily_or_history_only": 0,
+    "quote_only": 0,
+    "unsupported": 0,
+    "api_error": 0
+  },
+  "results": [
+    {
+      "symbol": "BITX",
+      "name": "2x Bitcoin Strategy ETF",
+      "status": "chart_ok",
+      "quoteStatus": "ok",
+      "candles1DCount": 502,
+      "effectiveRange": "1D",
+      "candles1YCount": 0,
+      "candles5YCount": 0
+    },
+    {
+      "symbol": "UVIX",
+      "name": "2x Long VIX Futures ETF",
+      "status": "chart_ok",
+      "quoteStatus": "ok",
+      "candles1DCount": 502,
+      "effectiveRange": "1D",
+      "candles1YCount": 0,
+      "candles5YCount": 0
+    }
+  ]
+}
