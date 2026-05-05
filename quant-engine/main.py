@@ -5,7 +5,9 @@ from typing import Callable
 import os
 
 from ml_pipeline import run_pca_autoencoder, run_lasso_ridge
-from risk_models import detect_regime, calculate_var_garch, predict_direction_arima
+from risk_models import detect_regime, calculate_var_garch
+from time_series_models import predict_direction_arima, predict_direction_sarima
+from lean_integration import run_lean_backtest, export_to_lean
 from graham_filters import check_margin_of_safety
 
 app = FastAPI(title="TradeMind Quant Engine")
@@ -48,6 +50,14 @@ class ToolRequest(BaseModel):
     symbol: str
     timeframe: str = "1D"
 
+class LeanRequest(BaseModel):
+    symbol: str
+    parameters: dict = {}
+
+@app.get("/health")
+def health_check():
+    return {"status": "ok", "service": "quant-engine"}
+
 @app.get("/")
 def read_root():
     return {"status": "Quant Engine Running"}
@@ -81,6 +91,31 @@ def predict_direction(req: ToolRequest):
     prediction = predict_direction_arima(req.symbol)
     return {"prediction": prediction}
 
+@app.post("/ml/predict_sarima")
+def predict_sarima(req: ToolRequest):
+    prediction = predict_direction_sarima(req.symbol)
+    return {"prediction": prediction}
+
+@app.post("/lean/backtest")
+def lean_backtest(req: LeanRequest):
+    algo_file = export_to_lean(req.symbol, req.parameters)
+    result = run_lean_backtest(algo_file)
+    if result.get("status") == "error" and "not installed" in result.get("message", ""):
+        return {"success": False, "status": "lean_not_ready", "message": result.get("message")}
+    
+    return {
+        "success": result.get("status") == "success",
+        "status": "completed" if result.get("status") == "success" else "error",
+        "statistics": {
+            "sharpe_ratio": None,
+            "drawdown": None,
+            "net_profit": None,
+            "win_rate": None
+        },
+        "raw_path": algo_file,
+        "details": result.get("output") or result.get("message")
+    }
+
 # --- Agent Workflow Endpoints ---
 
 @app.post("/workflow/analyze")
@@ -92,5 +127,4 @@ def run_workflow(req: SymbolRequest):
     result = run_analysis_workflow(req.symbol)
     return {"workflow_result": result}
 
-
-# bumped: 2026-05-05T04:21:00
+

@@ -296,5 +296,4 @@ function AlertRow({
 }
 
 const inputClass = 'w-full px-3 py-2 bg-gray-800/50 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-600 outline-none focus:border-emerald-500 transition-colors'
-
-# bumped: 2026-05-05T04:21:00
+

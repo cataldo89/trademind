@@ -140,5 +140,4 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Unexpected signal save error' }, { status: 500 })
   }
 }
-
-# bumped: 2026-05-05T04:21:00
+

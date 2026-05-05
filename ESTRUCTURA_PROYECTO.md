@@ -421,5 +421,4 @@ Usuario (Frontend)
     |-- PCA/Lasso ML pipeline
     |-- QuantConnect LEAN export
 `
-
-# bumped: 2026-05-05T04:21:00
+

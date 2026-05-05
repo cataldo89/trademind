@@ -53,5 +53,4 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `ALPHA_VANTAGE_API_KEY`
 <!-- END:vercel-project-rules -->
-
-# bumped: 2026-05-05T04:21:00
+

@@ -6,5 +6,4 @@ export const metadata: Metadata = { title: 'Recuperar contraseña' }
 export default function ForgotPasswordPage() {
   return <ForgotPasswordForm />
 }
-
-# bumped: 2026-05-05T04:21:00
+

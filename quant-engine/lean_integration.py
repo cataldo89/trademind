@@ -1,5 +1,6 @@
 import subprocess
 import os
+import json
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -8,7 +9,6 @@ QC_USER_ID = os.getenv("QC_USER_ID")
 QC_API_TOKEN = os.getenv("QC_API_TOKEN")
 
 def export_to_lean(symbol: str, parameters: dict, output_path: str = "./lean_algorithms"):
-    # Generate a C# or Python QCAlgorithm class based on calibrated parameters
     algorithm_template = f"""
 from AlgorithmImports import *
 
@@ -18,7 +18,6 @@ class TradeMindExportedAlgorithm(QCAlgorithm):
         self.SetCash(100000)
         self.AddEquity("{symbol}", Resolution.Daily)
         
-        # Calibrated Parameters
         self.rsi_period = {parameters.get('rsi_period', 14)}
         self.var_threshold = {parameters.get('var_threshold', 0.05)}
 
@@ -35,14 +34,21 @@ class TradeMindExportedAlgorithm(QCAlgorithm):
 
 def run_lean_backtest(algorithm_file: str):
     try:
-        # P0.5: Ejecutar lean whoami si Lean CLI está instalado.
-        result = subprocess.run(["lean", "whoami"], capture_output=True, text=True, check=True)
-        return {"status": "success", "message": "Lean CLI is installed and authenticated.", "output": result.stdout.strip()}
+        # Verificar whoami
+        whoami = subprocess.run(["lean", "whoami"], capture_output=True, text=True)
+        if whoami.returncode != 0:
+            return {"status": "error", "message": "Lean CLI is not installed or not authenticated."}
+
+        # Ejecutar backtest
+        project_dir = os.path.dirname(algorithm_file)
+        backtest = subprocess.run(["lean", "backtest", project_dir], capture_output=True, text=True)
+        
+        return {
+            "status": "success", 
+            "message": "Backtest finished", 
+            "output": backtest.stdout.strip()[-1000:] # Ultimos 1000 caracteres como log
+        }
     except FileNotFoundError:
         return {"status": "error", "message": "Lean CLI is not installed or not in PATH."}
-    except subprocess.CalledProcessError as e:
-        return {"status": "error", "message": f"Lean CLI error. Output: {e.output}"}
     except Exception as e:
         return {"status": "error", "message": f"Unexpected error running Lean: {str(e)}"}
-
-# bumped: 2026-05-05T04:21:00

@@ -18,5 +18,4 @@ if __name__ == "__main__":
     print(f"VaR 1D (95%): {var_data['var_1d_95']*100:.2f}%")
     print(f"Volatilidad Anualizada: {var_data['annualized_vol']*100:.2f}%")
 
-
-# bumped: 2026-05-05T04:21:00
+

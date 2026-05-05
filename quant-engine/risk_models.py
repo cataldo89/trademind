@@ -59,25 +59,5 @@ def calculate_var_garch(symbol: str, timeframe: str):
         "annualized_vol": ann_vol / 100.0
     }
 
-def predict_direction_arima(symbol: str):
-    df = yf.download(symbol, period="1y", progress=False)
-    if df.empty:
-        return {"expected_return": 0.0, "confidence": 0.0}
-        
-    close_series = df['Close'].squeeze() if isinstance(df['Close'], pd.DataFrame) else df['Close']
-    close_series = close_series.dropna()
-    
-    model = ARIMA(close_series, order=(1, 1, 1))
-    fitted = model.fit()
-    forecast = fitted.forecast(steps=1)
-    
-    last_price = close_series.iloc[-1]
-    predicted_price = float(forecast.iloc[0])
-    expected_return = (predicted_price - last_price) / last_price
-    
-    return {
-        "expected_return": expected_return,
-        "confidence": 0.55
-    }
 
-# bumped: 2026-05-05T04:21:00
+

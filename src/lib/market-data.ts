@@ -1049,5 +1049,4 @@ export function getCategorizedZestySymbols(): ZestyCategory[] {
     return (priority[a.id] || 999) - (priority[b.id] || 999)
   })
 }
-
-# bumped: 2026-05-05T04:21:00
+

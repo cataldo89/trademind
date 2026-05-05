@@ -22,7 +22,8 @@ def research_manager(state: AgentState):
 
 def technical_analyst(state: AgentState):
     try:
-        from risk_models import detect_regime, predict_direction_arima
+        from risk_models import detect_regime
+        from time_series_models import predict_direction_arima
         regime = detect_regime(state["symbol"])
         prediction = predict_direction_arima(state["symbol"])
         state["market_regime"] = regime
@@ -98,5 +99,4 @@ def run_analysis_workflow(symbol: str):
     state = decision_node(state)
     
     return state
-
-# bumped: 2026-05-05T04:21:00
+

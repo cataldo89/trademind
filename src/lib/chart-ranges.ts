@@ -92,5 +92,4 @@ export function getFallbackChartRanges(range: ChartRange): ChartRange[] {
 
   return Array.from(new Set(fallbacks))
 }
-
-# bumped: 2026-05-05T04:21:00
+

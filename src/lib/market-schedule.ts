@@ -124,5 +124,4 @@ export function getMarketCurrentTime(market: Market): string {
   const now = getTimeInZone(tz)
   return formatTimeHHMM(now)
 }
-
-# bumped: 2026-05-05T04:21:00
+

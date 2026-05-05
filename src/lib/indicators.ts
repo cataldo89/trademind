@@ -254,5 +254,4 @@ export function generateSignal(candles: Candle[]): {
   if (bearPoints > bullPoints + 2) return { type: 'SELL', strength, reasons }
   return { type: 'HOLD', strength: 50, reasons: reasons.slice(0, 3) }
 }
-
-# bumped: 2026-05-05T04:21:00
+

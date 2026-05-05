@@ -35,5 +35,4 @@ def check_margin_of_safety(symbol: str):
         return False, f"Debt-to-Asset ratio {debt_to_asset:.2f} exceeds strict limit of 0.50."
         
     return True, f"Passed Margin of Safety. P/E: {pe_ratio:.2f}, Debt/Asset: {debt_to_asset:.2f}"
-
-# bumped: 2026-05-05T04:21:00
+

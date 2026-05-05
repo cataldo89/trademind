@@ -74,5 +74,4 @@ def test_workflow_analyze(mock_risk, mock_tech, mock_research):
     assert res["action"] == "BUY"
     assert res["label"] == "COMPRAR CON CAUTELA"
     assert res["confidence"] >= 75
-
-# bumped: 2026-05-05T04:21:00
+

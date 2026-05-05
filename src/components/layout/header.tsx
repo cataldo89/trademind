@@ -67,5 +67,4 @@ export function AppHeader({ user }: AppHeaderProps) {
     </header>
   )
 }
-
-# bumped: 2026-05-05T04:21:00
+

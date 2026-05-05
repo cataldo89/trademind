@@ -41,5 +41,4 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.redirect(new URL('/login?error=auth_callback_failed', origin))
 }
-
-# bumped: 2026-05-05T04:21:00
+
