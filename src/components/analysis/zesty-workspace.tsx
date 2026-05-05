@@ -102,13 +102,14 @@ export function ZestyWorkspace() {
     const nextSymbol = searchParams.get('symbol')?.trim().toUpperCase()
     const nextMarket = (searchParams.get('market') || 'US') as Market
 
-    if (nextSymbol) {
+    if (nextSymbol && nextSymbol !== symbol) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSymbol(nextSymbol)
       setMarket(nextMarket)
       setSearchQuery('')
       setSymbolsOpen(false)
     }
-  }, [searchParams])
+  }, [searchParams, symbol])
 
   const normalizedSearchQuery = normalizeSearchText(searchQuery)
   const isSearching = normalizedSearchQuery.length > 0

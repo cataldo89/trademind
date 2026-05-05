@@ -1,177 +1,81 @@
-# Supabase CLI
+# TradeMind SaaS
 
-[![Coverage Status](https://coveralls.io/repos/github/supabase/cli/badge.svg?branch=develop)](https://coveralls.io/github/supabase/cli?branch=develop) [![Bitbucket Pipelines](https://img.shields.io/bitbucket/pipelines/supabase-cli/setup-cli/master?style=flat-square&label=Bitbucket%20Canary)](https://bitbucket.org/supabase-cli/setup-cli/pipelines) [![Gitlab Pipeline Status](https://img.shields.io/gitlab/pipeline-status/sweatybridge%2Fsetup-cli?label=Gitlab%20Canary)
-](https://gitlab.com/sweatybridge/setup-cli/-/pipelines)
+TradeMind es un SaaS de trading e inversión AI-Native enfocado en proveer señales cuantitativas explicables con protección algorítmica, inspirándose en los principios de inversión de Benjamin Graham. 
 
-[Supabase](https://supabase.io) is an open source Firebase alternative. We're building the features of Firebase using enterprise-grade open source tools.
+El objetivo es conectar el análisis financiero tradicional con capacidades modernas de machine learning y LLMs (Model Context Protocol), integrando todo bajo una arquitectura web de alto rendimiento.
 
-This repository contains all the functionality for Supabase CLI.
 
-- [x] Running Supabase locally
-- [x] Managing database migrations
-- [x] Creating and deploying Supabase Functions
-- [x] Generating types directly from your database schema
-- [x] Making authenticated HTTP requests to [Management API](https://supabase.com/docs/reference/api/introduction)
+## Stack Tecnológico
 
-## Getting started
+- **Frontend:** Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS, Recharts.
+- **Backend UI:** Next.js API Routes.
+- **Base de Datos & Auth:** Supabase (PostgreSQL, Auth, RLS).
+- **Quant-Engine (Microservicio):** Python, FastAPI, yfinance, scikit-learn, hmmlearn, arch, statsmodels.
+- **Backtesting:** QuantConnect LEAN (en progreso).
+- **Despliegue:** Vercel.
+- **IA:** Google Gemini 2.5 (análisis natural).
 
-### Install the CLI
+## Estado Actual
+*(Para más detalles, consulta `ESTADO_ACTUAL_PROYECTO.md`)*
 
-Available via [NPM](https://www.npmjs.com) as dev dependency. To install:
+El proyecto tiene implementados varios modelos de riesgo (HMM, GARCH, PCA) y un backend de usuario funcional en Next.js. Sin embargo, **existen brechas críticas** en la integración final:
+- `/api/trading` está actualmente operando como un **MOCK** (usa datos aleatorios).
+- La conexión con QuantConnect LEAN está **PENDIENTE** (`run_lean_backtest()` no ejecuta).
+- El cliente MCP existe pero no está totalmente integrado.
+- Algunas API Routes en Edge Runtime representan un **RIESGO** de compatibilidad con Supabase SSR.
 
-```bash
-npm i supabase --save-dev
-```
+Para el contexto completo para IAs, por favor leer `ANTIGRAVITY_CONTEXT.md` y `AGENTS.md`.
 
-When installing with yarn 4, you need to disable experimental fetch with the following nodejs config.
+## Ejecución Local
 
-```
-NODE_OPTIONS=--no-experimental-fetch yarn add supabase
-```
-
-> **Note**
-For Bun versions below v1.0.17, you must add `supabase` as a [trusted dependency](https://bun.sh/guides/install/trusted) before running `bun add -D supabase`.
-
-<details>
-  <summary><b>macOS</b></summary>
-
-  Available via [Homebrew](https://brew.sh). To install:
-
-  ```sh
-  brew install supabase/tap/supabase
-  ```
-
-  To install the beta release channel:
-  
-  ```sh
-  brew install supabase/tap/supabase-beta
-  brew link --overwrite supabase-beta
-  ```
-  
-  To upgrade:
-
-  ```sh
-  brew upgrade supabase
-  ```
-</details>
-
-<details>
-  <summary><b>Windows</b></summary>
-
-  Available via [Scoop](https://scoop.sh). To install:
-
-  ```powershell
-  scoop bucket add supabase https://github.com/supabase/scoop-bucket.git
-  scoop install supabase
-  ```
-
-  To upgrade:
-
-  ```powershell
-  scoop update supabase
-  ```
-</details>
-
-<details>
-  <summary><b>Linux</b></summary>
-
-  Available via [Homebrew](https://brew.sh) and Linux packages.
-
-  #### via Homebrew
-
-  To install:
-
-  ```sh
-  brew install supabase/tap/supabase
-  ```
-
-  To upgrade:
-
-  ```sh
-  brew upgrade supabase
-  ```
-
-  #### via Linux packages
-
-  Linux packages are provided in [Releases](https://github.com/supabase/cli/releases). To install, download the `.apk`/`.deb`/`.rpm`/`.pkg.tar.zst` file depending on your package manager and run the respective commands.
-
-  ```sh
-  sudo apk add --allow-untrusted <...>.apk
-  ```
-
-  ```sh
-  sudo dpkg -i <...>.deb
-  ```
-
-  ```sh
-  sudo rpm -i <...>.rpm
-  ```
-
-  ```sh
-  sudo pacman -U <...>.pkg.tar.zst
-  ```
-</details>
-
-<details>
-  <summary><b>Other Platforms</b></summary>
-
-  You can also install the CLI via [go modules](https://go.dev/ref/mod#go-install) without the help of package managers.
-
-  ```sh
-  go install github.com/supabase/cli@latest
-  ```
-
-  Add a symlink to the binary in `$PATH` for easier access:
-
-  ```sh
-  ln -s "$(go env GOPATH)/bin/cli" /usr/bin/supabase
-  ```
-
-  This works on other non-standard Linux distros.
-</details>
-
-<details>
-  <summary><b>Community Maintained Packages</b></summary>
-
-  Available via [pkgx](https://pkgx.sh/). Package script [here](https://github.com/pkgxdev/pantry/blob/main/projects/supabase.com/cli/package.yml).
-  To install in your working directory:
-
-  ```bash
-  pkgx install supabase
-  ```
-
-  Available via [Nixpkgs](https://nixos.org/). Package script [here](https://github.com/NixOS/nixpkgs/blob/master/pkgs/development/tools/supabase-cli/default.nix).
-</details>
-
-### Run the CLI
+### 1. Iniciar el Frontend (Next.js)
 
 ```bash
-supabase bootstrap
-```
+# Instalar dependencias
+npm install
 
-Or using npx:
+# Iniciar servidor de desarrollo
+npm run dev
+```
+La aplicación estará disponible en `http://localhost:3000`.
+
+### 2. Iniciar el Quant-Engine (Python)
 
 ```bash
-npx supabase bootstrap
+cd quant-engine
+
+# Crear entorno virtual e instalar dependencias
+python -m venv venv
+source venv/bin/activate  # En Windows: venv\Scripts\activate
+pip install -r requirements.txt
+
+# Iniciar servidor FastAPI
+./start.bat # En Windows
+# O manualmente: uvicorn main:app --reload --port 8000
+```
+La API cuantitativa estará en `http://localhost:8000`.
+
+## Variables de Entorno Requeridas
+
+Debes crear un archivo `.env.local` en la raíz del proyecto (basado en `.env.example`):
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=tu_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=tu_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=tu_service_role_key
+
+# Opcionales / Recomendados para IA y Datos
+GEMINI_API_KEY=tu_gemini_key
+ALPHA_VANTAGE_API_KEY=tu_alpha_vantage_key
 ```
 
-The bootstrap command will guide you through the process of setting up a Supabase project using one of the [starter](https://github.com/supabase-community/supabase-samples/blob/main/samples.json) templates.
-
-## Docs
-
-Command & config reference can be found [here](https://supabase.com/docs/reference/cli/about).
-
-## Breaking changes
-
-We follow semantic versioning for changes that directly impact CLI commands, flags, and configurations.
-
-However, due to dependencies on other service images, we cannot guarantee that schema migrations, seed.sql, and generated types will always work for the same CLI major version. If you need such guarantees, we encourage you to pin a specific version of CLI in package.json.
-
-## Developing
-
-To run from source:
-
-```sh
-# Go >= 1.22
-go run . help
+Adicionalmente en `quant-engine/.env`:
+```env
+QC_USER_ID=tu_quantconnect_user_id
+QC_API_TOKEN=tu_quantconnect_api_token
+QUANT_ENGINE_SECRET=tu_secreto_interno
+QUANT_ENGINE_AUTH_DISABLED=false
+QUANT_ENGINE_ALLOWED_ORIGINS=http://localhost:3000,https://trademind-cv.vercel.app
 ```
+
+> **NOTA SOBRE SEGURIDAD:** En producción, si `QUANT_ENGINE_SECRET` no está configurado, la aplicación fallará explícitamente. Para entornos locales, puedes saltar la seguridad usando `QUANT_ENGINE_AUTH_DISABLED=true`.

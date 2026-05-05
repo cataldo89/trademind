@@ -24,7 +24,7 @@ export function VisionSection() {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="text-lg md:text-xl text-gray-400 leading-relaxed mb-8"
           >
-            Durante décadas, el trading algorítmico estuvo reservado para instituciones en "salas de servidores frías" con interfaces mediocres. Nosotros creemos que el poder absoluto del software no tiene por qué estar reñido con un diseño excepcional.
+            Durante décadas, el trading algorítmico estuvo reservado para instituciones en &quot;salas de servidores frías&quot; con interfaces mediocres. Nosotros creemos que el poder absoluto del software no tiene por qué estar reñido con un diseño excepcional.
           </motion.p>
           
           <motion.p
@@ -32,9 +32,10 @@ export function VisionSection() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-lg md:text-xl text-gray-400 leading-relaxed"
           >
-            Hemos unificado un motor escalable que procesa millones de datos en milisegundos, con una estética de cristal y fluidez que inspira a invertir. No es solo trading; es una obra de arte interactiva.
+            <p className="text-gray-400 max-w-2xl mx-auto text-lg leading-relaxed">
+              No prometemos rendimientos mágicos. Ofrecemos herramientas institucionales democratizadas para que tomes decisiones basadas en datos, no en emociones. El verdadero &quot;Alpha&quot; es la gestión de riesgo.
+            </p>
           </motion.p>
         </div>
       </div>

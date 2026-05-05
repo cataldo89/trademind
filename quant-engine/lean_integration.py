@@ -34,6 +34,13 @@ class TradeMindExportedAlgorithm(QCAlgorithm):
     return file_name
 
 def run_lean_backtest(algorithm_file: str):
-    # Placeholder for Lean CLI execution
-    # e.g., subprocess.run(["lean", "backtest", "ProjectName"])
-    pass
+    try:
+        # P0.5: Ejecutar lean whoami si Lean CLI está instalado.
+        result = subprocess.run(["lean", "whoami"], capture_output=True, text=True, check=True)
+        return {"status": "success", "message": "Lean CLI is installed and authenticated.", "output": result.stdout.strip()}
+    except FileNotFoundError:
+        return {"status": "error", "message": "Lean CLI is not installed or not in PATH."}
+    except subprocess.CalledProcessError as e:
+        return {"status": "error", "message": f"Lean CLI error. Output: {e.output}"}
+    except Exception as e:
+        return {"status": "error", "message": f"Unexpected error running Lean: {str(e)}"}

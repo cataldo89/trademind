@@ -10,21 +10,21 @@ Metodo: Lectura fisica de todos los archivos del repositorio.
 
 1.1 HMM (Regimenes de Mercado)
 - Archivo: trademind/quant-engine/risk_models.py (lineas 1-37)
-- Estado: PRODUCCION (Logica real implementada)
+- Estado: [IMPLEMENTADO] (Logica real implementada)
 - Usa hmmlearn.hmm.GaussianHMM con n_components=3
 - Mapea estados por orden de medias: Bear, Sideways, Bull
 - Confianza: ALTA
 
 1.2 ARIMA/GARCH (Volatilidad y VaR 95%)
 - Archivo: trademind/quant-engine/risk_models.py (lineas 39-81)
-- Estado: PRODUCCION (Logica real implementada)
+- Estado: [IMPLEMENTADO] (Logica real implementada)
 - GARCH(1,1) correcto, VaR 95% = sqrt(variance) * 1.645
 - ARIMA(1,1,1) con confianza hardcodeada a 0.55 (PLACEHOLDER)
 - Confianza: MEDIA-ALTA (GARCH real, ARIMA confidence fake)
 
 1.3 PCA / Lasso (Reduccion de Dimensionalidad)
 - Archivo: trademind/quant-engine/ml_pipeline.py (lineas 1-44)
-- Estado: PRODUCCION (Logica real implementada)
+- Estado: [IMPLEMENTADO] (Logica real implementada)
 - PCA(n_components=1) sobre features estandarizadas
 - Lasso(alpha=0.01) para seleccion de features
 - NOMBRE ENGANOSO: run_pca_autoencoder NO es autoencoder
@@ -32,10 +32,10 @@ Metodo: Lectura fisica de todos los archivos del repositorio.
 
 1.4 Filtros de Graham (Margin of Safety)
 - Archivo: trademind/quant-engine/graham_filters.py (lineas 1-20)
-- Estado: PRODUCCION (Logica real implementada)
+- Estado: [RIESGO] (Logica real implementada pero con umbrales dudosos)
 - P/E < 15: CORRECTO
 - Debt/Asset: DESVIACION - usa > 1.10 en lugar de < 0.50
-- Confianza: MEDIA (parametros incorrectos)
+- Confianza: MEDIA (parametros incorrectos, requiere validación final)
 
 ========================================
 2. ESTADO DE INFRAESTRUCTURA
@@ -43,11 +43,11 @@ Metodo: Lectura fisica de todos los archivos del repositorio.
 
 2.1 Edge Runtime en API Routes:
 /api/ai/analyze    -> nodejs (CORREGIDO)
-/api/signals       -> edge (RIESGO: puede fallar con @supabase/ssr)
+/api/signals       -> edge [RIESGO] (puede fallar con @supabase/ssr)
 /api/market/candles    -> nodejs
 /api/market/movers     -> nodejs
 /api/market/quote      -> nodejs
-/api/trading           -> nodejs (MOCK)
+/api/trading           -> nodejs [MOCK]
 /api/alerts/check      -> nodejs
 
 2.2 Supabase:
@@ -58,7 +58,8 @@ Metodo: Lectura fisica de todos los archivos del repositorio.
 2.3 QuantConnect (LEAN):
 - qc-workspace: EXISTE con datos historicos
 - TradeMindCRT/main.py: EXISTE (SMA 200 + volatilidad)
-- Autenticacion: PLACEHOLDER (credenciales leidas pero no usadas)
+- Autenticacion: [PENDIENTE] (credenciales leidas pero no usadas)
+- run_lean_backtest(): [PENDIENTE] (funcion vacia, no hay integracion real)
 
 ========================================
 3. ARQUITECTURA DE AGENTES
@@ -79,11 +80,11 @@ Agentes:
 ========================================
 
 4.1 Mocks y Datos Falsos:
-- api/trading/route.ts:17 -> Math.random() MOCK 100%
-- lean_integration.py: QC tokens leidos pero nunca autentican
-- lean_integration.py:37 -> run_lean_backtest() = pass
-- ml_pipeline.py:8 -> run_pca_autoencoder es solo PCA
-- lib/ai/mcp-client.ts -> definido pero NUNCA usado
+- api/trading/route.ts:17 -> Math.random() [MOCK]
+- lean_integration.py: QC tokens leidos pero nunca autentican [PENDIENTE]
+- lean_integration.py:37 -> run_lean_backtest() = pass [PENDIENTE]
+- ml_pipeline.py:8 -> run_pca_autoencoder es solo PCA [PARCIAL]
+- lib/ai/mcp-client.ts -> definido pero NUNCA usado [PARCIAL/PENDIENTE]
 
 4.2 Funcionalidades NO Implementadas:
 - LangGraph real: NO EXISTE
@@ -120,7 +121,9 @@ Testing y CI/CD:                                                   0%
 TOTAL GENERAL:                                                    ~50%
 
 Brechas criticas:
-1. /api/signals en edge runtime (riesgo de fallo)
-2. trading route como mock (datos aleatorios)
-3. QuantConnect sin autenticacion
-4. Ausencia total de testing
+1. /api/signals en edge runtime ([RIESGO] por uso de @supabase/ssr)
+2. /api/trading es [MOCK] (usa Math.random(), no conecta con quant-engine)
+3. QuantConnect [PENDIENTE] (run_lean_backtest() vacio, sin integracion real)
+4. mcp-client.ts existe pero NO esta integrado [PARCIAL]
+5. Filtros de Graham requieren validacion final (contradicciones de umbral) [RIESGO]
+6. Ausencia total de testing y CI/CD [PENDIENTE]

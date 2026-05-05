@@ -8,7 +8,9 @@ class AgentState(TypedDict):
     market_regime: str
     ml_prediction: float
     var_95: float
-    final_decision: str
+    action: str
+    label: str
+    confidence: int
     xai_explanation: str
 
 def research_manager(state: AgentState):
@@ -19,36 +21,68 @@ def research_manager(state: AgentState):
     return state
 
 def technical_analyst(state: AgentState):
-    from risk_models import detect_regime, predict_direction_arima
-    regime = detect_regime(state["symbol"])
-    prediction = predict_direction_arima(state["symbol"])
-    state["market_regime"] = regime
-    state["ml_prediction"] = prediction["expected_return"]
+    try:
+        from risk_models import detect_regime, predict_direction_arima
+        regime = detect_regime(state["symbol"])
+        prediction = predict_direction_arima(state["symbol"])
+        state["market_regime"] = regime
+        state["ml_prediction"] = prediction["expected_return"]
+    except Exception as e:
+        state["market_regime"] = "Desconocido"
+        state["ml_prediction"] = 0
     return state
 
 def risk_manager(state: AgentState):
-    from risk_models import calculate_var_garch
-    var_data = calculate_var_garch(state["symbol"], "1D")
-    state["var_95"] = var_data["var_1d_95"]
+    try:
+        from risk_models import calculate_var_garch
+        var_data = calculate_var_garch(state["symbol"], "1D")
+        state["var_95"] = var_data.get("var_1d_95", 1)
+    except Exception as e:
+        state["var_95"] = 1
     return state
 
 def decision_node(state: AgentState):
-    if not state.get("graham_passed", False):
-        decision = "EVITAR / VENDER"
+    var_95 = state.get("var_95", 1)
+    ml_pred = state.get("ml_prediction", 0)
+    graham_passed = state.get("graham_passed", False)
+    
+    # Base confidence calculation
+    confidence = 50
+    
+    if not graham_passed:
+        action = "SELL"
+        label = "EVITAR / VENDER"
         explanation = f"Rechazado por filtro Graham: {state.get('graham_reason', 'Desconocido')}"
-    elif state.get("ml_prediction", 0) > 0.01 and state.get("var_95", 1) < 0.05:
-        decision = "COMPRAR CON CAUTELA"
-        explanation = f"Señal alcista validada. Régimen: {state.get('market_regime', 'Desconocido')}. Riesgo VaR 1D: {state.get('var_95', 1)*100}%."
+        # High confidence if var is also high or prediction is negative
+        if var_95 > 0.05 or ml_pred < 0:
+            confidence = 85
+        else:
+            confidence = 65
+    elif ml_pred > 0.01 and var_95 < 0.05:
+        action = "BUY"
+        label = "COMPRAR CON CAUTELA"
+        explanation = f"Señal alcista validada. Régimen: {state.get('market_regime', 'Desconocido')}. Riesgo VaR 1D: {var_95*100:.2f}%."
+        confidence = 75 + int((0.05 - var_95) * 200) # Boost confidence based on low risk
+        confidence = min(confidence, 95)
     else:
-        decision = "MANTENER"
-        explanation = "Las condiciones no justifican aumentar la exposición según el umbral de riesgo GARCH."
+        action = "HOLD"
+        label = "MANTENER"
+        explanation = "Las condiciones no justifican aumentar la exposición según el umbral de riesgo GARCH o modelos ML."
+        confidence = 50
         
-    state["final_decision"] = decision
+    # Penalize confidence if regime is unknown or data is faulty
+    if state.get('market_regime') == "Desconocido" or var_95 == 1:
+        confidence = min(confidence, 30)
+        explanation += " (Datos incompletos, confianza reducida)."
+
+    state["action"] = action
+    state["label"] = label
+    state["confidence"] = confidence
     state["xai_explanation"] = explanation
     return state
 
 def run_analysis_workflow(symbol: str):
-    # Vanilla Python Workflow Execution (Reemplazo de LangGraph por incompatibilidad con Python 3.8)
+    # Vanilla Python Workflow Execution
     state: AgentState = {"symbol": symbol}
     
     # 1. Research Manager

@@ -65,6 +65,7 @@ export function RealtimeChart() {
     if (seriesRef.current && data.length > 0) {
       // lightweight-charts expects data to be sorted by time and unique
       const sortedData = [...data].sort((a, b) => a.time - b.time);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       seriesRef.current.setData(sortedData as any);
     }
   }, [data]);

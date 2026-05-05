@@ -1,5 +1,7 @@
 # TradeMind: Memoria Central e "Inspiración Titanes"
 
+> **ADVERTENCIA:** Este archivo representa la memoria histórica, la filosofía de diseño y la visión del producto. **NO ES LA FUENTE CANÓNICA DEL ESTADO ACTUAL DEL CÓDIGO**. Para ver qué funciona realmente, lee `ESTADO_ACTUAL_PROYECTO.md`.
+
 Este archivo (`MEMORY.md`) actúa como la memoria central para cualquier IA (Agent) que trabaje en este repositorio. Define el estado del arte del proyecto, hacia dónde vamos y, lo más importante, la filosofía fundamental bajo la cual está construido.
 
 ## Filosofía: Inspiración "Titanes" + "Fazt Tech Pragmatism"
@@ -13,7 +15,7 @@ El desarrollo de TradeMind se rige por las lecciones de tres pilares:
 
 - **Frontend**: Next.js (App Router), React, Tailwind CSS (configurado con variables para un modo oscuro elegante).
 - **Backend/Base de Datos**: Supabase (PostgreSQL), integrado con llaves públicas y de *service role* en `.env.local`.
-- **APIs Financieras**: Alpha Vantage y Finnhub listas en configuración para ingestar datos.
+- **APIs Financieras**: Alpha Vantage y Finnhub: planeadas en configuración (aún no operativas end-to-end).
 - **Componentes Base**: Existen estructuras en `src/components/` para análisis, dashboard, layout, alertas y señales, pero aún falta inyectarles los datos en tiempo real y la lógica de IA algorítmica.
 
 ## Qué es lo que viene (Roadmap Inmediato)
@@ -21,7 +23,7 @@ El desarrollo de TradeMind se rige por las lecciones de tres pilares:
 1. **Flujo y Espacio de Trabajo Zesty (Implementado y en iteración)**: Se implementó un `ZestyWorkspace` que agrupa automáticamente los más de 400 activos de inversión en categorías exactas basadas en los antecedentes de Zesty (ej. IA, ETFs Apalancados, Semiconductores, Biotecnología). Este es el flujo de trabajo principal de análisis.
 2. **Rediseño Arquitectónico Visual**: Descomponer la Landing Page en componentes de alto impacto (Hero, Features, Vision) aplicando la filosofía de los "Titanes".
 3. **Monitoreo en Tiempo Real**: Refinar la fiabilidad de `CandlestickChart` y la ingesta de velas para la nueva organización categórica.
-4. **Algoritmo de Trading con IA Automático (En Progreso)**: Se implementó un Asesor IA en la nube en `/api/ai/analyze` integrado nativamente con **Google Gemini 2.5**. Ya ingesta datos de Yahoo Finance y titulares para recomendar inversiones (COMPRAR/VENDER/MANTENER). El siguiente paso es implementar **RAG (Retrieval-Augmented Generation)** subiendo documentos financieros locales como fuente de verdad para el agente, replicando el comportamiento experto de un NotebookLM.
+4. **Algoritmo de Trading con IA Automático (Visión/Mocks)**: Existe un endpoint `/api/ai/analyze` integrado con Google Gemini 2.5 que usa reglas básicas y datos públicos. El siguiente paso aspiracional es implementar **RAG (Retrieval-Augmented Generation)** subiendo documentos financieros locales como fuente de verdad para el agente, replicando el comportamiento experto de un NotebookLM. Actualmente esto es una visión, no una implementación activa validada contra el motor cuantitativo.
 5. **Infraestructura Cloud CI/CD**: Despliegue gestionado mediante Vercel y Supabase. Se han implementado soluciones a prueba de balas para el manejo de JWTs y fallos de autenticación entre Next.js y Supabase.
 
 ## Arquitectura de Datos Zesty

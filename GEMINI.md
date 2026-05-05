@@ -1,13 +1,17 @@
 # TradeMind SaaS 2026 - Guía de Desarrollo "Agent-First"
 
-Esta guía define la arquitectura, convenciones de código y estándares de seguridad para la evolución de TradeMind hacia una plataforma SaaS "AI-Native", basada en principios de finanzas cuantitativas y la psicología de inversión de Benjamin Graham.
+> **ADVERTENCIA PARA AGENTES IA:** Este documento es una guía de **VISIÓN FUTURA Y ROADMAP ASPIRACIONAL**. 
+> NO asumas que las tecnologías aquí descritas (LangGraph completo, MCP real, Edge AI generalizado, Autoencoders, SHAP/LIME, Algoritmos Genéticos) están implementadas en producción o de forma estable.
+> Para conocer la realidad técnica actual y el código real, dirígete a `ANTIGRAVITY_CONTEXT.md` y `AGENTS.md`.
+
+Esta guía define la arquitectura aspiracional, convenciones de código y estándares de seguridad para la evolución de TradeMind hacia una plataforma SaaS "AI-Native", basada en principios de finanzas cuantitativas y la psicología de inversión de Benjamin Graham.
 
 ## 1. Arquitectura AI-Native e Interoperabilidad
 
 - **Single Pane of AI**: La interfaz de usuario debe priorizar el lenguaje natural y el uso de "Artifacts" dinámicos en lugar de dashboards estáticos. El objetivo es lograr una orquestación de inteligencia fluida.
 - **MCP (Model Context Protocol)**: Todos los recursos clave (estado de la cartera, señales de Candle Range Theory - CRT) deben exponerse como herramientas a través de un servidor MCP nativo.
 - **Infraestructura de Agentes**: Utilizar LangGraph (o LangGraph.js) para establecer un clúster multi-agente con memoria persistente y estados de ejecución. Roles sugeridos: `Research Manager`, `Technical Analyst`, `Risk Manager`.
-- **Edge AI**: Las APIs de señales en tiempo real deben configurarse para ejecutarse en el borde (Edge Runtime) para garantizar la mínima latencia.
+- **Edge AI**: Se aspira a que las APIs de señales en tiempo real se configuren para ejecutarse en el borde (Edge Runtime) para garantizar la mínima latencia. (Nota: actualmente `/api/signals` en Edge presenta riesgos, ver `ESTADO_ACTUAL_PROYECTO.md`).
 
 ## 2. Núcleo Cuantitativo y Algorítmico (Pipeline DS/ML)
 

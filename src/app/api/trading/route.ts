@@ -1,29 +1,48 @@
 import { NextResponse } from 'next/server';
+import { mcpClient } from '@/lib/ai/mcp-client';
 
-// FASE 3: Algoritmo IA Automático de Señales (El Motor de Gates)
-// Separación estricta de responsabilidades. Aquí es donde viviría la lógica pesada
-// que contacta a OpenAI/AlphaVantage usando claves secretas y luego inserta en Supabase.
+// FASE 3: Algoritmo IA Automático de Señales
+// Separación estricta de responsabilidades. Aquí contactamos al quant-engine (Python).
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
     const { symbol, currentPrice } = body;
 
-    // 1. Aquí se llamaría a las APIs externas (AlphaVantage para históricos, OpenAI para heurísticas).
-    // const historicalData = await fetchAlphaVantage(symbol);
-    // const aiAnalysis = await analyzeWithAI(historicalData, currentPrice);
+    if (!symbol) {
+      return NextResponse.json({ success: false, error: 'Symbol is required' }, { status: 400 });
+    }
 
-    // 2. Simulación de la respuesta de IA
-    const action = Math.random() > 0.5 ? 'BUY' : 'SELL';
-    const confidence = Math.floor(Math.random() * 20) + 80;
-    
+    // 1. Llamar al workflow del quant-engine
+    const response = await mcpClient.runWorkflow(symbol);
+
+    if (!response.success || !response.data) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          status: "not_implemented", 
+          message: "Trading engine is not connected to quant-engine yet or failed.",
+          error: response.error 
+        }, 
+        { status: 503 }
+      );
+    }
+
+    const responseData = response.data as Record<string, unknown>;
+    const workflowResult = (responseData.workflow_result as Record<string, unknown>) || {};
+    const action = workflowResult.action || 'HOLD';
+    const confidence = workflowResult.confidence || 50;
+    const label = workflowResult.label || 'MANTENER';
+    const reasoning = workflowResult.xai_explanation || `Análisis procesado en quant-engine para ${symbol}.`;
+
     const signal = {
       id: crypto.randomUUID(),
       symbol,
       action,
-      price: currentPrice,
+      label,
+      price: currentPrice || null,
       confidence,
-      reasoning: `Análisis procesado en Backend Seguro: Patrón algorítmico detectado para ${symbol}.`,
+      reasoning,
       timestamp: new Date().toISOString()
     };
 
@@ -35,3 +54,4 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: false, error: 'Failed to process AI signal' }, { status: 500 });
   }
 }
+

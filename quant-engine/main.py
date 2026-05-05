@@ -1,15 +1,41 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from typing import Callable
+import os
+
 from ml_pipeline import run_pca_autoencoder, run_lasso_ridge
 from risk_models import detect_regime, calculate_var_garch, predict_direction_arima
 from graham_filters import check_margin_of_safety
 
 app = FastAPI(title="TradeMind Quant Engine")
 
+from fastapi.responses import JSONResponse
+
+# --- Security Configuration ---
+AUTH_DISABLED = os.getenv("QUANT_ENGINE_AUTH_DISABLED", "false").lower() == "true"
+SECRET_KEY = os.getenv("QUANT_ENGINE_SECRET")
+
+@app.middleware("http")
+async def security_middleware(request: Request, call_next: Callable):
+    if not AUTH_DISABLED:
+        if not SECRET_KEY:
+            return JSONResponse(status_code=500, content={"detail": "QUANT_ENGINE_SECRET is not configured."})
+        
+        client_secret = request.headers.get("X-TradeMind-Quant-Secret")
+        if client_secret != SECRET_KEY:
+            return JSONResponse(status_code=401, content={"detail": "Unauthorized"})
+            
+    response = await call_next(request)
+    return response
+
+# --- CORS Configuration ---
+allowed_origins_str = os.getenv("QUANT_ENGINE_ALLOWED_ORIGINS", "http://localhost:3000")
+allowed_origins = [origin.strip() for origin in allowed_origins_str.split(",") if origin.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

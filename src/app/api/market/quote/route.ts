@@ -24,6 +24,7 @@ export async function GET(request: NextRequest) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let quotes: any[]
     if (symbols.length === 1) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const q = await yahooFinance.quote(symbols[0]) as any
       quotes = q ? [q] : []
     } else {
@@ -31,6 +32,7 @@ export async function GET(request: NextRequest) {
       quotes = []
       for (let i = 0; i < symbols.length; i += 50) {
         const chunk = symbols.slice(i, i + 50)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const res = await yahooFinance.quote(chunk) as any
         if (Array.isArray(res)) quotes.push(...res)
         else if (res) quotes.push(res)
@@ -41,6 +43,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Symbol not found' }, { status: 404 })
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const results = quotes.map((quote: any) => ({
       symbol: quote.symbol || '',
       name: quote.longName || quote.shortName || quote.symbol || '',

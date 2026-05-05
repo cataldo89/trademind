@@ -1,5 +1,6 @@
 # ESTRUCTURA DEL PROYECTO — TradeMind CV
 
+> **AVISO IMPORTANTE:** Este es un mapa de archivos e inventario. **INVENTARIO NO EQUIVALE A FUNCIONALIDAD**. La existencia de un archivo (ej. `lean_integration.py` o `mcp-client.ts`) no implica que el sistema esté interconectado o validado. Lea `ESTADO_ACTUAL_PROYECTO.md` para el estado real.
 > **Fecha de generacion:** 2026-05-03
 > **Descripcion:** Mapa completo de carpetas y archivos del proyecto TradeMind.
 
@@ -141,7 +142,7 @@ egister/page.tsx | Formulario de registro con Supabase Auth |
 | market/movers/route.ts | Endpoint de market movers (gainers, losers, most active) via Yahoo Finance screener |
 | market/quote/route.ts | Endpoint de cotizacion en tiempo real de Yahoo Finance (precio, volumen, P/E, market cap) |
 | signals/route.ts | CRUD de señales. GET lista señales del usuario, POST crea nueva senal en Supabase |
-| 	rading/route.ts | Endpoint de trading. **MOCK** — genera señales aleatorias (sin modelo real) |
+| 	rading/route.ts | Endpoint de trading. **(MOCK: genera señales aleatorias, no usar en prod)** |
 
 #### src/app/auth/callback/route.ts
 
@@ -269,7 +270,7 @@ trademind/src/lib/
 
 | Archivo | Descripcion |
 |---------|-------------|
-| mcp-client.ts | Cliente MCP (Model Context Protocol) para conectar con quant-engine. Define herramientas: getMarketRegime, calculateVaR, checkGrahamFilters |
+| mcp-client.ts | Cliente MCP (Model Context Protocol). **(PARCIAL/SIN USAR)** |
 
 ### src/lib/supabase/
 
@@ -312,7 +313,7 @@ trademind/quant-engine/
 isk_models.py | Modelos de riesgo: HMM regime detection, GARCH VaR 95%, ARIMA prediction |
 | ml_pipeline.py | Pipeline ML: PCA de dimensionalidad, Lasso/Ridge feature selection |
 | graham_filters.py | Filtros de Graham: P/E < 15, Debt/Asset < 0.50, Margin of Safety |
-| lean_integration.py | Integracion con QuantConnect LEAN: exportacion de algoritmos, ejecucion de backtests |
+| lean_integration.py | Integracion con QuantConnect LEAN. **(PENDIENTE: no ejecuta backtest real)** |
 | 
 equirements.txt | Dependencias Python (numpy, pandas, yfinance, sklearn, hmmlearn, arch, statsmodels, fastapi, uvicorn, python-dotenv) |
 | start.bat | Script de inicio del servidor FastAPI en Windows |
