@@ -24,3 +24,5 @@ ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
 CREATE POLICY service_insert_audit ON audit_logs FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
 CREATE POLICY users_view_audit ON audit_logs FOR SELECT USING (auth.uid() = user_id);
 
+
+# bumped: 2026-05-05T04:21:00

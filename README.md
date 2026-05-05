@@ -79,3 +79,5 @@ QUANT_ENGINE_ALLOWED_ORIGINS=http://localhost:3000,https://trademind-cv.vercel.a
 ```
 
 > **NOTA SOBRE SEGURIDAD:** En producción, si `QUANT_ENGINE_SECRET` no está configurado, la aplicación fallará explícitamente. Para entornos locales, puedes saltar la seguridad usando `QUANT_ENGINE_AUTH_DISABLED=true`.
+
+# bumped: 2026-05-05T04:21:00

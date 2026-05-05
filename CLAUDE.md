@@ -6,3 +6,5 @@
 3. `ESTADO_ACTUAL_PROYECTO.md` (Auditoría de código)
 
 No asumas roadmap ni dupliques estado técnico aquí.
+
+# bumped: 2026-05-05T04:21:00

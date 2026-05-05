@@ -15,3 +15,5 @@ export interface TradeSignal {
   confidence: number; // 0 to 100
   reasoning: string;
 }
+
+# bumped: 2026-05-05T04:21:00

@@ -127,3 +127,5 @@ Brechas criticas:
 4. mcp-client.ts existe pero NO esta integrado [PARCIAL]
 5. Filtros de Graham requieren validacion final (contradicciones de umbral) [RIESGO]
 6. Ausencia total de testing y CI/CD [PENDIENTE]
+
+# bumped: 2026-05-05T04:21:00

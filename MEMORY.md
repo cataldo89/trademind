@@ -34,3 +34,5 @@ El desarrollo de TradeMind se rige por las lecciones de tres pilares:
 - Si editas la UI, asegúrate de mantener animaciones sutiles y estilos de *Glassmorphism* y gradientes oscuros.
 - Si editas el backend o la IA algorítmica, asegúrate de que el código sea eficiente, no bloqueante, y documentado de forma que la modularidad no se pierda.
 - **Nunca asumas** que un componente simple de React es suficiente: TradeMind busca la perfección técnica y visual.
+
+# bumped: 2026-05-05T04:21:00

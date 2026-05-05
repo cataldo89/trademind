@@ -44,3 +44,5 @@ def run_lean_backtest(algorithm_file: str):
         return {"status": "error", "message": f"Lean CLI error. Output: {e.output}"}
     except Exception as e:
         return {"status": "error", "message": f"Unexpected error running Lean: {str(e)}"}
+
+# bumped: 2026-05-05T04:21:00

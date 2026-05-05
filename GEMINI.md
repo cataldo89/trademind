@@ -40,3 +40,5 @@ Todo nuevo módulo cuantitativo debe implementarse o integrarse respetando los s
 - **Tipado Estricto**: TypeScript debe utilizarse de forma estricta. Todo modelo de datos debe ser validado con Zod en la capa de API.
 - **Variables de Entorno**: Segregar las claves (OpenAI, Gemini, Supabase, QuantConnect) y nunca exponer secretos del servidor al cliente.
 - **Latencia**: Cualquier cálculo pesado que exceda 1 segundo debe encolarse de manera asíncrona o procesarse en Python, devolviendo un estado o utilizando WebSockets/Server-Sent Events para actualizar el cliente.
+
+# bumped: 2026-05-05T04:21:00

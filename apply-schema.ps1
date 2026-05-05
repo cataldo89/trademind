@@ -48,3 +48,5 @@ try {
     Write-Host "ACCION REQUERIDA: Ejecuta el schema manualmente" -ForegroundColor Magenta
     Write-Host ("URL: https://supabase.com/dashboard/project/" + $projectRef + "/sql/new")
 }
+
+# bumped: 2026-05-05T04:21:00

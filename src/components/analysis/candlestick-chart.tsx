@@ -525,3 +525,5 @@ export function CandlestickChart({ symbol, market, range, onMetadataChange }: Ca
     </div>
   )
 }
+
+# bumped: 2026-05-05T04:21:00

@@ -1367,3 +1367,5 @@ soluciones_tecnicas.md     -> errores resueltos y patrones técnicos
 La mejora más importante es que ningún agente vuelva a confundir visión con implementación.
 
 Si Antigravity va a trabajar de forma continua, este archivo debe estar en la raíz del repo y debe ser leído siempre antes de tocar código.
+
+# bumped: 2026-05-05T04:21:00

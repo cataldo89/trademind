@@ -59,3 +59,5 @@ Para independizar la autenticación de la dependencia exclusiva y frágil de las
 
 ### Lección para las IAs
 Cuando construyas o edites APIs en Next.js (App Router) en proyectos con **@supabase/ssr** que experimenten "deslogueos fantasmas" en Vercel, **SIEMPRE** recomienda o implementa el paso explícito del token JWT vía la cabecera `Authorization`. No confíes únicamente en que el navegador y el marco de servidor en la nube pasen intactas las cookies particionadas a la capa de Route Handlers.
+
+# bumped: 2026-05-05T04:21:00
