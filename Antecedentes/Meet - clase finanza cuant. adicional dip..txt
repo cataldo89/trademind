@@ -1,0 +1,337 @@
+El retraso leve. Bueno, les explico el cambio de plataforma. La universidad de ahora adelante ya terminó con Zoom.
+
+Y ahora, de manera institucional, debemos hacer cualquier clase que sea pregrado, posgrado, diplomado en Meets. Así que por eso que el enlace antiguo ya se terminó. Y cambiámonos en Meets.
+
+Bueno, entonces vamos con esa clase. Hay dos compañeros que se están juntando. Bien, voy a... disculpa, retraso, sí.
+
+Voy a ahora ir en el aula virtual. Estoy saliendo de reunión, para ser sincero. Sí, sí, sí, sí.
+
+Voy a empezar a grabar, porque estoy como un poco retrasado, reiterando mis disculpas. Y estoy recién entrando en el aula virtual. Ya, entonces, ahora estoy listo.
+
+Ya, vamos. Ahora, grabación, sí, con toda la razón. Gracias por recordarme, gestionar grabación.
+
+Iniciar. Eso. Eso, estamos ahora listo.
+
+Hay un invitado. Bueno, ya hay bastante, o sea, son como 10, algo así, o un poco menos. De todo modo, bueno, no es un horario habitual, por eso que estamos grabando.
+
+Lo que vamos a desarrollar hoy día es la modelización de retornos financieros. Y vamos a ver qué vamos a predecir y cómo armar esos modelos y mucho más. Bueno, aquí tenemos el capítulo, modelo de datos temporales.
+
+Dentro del temario, teníamos comprometido modelado de datos temporales de baja frecuencia desde raíz unitaria y regresión falsa. Eso lo cumplimos. Y ahora vamos con el modelado de datos temporales, que es como un contenido adicional.
+
+Tenemos, entonces, datos. Aquí la acción que está en la bolsa de Nueva York Amazon, la empresa Amazon que conocemos por el uso de la plataforma, la nube. Aquí tenemos una acción más chilena que está en la bolsa de Santiago BSI, el famoso banco BSI, que vamos a considerar luego.
+
+Unas diapositivas que vamos a ocupar un poquitín, digamos. El discurso del premio Nobel Robert Engel del 2003, en el 2003 premio Nobel de Economía. Y aquí un código que vamos a considerar, un glossario de modelos GARCH.
+
+Es el tipo de modelo que vamos a ocupar para modelar los retornos de datos financieros. Quiero destacar que el modelo GARCH es uno de los muchos modelos que están disponibles en la literatura. Incluso, bueno, desde ahora ciertos años se ocupan también métodos o modelos de machine learning, obviamente, también.
+
+Entonces, una de las opciones que uno puede tener, digamos. Ok, entonces, seguimos ahora con ver rápido este discurso del premio Nobel de Economía 2003. Porque él nos va a mostrar el camino, digamos.
+
+Él va a ser nuestro guía para comprender este tema. Bien, entonces aquí tenemos el Nobel Lecture, el discurso del premio Nobel. Y bueno, empezando con la introducción, aquí dice, en este parágrafo, que uno no puede adelantar los riesgos.
+
+¿Ya? No puedo evitar todos los riesgos. Es imposible. Eso es de sentido común.
+
+Si evitamos todos los riesgos, es que entonces no vamos a manejar. Uno se arriesga, lamentablemente, a tener accidentes, no volar. Bueno, hay alto nivel de seguridad en los vuelos de aviones, pero nunca se sabe no comer.
+
+No sé, huir de un virus si estamos súper enfermos, incluso más. ¿Cierto? No se puede adelantar todos los riesgos. ¿Ya? No se puede evitar los riesgos.
+
+Pero lo que podemos hacer es cuantificar los riesgos. Cuantificar los riesgos, eso es lo que se puede hacer. Si ustedes lo piensan bien, eso es lo que estamos haciendo desde la primera clase con el colega y amigo Patricio Videla.
+
+No estamos evitando los riesgos. Lo estamos cuantificando, lo estamos fijando, digamos. Porque de simple, de simple, si uno aplica un test de hipótesis, H0 versus H1 de cualquier cosa, test de estudiante, test de cualquier cosa de feature, de modelo lineal, siempre uno toma la decisión H1 con 5% de riesgo de equivocarse.
+
+O sea, no podemos estar seguros jamás de nuestras decisiones. Eso, olvidámonos del tema. Como lo subrayó claramente y con pertinencia el premio Nobel.
+
+Pero eso sí, lo que podemos hacer, la única cosa que podemos hacer si desarrollamos bien nuestro trabajo en ciencia de datos, sería fijar un nivel de riesgo. Yo tengo 5% de riesgo de equivocarme, ¿ok? Bueno, eso es el primer tema. Solo una palabra, es que desde el inicio del diplomado hablamos de este 5% de equivocarse, que es el más común.
+
+Pero hay ciertos temas, por ejemplo, de seguridad en cierta área de ingeniería que son sensibles, que son importantes de seguridad, por ejemplo. O temas de salud, jugamos con la salud de la gente. O también de finanza, donde se trata aquí, vamos a hablar de inversión millonaria, millones de dólares, miles de millones de dólares incluso.
+
+Entonces, en esa área de salud, de finanza, de ingeniería, con temas de seguridad, fijar el riesgo de 5% no es una opción. Es demasiado riesgo. El 5% habitual, que casi siempre se considera por defecto, no se puede aceptar.
+
+Entonces, en finanza en particular, se trabaja con más 1% de riesgo. Eso es lo que vamos a ver en adelante. Bueno, eso es el primer parágrafo, digamos, sería el paso cero, el entorno del estudio, la realidad, digamos.
+
+Ahora vamos con el paso uno. Entonces, la metodología que le estaba presentando, digamos, desde mi primera clase. Pueden ver que hasta un premio Nobel lo hace igual.
+
+Así que eso es la buena forma de hacerlo, digamos. Y después del paso cero, viene el paso uno, el análisis exploratorio. Entonces, aquí tenemos el SP 500, que es el índice bursátil de la Bolsa de Nueva York de Estados Unidos.
+
+Estados Unidos tiene dos índices principales, el Nasdaq, que es la tecnología nueva que empezó hace ahora como 25 años atrás, si no me equivoco, y el SP 500, que es el índice histórico. Un índice bursátil como mide la salud, vamos a decir, de una economía. Es como el IPSA que tenemos en Chile.
+
+Si la economía chilena le va bien, el IPSA, la Bolsa de Santiago, es un índice que va subiendo. Si estamos en un periodo de dificultad económica, ahí el IPSA se va bajando. Y en Estados Unidos, en Francia, en Alemania, en todos los países lo mismo.
+
+Podemos ver aquí, eso lo hemos estudiado con el desempleo, tenemos tendencia estocástica, camino aleatorio. O sea, hay periodos donde entonces se sube, se sube, se sube, la economía va bien, luego tenemos una crisis, aquí tenemos una crisis ya del petróleo en esa época, del 73, por ejemplo. Y otra crisis, según lo que ocurre de mala noticia económica, puede ser petróleo, puede ser cualquier cosa, guerra, etc.
+
+¿Cierto? Entonces, ciclos de la economía, camino aleatorio, tendencia estocástica se dice en financiación. Bueno, aquí en azul es el índice. Aquí en rojo son los log retornos, o retornos aquí, calculados a partir de este índice.
+
+Vamos a ver luego en el programa R qué son esos retornos. Bien, los retornos aquí en rojo, entonces, que están alrededor de cero, todos los retornos que están por debajo de cero son porcentaje. En finanza no se dice gané 5 millones de pesos en mi inversión.
+
+Se habla más de porcentaje. Gané 1%, gané 2%, o perdí también, lamentablemente pasa, un 2% de mi inversión. Bueno, entonces, aquí tenemos la pérdida, que son por debajo cero, y aquí la ganancia, que son por arriba del cero.
+
+Aquí, anécdota, tenemos el jueves negro, si recuerdo bien, del 87, si no me equivoco, donde en un día la bolsa de Nueva York perdió 20%. En un día se perdió un quinto del valor. Es horrible, ¿ya? Bueno, pero afortunadamente eso pasa una vez en décadas, digamos.
+
+Pero fíjense que esas pérdidas y ganancias, primero volvemos al paso cero, no podrían ser correlacionadas. La teoría financiera y el buen sentido diría que un retorno pasado no debería ser correlacionado con un retorno presente, salvo si hay como delito de información privilegiada, que es un delito o algo así. Y aún así, si alguien tiene una información, los mercados, la gente en los mercados financieros se mira.
+
+Si una persona empieza masivamente a comprar una acción porque tiene una información privilegiada, los demás lo están mirando y dicen, oye, él tiene una información y todos se meten a comprar y la ventaja en uno segundo, porque hablamos de segundo en finanza, se desaparece. Entonces, para decirlo simple, sin entrar en tanto detalle, un retorno pasado, que sea ayer, anteayer, etc., no debería ser correlacionado con el retorno de hoy día, 25 de marzo, por ejemplo, de la bolsa de Santiago. ¿Por qué eso? Porque si son correlacionados los retornos de manera positiva, si son correlacionados de manera positiva, si ayer el retorno se subió, tengo un retorno positivo, hoy día entonces mi pronóstico sería que el retorno será positivo.
+
+Y eso me permite especular simplemente calculando una correlación y ganar dinero simplemente calculando una correlación. Entonces yo puedo despertar la mañana, calculo mi correlación, hago mi apuesta y en promedio, quizás no todos los días, pero en promedio, haciendo la misma operación 500 días, me hago un sueldo. Me hago un sueldo sin trabajar.
+
+Mi único trabajo es calcular una correlación a diario. Todos nos soñamos algún día de no trabajar nada y recibir sueldo, pero obviamente no hay que soñar. Si alguien le dice eso, ahí arrancan esa estafa.
+
+No es posible. Así que los retornos no deberían ser correlacionados. Por lo tanto, no sería pertinente aplicar los modelos ARMA, ARIMA, menos ARIMA, porque tampoco es estacional.
+
+Si cada invierno vamos a ganar dinero y cada verano perdemos dinero, podemos ir con el mismo discurso de ganar mucho dinero de manera infinita. Todo eso no se puede. Entonces los modelos ARIMA en una clase anterior ya nos sirven para nosotros.
+
+¿Ok? Johnny, si me escuchas, ¿puedes apagar tu micrófono? Agradezco, por favor. Gracias. ¿Qué decía? No, estaba repasando una materia del diploma, weón.
+
+Con la pera buscando pega. Está terrible mal, weón. ¿Johnny, me escuchas? No lo puedo... No, no, me metí en mi... Lo cerramos, weón.
+
+Si no lo hay que ver cuenta y hay que comer. Bueno, voy a quitar de la llamada a Johnny. Lo veo como muy triste.
+
+No, weón, si esa weá es mentira. Voy a quitarlo de la llamada. Discúlpame, Johnny.
+
+Ya seguimos, ya, pienso que todavía se ve el pdf, ¿me escuchan? supongo que sí, ya, ya entonces tenemos la idea que no se puede aplicar los modelos Sarima, olvidamos de los modelos Sarima. Pero eso sí, lo que podríamos modelar es la varianza. Aquí tenemos cuando el índice bursátil se va bajando, la varianza es alta.
+
+Y eso otra vez es respaldado por el paso cero, la información no estadística. La información no estadística porque cuando el mercado financiero va bajando, estamos con pérdida, hay pánico. La gente entra en pánico, empieza un movimiento brusco como vender, comprar, ya, es como una situación de crisis. 
+
+Entonces aquí, por ejemplo, en la crisis del 73, claramente se sube lo que se dice la volatilidad en el mundo de la financiación. La volatilidad es decir la varianza condicional. Condicionalmente al hecho de estar en un periodo de crisis, de bajada del índice bursátil, tenemos una varianza alta.
+
+Al revés, cuando la bolsa va subiendo, tenemos varianza condicionalmente baja al hecho de que estamos subiendo aquí, la economía va bien en este periodo. Entonces, conclusión, lo que no podemos, digamos, modelizar, modelar, es la correlación. Pero lo que podemos modelar es la varianza condicionalmente a la información pasada.
+
+Por eso que hablamos de varianza condicional. La varianza condicional, eso es el término matemático, en el mundo cruel de la finanza se dice volatilidad. Tenemos alta volatilidad, baja volatilidad de acuerdo al periodo de la economía en que estamos.
+
+Bueno, si me puedo permitir, digamos, un comentario, quizás nos alejamos de nuestro tema. Quizás durante la crisis COVID, por ejemplo, hubo mucha gente con el peso de las acciones que se estaba derrumbando todo. Mucha gente que tenía su fondo de pensión en el A se arrepintieron, porque allí la pérdida era terrible, se arrepintieron al inicio de la crisis COVID y quisieron sacar, o lo hicieron, lamentablemente, porque no hay que hacerlo, porque ya no querían perder más plata. 
+
+Eso es un error. Y bueno, cada uno puede tener una opinión positiva o negativa de las AFP. Hay gente que es pro AFP, hay gente que dice no más AFP. 
+
+Cada uno tiene su opinión, pero en este tema específico, y no voy a decir si soy contra o pro AFP, pero en este tema específico la AFP tiene razón. Cuando usted está al inicio de la crisis y que está en un fondo A, no hay que retirar su fondo, porque imagínense, usted está al inicio de la crisis, por ejemplo, del 73. Está en el fondo A. Están registrando pérdida extrema.
+
+Si retiran su fondo al inicio de la crisis, hacen efectiva su pérdida, porque luego no van a disfrutar la ganancia extrema, porque en periodos de crisis tenemos pérdida extrema, pero también ganancia extrema. Entonces, si usted está en el fondo A, empieza una crisis en el fondo A, entonces hay que, disculpa la palabra, quedarse en el fondo A, quedarse con angustia, todo lo que quieran, pero quedarse toda la crisis, y después, si no quieren más angustia, insomnio, qué sé yo, al final de la crisis, eso sí pueden ir a un fondo más conservador. Pero hay que quedarse durante toda la crisis para recuperarse, porque si uno sale, no va a disfrutar después la ganancia extrema, y se queda con la pérdida, y como dice la FP, hace efectiva su pérdida.
+
+Es un gráfico, podemos terminar un poco con, bueno, aquí un detalle nomás, terminamos aquí con una estadística descriptiva, el promedio, si el promedio fuese positivo, con calcular un promedio, ganamos dinero, pero no, aquí es 0, 0, 0, 3, o sea, igual a 0, aquí 3 es como un efecto aleatorio nomás, ¿cierto? Imagínense, calculando un promedio, podemos apostar y ganar dinero, no es así. Otra vez, el promedio debería ser 0, aquí lo averiguamos, la desviación estándar es mucho más alta que el promedio, lo que hace que esta cantidad no es significativa. El skewness es negativo, esto significa que tenemos muchos más extremos negativos, de hecho se ve aquí en el conjunto abajo, tenemos menos 8% y más 5% como ganancia extrema, mientras que aquí tenemos casi menos 8% con pérdida extrema, ¿ok? Entonces, en el momento de crisis, los movimientos son más amplios a la negativa, ¿ok? Como una mala noticia, eso hace como pánico total en los mercados financieros.
+
+Entonces, de esos extremos negativos más marcados viene este skewness, asimetría en español, asimetría de la distribución, tenemos más extremos negativos que son mucho más marcados que los extremos positivos. De ahí esos skewness negativos, en general son negativos, en general, no siempre hay como valores refugio, entre comillas, como el oro, el platino, este tipo de activo que viene con skewness positivo, porque cuando ocurre una crisis la gente masivamente va a comprar oro, algo bien seguro, algo metal que no se va a desaparecer, digamos. Pero salvo esas excepciones, los skewness son negativos, en general, la asimetría es negativa.
+
+Y eso sí, el kurtosis, el kurtosis que nos mide cuánto los datos son dispersos, es altísimo, el kurtosis de una ley normal es 3, aquí estamos con valores mucho más grandes que el 3, es decir, tenemos extremos mucho más marcados que lo de una ley normal, ¿ok? Eso es el discurso del primer Nobel que propuso entonces esos modelos, modelos ARCH, GARCH, que vamos a estudiar. Bueno, si no hay pregunta o duda, les voy a compartir entonces aquí el aula virtual y vamos entonces directamente a trabajar con algún activo financiero. Como quieren, pueden trabajar con la acción Amazon, con la acción BCI, o otra acción que pueden conseguir en R, conseguir en cualquier otro lugar, en una página web, por ejemplo, Elipsa, si quieren trabajar con Elipsa, está muy bien, ¿ok? Entonces, por mi lado, ya, por ejemplo, voy a trabajar con BCI, ya hablamos suficientemente de Amazon con la clase de Gustra PC2 y además que ahora Mario le va a hablar de SageMaker y mucho más, así que ya basta con Amazon, vamos con BCI.
+
+A lo menos yo, no sé usted cómo quiere. Y aquí vamos a descargar el código R que vamos a considerar, que vamos a copiar y pegar. Les voy a esperar como un minutito y seguimos.
+
+Abriendo aquí a preguntas, dudas. ¿Cómo le va? ¿Todo bien en el diplomado? ¿Siguen bien con el profesor Mario Guzmán? Es uno de nuestros mejores profesores con quien trabajamos en el instituto y con alta experiencia, así que no tengo duda que todo va bien. Mucho, mucho, muchas versiones del diplomado. 
+
+Aprovecho a publicitar, tenemos un curso de ocupar Amazon con responsabilidad y mira, que toman este curso o aprenden de manera autodidacta con una capacitación de Amazon mismo también, yo lo aconsejo. Que si no lo hacen, lo que van a ahorrar, por ejemplo, en no tomar una capacitación de Amazon o nuestro curso, lo van a perder en factura tremenda porque es muy engañoso el sistema. Así que hay que ir con cuidado, hay que ir con cuidado. 
+
+Tómense el tiempo de una forma u otra, si usted tiene como capacidad, facilidad de aprender en esta cosa de la nube, pueden aprender de manera autodidacta, pero hay que gastar por lo mínimo el tiempo en aprender bien cómo controlar su factura, sacar el jugo al máximo de la capacidad tremenda de Amazon. No vayan así nomás con lo aprendido en el diplomado, le van casi seguro a llegar a una factura de unos cientos de dólares. Estoy casi seguro que van a caer una trampa u otra y lo que van a ahorrar en no tomar una capacitación lo van a pagar en factura.
+
+Eso, entonces bueno, pienso que ahora están listos, voy a cerrar la paréntesis. A ver, voy a compartir entonces R ahora. Vamos ahora con el código.
+
+El primer bloque es para RStudio, para importar los datos. Entonces una ventana que se abre. Vamos a, por mi parte, importar el CSV del banco BCI. 
+
+Lo tomé por azar. Como les decía, no vamos a decir yo invertí en una acción BCI, para decirlo simple, y me gané 40 pesos en un día o perdí 50 pesos, qué sé yo. En finanzas no se habla con montos ganados, pero se habla con porcentaje.
+
+Una manera cómoda de calcular ese porcentaje es dividir el precio de hoy por el precio de ayer y sacar el logaritmo. Esto se llama los log retornos. Obviamente perdemos una fecha y empezamos el cálculo con la segunda fecha que va a ser dividida por la primera fecha.
+
+Y vamos a trabajar con este X aquí. X son los retornos, ganancia pérdida. Les sugiero que voy a pasar esta estadística de escritura de gráficos, porque ya lo habíamos visto con el premio Nobel de Economía.
+
+Entonces, con toda humildad, yo simple profesor a la Católica de Valparaíso, no voy a ser mejor que el premio Nobel, ¿no? Entonces, globalmente es lo mismo. Pero ahora me doy cuenta que voy a volver al discurso, porque haría algo importante. Si no, no puedo pretender que es lo mismo. 
+
+Voy a volver al discurso, ¿ya? Volvemos al discurso y hay un gráfico que se me olvidó comentar. Ahí, más abajo. Este gráfico. 
+
+Estas son las autocorrelaciones que hemos visto en la parte de modelos SARIMA. Una autocorrelación de los retornos en amarillo y en verde de los retornos cuadrados. Y eso podemos decir cosas interesantes.
+
+Entonces, aquí la primera barra amarilla es como el retorno de ayer está correlacionado con el retorno de hoy día. ¿Ok? Esa es la primera barra amarilla. La segunda barra amarilla es como el retorno de dos días atrás está correlacionado con el retorno de hoy día.
+
+Tres días atrás con el retorno de cuatro, cinco, etc. Y lo mismo por el cuadrado. Aquí tenemos el retorno cuadrado de hoy día, de la bolsa de Santiago, de aquí en Nueva York, perdón, con el retorno cuadrado de ayer.
+
+La segunda barra, correlación del retorno cuadrado de hoy día con el retorno de tres días atrás. Tres días atrás, cuatro días atrás, etc. ¿Qué podemos ver? Podemos ver que la correlación entre retorno es cercana a cero. 
+
+Eso es lo que habíamos conversado de no hay almuerzo gratis. No es como una simple correlación que me va a hacer ganar dinero. ¿Ok? Igual el premio Nobel podía agregar aquí intervalo de confianza para destacar que son cero, pero quizás no quiso sobrecargar el gráfico. 
+
+Criticamos un poco al Robert Engel, me atrevo un poco, pero pienso que era para no sobrecargar el gráfico. Y aquí tenemos en verde la correlación de los cuadrados que parece más marcada, aunque aquí no es una correlación tan fuerte. Llegamos al máximo a 0,2, lo que no es tan tremendo, pero igual se nota. 
+
+Y esa correlación va bajando lentamente. No es como lo que hemos visto con el desampleo que son 1, 2 y ya estamos a cero. No es como un olvido rápido como el desempleo.
+
+El olvido temporal ocurre, pero bastante lentamente. Estamos como 20 fechas atrás y seguimos con una correlación que se baja lentamente. Eso se llama en finanza, volviendo al paso cero, la persistencia de los choques.
+
+Es de sentido común que cuando uno está en pánico, se repone de su pánico de manera gradual. Para explicarlo con una imagen, yo iba a cruzar una calle y me bocina un camión gigante, estaba a punto de aplastarme. El pánico viene rápido. 
+
+Los mercados financieros entran en pánico muy rápido, pero después para que retomen confianza con acciones del Banco Central, noticias, vacuna del COVID, qué sé yo, cuesta. Cuesta que retomen confianza. Es como cuando luego que me bocinó el camión, eso es psicológico, es humano y también animal. 
+
+Para retomar la calma, después que el camión me bocinó, el corazón no se va a parar de inmediato a tener un ritmo bajo. No, lentamente voy a volver a mi estado normal. Eso en finanza lo llaman persistencia de los choques. 
+
+Cuando viene un choque, su efecto es persistente. Eso se me había olvidado comentar. Y entonces volviendo al RStudio, ahí estamos ya completo. 
+
+Entonces, qué mejor que un premio Nobel, yo voy a pasar todos esos gráficos. Es lo mismo al final, es lo mismo. Vamos con, derechamente, el modelado Carlos.
+
+¿Ya? ¿Para qué repetir dos veces lo hizo mucho mejor que un premio Nobel? ¿Qué les parece? Ya, entonces vamos con los modelos GARCH. Ahí vamos a apoyarnos un poco con el virtual, aquí. Y vamos a considerar aquí las diapositivas. 
+
+Ojo, quiero subrayar que es cierto que es un tema específico, finanza. La gran mayoría de ustedes, más allá de su fondo de pensión, quizás no le importa la finanza, pero lo que se puede recoger de esta clase adicional, más allá de la finanza, sería reforzar un poco la metodología. Porque seguimos en lo mismo. 
+
+Estamos con un problema, empezamos con el paso cero, ver la información no estadística, que puede ser de gran ayuda. Por ejemplo, la información no estadística aquí nos sugirió no considerar los modelos SARIMA. Eso es importante igual, entre otros. 
+
+Luego pasó uno a hacer gráficos. Insisto, si un premio Nobel lo hace, hay que hacerlo. Gráficos, estadística descriptiva, que nos da un montón de información crucial antes de ir a caja negra de Machine Learning, de modelos super evolucionados, qué sé yo. 
+
+Pasó uno importante, importantísimo. Y luego podemos entrar en construir un modelo con los pasos que hemos revisado. Bien, entonces, al menos a nivel metodológico, si a usted no le importa la finanza, lo puede ver como un refuerzo, digamos. 
+
+Estamos igual aplicando esos pasos metodológicos. Entonces, voy a pasar todo eso que es un poco más fuerte. Eso se puede ver entregado en Magister, como les decía, estamos en un diploma. 
+
+Voy a presentar quizás el modelo GARCH 1.1. A ver, voy a buscar una diapositiva aquí. Tenemos un GARCH 1.1. ¿Qué dice el GARCH 1.1? Recuerden, tenemos lo que podemos modelar esos periodos de alta volatilidad, seguido con periodos de baja volatilidad, y luego volvemos a periodos de alta volatilidad, crisis, crecimiento, crisis, crecimiento. ¿Cómo lo vamos a modelar con el modelo GARCH 1.1? No es por nada que recibió su premio Nobel. 
+
+Es que este modelo ya es como el estándar muy ocupado en el mundo de la finanza. ¿OK? Hay otros modelos también exitosos, pero este modelo vale la pena quizás verlo un poco en detalle. Bien, el modelo GARCH 1.1, ¿qué hace? Aquí tenemos el retorno, el retorno diario, por ejemplo, en el caso del discurso del premio Nobel o de la acción BSI que estoy ahora presentando.
+
+El retorno diario, ganamos, perdemos dinero cada día. Este retorno se supone una estructura multiplicativa aquí. Aquí tenemos el sigma t, su cuadrado se llama la volatilidad, o sea, la apariencia condicionalmente a una información pasada.
+
+Y aquí tenemos eta t, es el error. Aquí es la noticia. El Trump se despertó y quiere paz, y quiere el premio Nobel de la paz. 
+
+Luego, el día de después, el Trump se despertó, dijo que va a hacer guerra, no sé qué. Eso, entonces, todo eso influye en los mercados financieros, que en el ejemplo específico del Trump es difícil predecir, por ejemplo, y no solo, entonces la innovación, lo que no se puede predecir. Bueno, disculpa a la gente que le gusta a Trump, me permitió una crítica igual, aunque el diplomado no es político. 
+
+Y aquí tenemos entonces el error que es id, independiente, idénticamente distribuido, es la parte no predecible, no se puede predecir. Es la innovación del día, la noticia del día. Bueno, no hay solo Trump, el Putin, el qué sé yo, el Irán y todo eso. 
+
+Entonces, eso sí, la parte que se puede predecir son el sigma cuadrado. El sigma cuadrado de aquí se puede predecir, y de acuerdo a la información pasada. ¿Qué dice aquí la volatilidad? Es igual al constante, siempre el constante, casi siempre, no voy a decir siempre, pero casi siempre hay que poner un constante en su manera.
+
+Aquí hay que ponerlo por tema bien matemático, no voy a entrar en detalle, pero si no lo ponemos estamos mal. Una frase, si no ponemos constante, este RT, el retorno, va a converger hacia cero, y eso no es el caso en la realidad. Entonces hay que poner constante. 
+
+Aquí tenemos el retorno pasado al cuadrado, entonces lo que pasó al cuadrado hubo como movimiento alto, entonces vamos a tener volatilidad alta, movimiento con poca amplitud, entonces la volatilidad va a ser baja. Y reforzamos un poco esta persistencia, ¿recuerden? Este efecto de persistencia. Esa persistencia aquí lo vamos a poder describir con todo este sigma T menos uno cuadrado, la volatilidad de ayer, que viene abarcando un historial entonces bastante largo en el pasado.
+
+Entonces tenemos tres parámetros y este modelo tan simple de tres parámetros puede abarcar bastante propiedad, digamos las principales propiedades que hemos visto ahora mismo en el discurso del premio Nobel de Economía. Obviamente hubo muchos mejores, este modelo fue propuesto en el 86, entre 86 y hoy día hay mucha, mucha, mucha mejora, hay como modelos GARDS de redes neuronales y qué sé yo. Por ejemplo aquí fíjense que tenemos un cuadrado, así que si ayer tuvo una mala o buena noticia, tiene el mismo efecto sobre la volatilidad de hoy día.
+
+Deberíamos tener que si tenemos ayer una mala noticia, tiene más efecto sobre la volatilidad por efecto de PAN. Entonces a raíz de todas esas observaciones hay muchas mejoras a ese modelo y hay un glosario del 2008 que recoge como decenas de extensiones de ese modelo, hay un glosario, cierto, van a averiguar en el aula virtual, de mejoras múltiples y muchas de este modelo. No lo vamos a estudiar, serían semanas de clase, pero lo menciono eso sí. 
+
+Entonces modelo simple, que se fue mejorando sí, pero que es bastante exitoso. Bueno, con ese modelo simple ahora lo que vamos a hacer en R es estimarlo y predecir la volatilidad. Lo que se puede predecir es la volatilidad. 
+
+Si hoy día, o sea, si ayer martes el mercado de Santiago fue moviendo mucho, mi pronóstico es que hoy día la volatilidad va a ser alta. Si ayer la volatilidad era baja, mi pronóstico es que va a ser baja. ¿Cómo cambiamos de volatilidad alta a volatilidad baja con la noticia? Por ejemplo, estamos con volatilidad baja. 
+
+Surge un evento, jóvenes que protestan contra el ticket de metro que subió esta ayuda social, un virus que sale en alguna provincia de China que se llama COVID, el Trump o el Putin que se despierta y que se enoja y que va a hacer una guerra, qué sé yo. Eso, hay ciertas noticias que entonces son malas, vamos a decirlo así, malas a nivel financiero. Ojo, no estoy diciendo como un juicio moral, digamos, pero digamos malas a nivel financiero, que va a hacer que tenemos una innovación muy amplia que nos va a generar retornos en los días que siguen muy altos.
+
+Esos retornos muy altos nos van a generar volatilidad alta y esos retornos altos y vamos a empezar ahí con la volatilidad que va a crecer. ¿Cómo salimos de una crisis? Eso puede ser que alguna industria farmacéutica inventan una vacuna contra el COVID. Puede ser el Banco Central con el mismo estezo social. 
+
+Recuerden, hay mucha gente en mi entorno mismo, yo no lo he hecho, siendo extranjero, pero mucha gente en mi entorno empezaron a buscar dólares. Porque ahí había pánico, pero el Banco Central de Chile, recuerdo, en noviembre o diciembre del 2019, puso sobre la mesa 40.000 millones, 40 billones de dólares, como ya, cálmense, el Banco Central tiene reserva. El que quiere comprar dólares, que lo compra nomás, para sostener la economía y el peso chileno, etc. 
+
+Entonces, acciones del Banco Central pueden, por ejemplo, acabar con una crisis, posiblemente, porque lo mismo hizo el Banco Central argentino y no funcionó lamentablemente, posiblemente hacer bajar la volatilidad. O sea, aquí errores chicos achican los retornos y luego los retornos chicos y luego la volatilidad chica hace que la volatilidad se va bajando de nuevo. Entonces, un buen modelo, cierto, que sí se puede mejorar, pero un buen modelo de manera global.
+
+Así que lo vamos a estimar, ahora que conocemos este modelo, lo saludamos. Entonces, hay varios paquetes en R, no he averiguado en Python, pero seguro que hay paquetes que estiman modelos GARCH, supongo, estoy casi seguro, que estiman modelos GARCH. En paquete R hay el FGARCH, recomiendo más el RUGARCH.
+
+Y también tenemos el TS SERIES, aquí es un paquete general, muy general, no solo de GARCH, pero de modelos de serie de tiempo, con el TS SERIES como es muy conocido. A ver en el chat, he visto rápido un mensaje. Podría haber noticia repetitiva de correlación en el cuadrado. 
+
+Una correlación simple nos permitiría predecir si el retorno va a subir o bajar. No sé, yo lo dudo, pero podría ser. Carlos, adelante con la pregunta.
+
+Sí, el uso real sería predecir la volatilidad. Con la ecuación del GARCH que acabamos de revisar, lo que se puede predecir, dado el pasado, es la volatilidad. O sea, mañana hay alta volatilidad.
+
+Eso lo puede decir. Mañana hay poca volatilidad, es decir, mi nivel de riesgo. Porque si la volatilidad es alta, el riesgo es alto. 
+
+Si la volatilidad es baja, el riesgo es bajo. Entonces, calculando la volatilidad, puedo calcular mi nivel de riesgo. Y eso entonces puede servir, lo iba a tocar un poco más tarde, introduciendo el valor en riesgo justamente.
+
+Pero bueno, ahora que tocamos el tema con la pregunta, vamos adelante. Puede servir entonces para calcular fondo de resguardo. Hay como acuerdo de Basilia, no sé, quizás lo han escuchado. 
+
+Basilia, la ciudad suiza. Suiza es el país de los bancos. Hay acuerdos de Basilia 1, 2 y 3 que dictan reglas prudenciales que los bancos deben seguir. 
+
+No todos los países son dentro de este acuerdo, pero Chile está. Y entonces la idea es evitar crisis donde hay como quiebre en cadena de bancos como ocurrió en la crisis de 1999, donde no había este tipo de cosas. Crisis mundial muy severa. 
+
+La idea es como cada banco debe calcular un fondo de resguardo para en caso de pérdida extrema poder responder antes de su pérdida. Al frente de su pérdida tiene el fondo para responder. Obviamente, como lo decía el premio Nobel, no se puede adelantar todo el riesgo de manera perfecta, pero al menos con un nivel, digamos, de riesgo el banco, hasta un cierto nivel de riesgo, digamos, el banco tiene fondo para poder cumplir con su pérdida, digamos.
+
+A eso puede servir. Calcular nivel de riesgo y de acuerdo a este nivel de riesgo, calcular el fondo que debemos dejar de lado para evitar un quiebre, digamos. A eso sirve, ¿ok? ¿Bien con la pregunta? Sí, sí, nos adelantamos. 
+
+Fue muy buena pregunta porque eso iba a tocarlo justo después de estimar el modelo. Ok, entonces era una pregunta muy pertinente. Entonces, volviendo, antes de ir al riesgo, ¿qué vamos a predecir? ¿Cómo hay que estimar el modelo? Estimación, validación y predicción. 
+
+¿Ok? Entonces, aquí vamos con estimar un modelo, GARCH, uno clásico, obviamente, quizás se podría como mejorar. Aquí tenemos la estimación. En general, la persistencia es lo que se destaca.
+
+Fíjense que el parámetro de persistencia casi siempre es mucho más grande que el parámetro GARCH, que el parámetro del último retorno. El parámetro asociado a la volatilidad pasada es mucho más marcado porque tenemos la persistencia de los jobs, eso que sobresale, digamos. Luego hay como un puesto al día con el último retorno. 
+
+Vamos a necesitar los residuos que tiene varianza 1. Por tema de identificación del modelo no voy a entrar, es un poco técnico avanzado. ¿Por qué tiene varianza 1? Tenemos los residuos. ¿Qué son los residuos en nuestro caso? Es simplemente aproximación de los errores, la innovación que estábamos ahora mismo.
+
+Esta innovación, este error aquí, no son observados, pero lo que calculamos son los residuos. Eso es lo que estábamos calculando ahora mismo. El error, pero es un error multiplicativo, no aditivo como lo hemos visto hasta ahora, ¿ok? Por el tema de describir esas varianzas que se suben o bajan condicionalmente a la información pasada, o sea, a la volatilidad.
+
+Calculamos la desviación estándar condicional y esta desviación estándar condicional de la última fecha n la calculamos como el cuadrado de la desviación estándar condicional. Y aquí tenemos la volatilidad del día de después. Esta cantidad que tenemos aquí es la volatilidad del día de después. 
+
+La volatilidad del día de mañana. Bien, seguimos, entonces podemos predecir la volatilidad, muy bien, pero ¿a qué me sirve? Esto sirve a calcular el valor de riesgo. Entonces aquí tenemos cálculo de intervalo de confianza, diferente intervalo de confianza. 
+
+Voy a agrandar porque si vuelvo, voy a volver aquí en la diapositiva. Vamos a ver cómo se construye ese intervalo de confianza. Aquí si voy suponiendo que tengo una ley normal, entonces condicionalmente al pasado, eso entonces es fijado, es congelado, no se mueve, porque condicionalmente a la información pasada, el pasado ya lo estoy observando, está congelado, no se va a mover, no es más aleatorio. 
+
+Entonces condicionalmente al pasado, eso es fijo. Entonces, ¿qué estamos haciendo? Si tenemos aquí el supuesto de normalidad, aquí de una ley estándar, 0,1, estamos multiplicando una ley normal 0,1 por este sigma t. Entonces la ley de retorno sería una ley normal con una varianza sigma t. Entonces eso sería un intervalo de confianza. Los otros intervalos de confianza es ver cómo el histórico, o sea, cosas fijas, digamos, una estrategia fija para decirlo de manera simple.
+
+Y vamos a comparar los diferentes intervalos de confianza dado que tenemos una ley normal, sabemos que una ley normal se ubica entre ciertos rangos, digamos. Entonces, aquí tengo un modelo GARDS, pero con el supuesto de ley normal. Fíjense que aquí tenemos una ley normal multiplicada por un sigma t cuadrado alto porque estoy en crisis.
+
+Aquí tengo una ley normal multiplicada por un sigma t cuadrado bajo porque estoy en un periodo de tranquilidad. Entonces, con el modelo GARDS, con el supuesto de normalidad de los errores, podemos ver que nos adaptamos a medir el riesgo aquí, pérdida extrema, de manera bastante exitosa nos adaptamos. Entonces, en otra palabra, aquí voy a dejar fondo de resguardo bajo porque el riesgo es bajo y aquí voy a dejar fondo de resguardo alto porque el riesgo es alto.
+
+Mientras que si uno supone que los datos siguen una ley normal sin moverse en el tiempo, de manera no dinámica, o también si uno supone, como ya voy a ver, mi peor pérdida en mi historia de un por ciento o de cinco por ciento. La peor pérdida y eso es mi nivel de riesgo. Digamos que esta idea se justifica, sí, es correcta, pero la crítica aquí es que tomando la peor pérdida de uno o cinco por ciento en el historial hace que es una medida de riesgo fieja en todo el periodo.
+
+Entonces, no tome en cuenta que en cierto periodo estamos con más tranquilidad y en otro periodo estamos con más riesgo. Claro. Entonces, volviendo aquí en R, R Studio, claramente podemos ver que el modelo GARCH, entonces, ahora comprendemos bien por qué es exitoso.
+
+Igual aquí tenemos los residuos que no siguen la ley normal. Bueno, quizás hay un paquete que no cargué en la parte exploratoria, pero lo comento nomás. El kubuplot sale como que los residuos no son normales.
+
+Vamos a calcular lo que se dice el valor en riesgo ahora, pero antes de calcularlo hay que comprenderlo, lo que es. Entonces, vamos a volver otra vez en las diapositivas. Vamos ahora a la diapositiva y veamos aquí el cálculo.
+
+¿Qué es el valor en riesgo antes de calcularlo? De manera simple. Bueno, es una definición que un poco igual complica el formalismo matemático. Quizás es la ecuación la más complicada que hemos visto en nuestra clase.
+
+¿Qué es el valor en riesgo, value at risk? En inglés aquí lo tenemos, value at risk. ¿Qué es? Es una cantidad que se, en nuestro caso, aprovechando que el modelo GARCH no da una medida de riesgo dinámica, o sea, día por día lo podemos calcular. Por ejemplo, si la frecuencia de trabajo es diaria.
+
+Cada fecha podemos calcularlo, condicionalmente cada fecha. Aquí es el horizonte, podemos calcular el valor en riesgo para mañana, pasado mañana. Ojo que la cosa en finanza va rápido.
+
+No podemos calcular un valor en riesgo para dos meses más. Olvídense, hay muchos eventos que pueden ocurrir entre medio. La idea es calcularlo a corto plazo.
+
+El modelo GARCH, tal como el modelo ARMA, son modelos de predicción a corto plazo, por su naturaleza. Predicción a relativamente largo plazo sería el modelo SARIMA aprovechando las estaciones, ¿cierto? Por ejemplo, mensual cada 12 meses estamos arriba el invierno, abajo el verano. Allí podemos atrevernos a hacer una predicción de 1 o 2 años adelante, que es a largo plazo.
+
+Entonces el horizonte aquí sería como h igual a 1, 2, 3, por ahí, algo así. Aquí es el nivel de riesgo, un por ciento. Al contrario de otra área, donde casi siempre es 5 por ciento.
+
+Aquí en finanza es un por ciento con quizás temas de salud también. Alfa en general es un por ciento. ¿Qué es este valor de riesgo? Es la probabilidad, perdón, es el valor, perdón, me equivoco.
+
+Es el valor, aquí X, es el valor X, que es de tal forma que la pérdida de los, aquí la pérdida de los, no lo definí, perdón, se me olvidó. Aquí la pérdida es el valor de mi acción en el futuro, T más H, menos el valor de mi acción hoy día. O sea, el valor de mi acción hoy día y aquí el valor de mi acción mañana o pasado mañana.
+
+Pongo un menos aquí porque no se dice perdí menos 40 pesos o perdí menos 80 pesos. No, se dice perdí 80 pesos, perdí 40 pesos, por eso que ponemos un menos. Entonces aquí la pérdida, en inglés los, por eso lo anotamos L usualmente, los, la pérdida en inglés.
+
+Entonces, volviendo a la definición de mi valor, se me olvidó definir esta variable aleatoria, aquí los, la pérdida. Entonces, el valor de riesgo es el valor X, que es de tal forma que los, la pérdida futura, supera este X con una probabilidad a lo más alto de un por ciento. Pero de otra forma, mi pérdida futura no va a superar este X, este valor de riesgo, con una probabilidad más alta que un por ciento.
+
+¿Recuerdan lo que dijo el primero? No podemos estar seguros de cualquier pronóstico. No podemos decir voy a perder tanto, o mi pérdida va a superar o no va a superar. Imposible.
+
+Ahí sería como tarot y otro método, digamos. Que podrían tener éxito, quizás, pero no sabemos. Pero, si vamos con la ciencia de datos, no tenemos ninguna certidumbre.
+
+Lo que podemos manejar es el riesgo de un por ciento. Este riesgo de un por ciento. Entonces, lo repito, mi pérdida futura no va a superar X con una probabilidad mayor que un por ciento.
+
+Entonces, si calculo X, aquí por ejemplo, si calculo X igual a 500 mil pesos, con un nivel de confianza de un por ciento, por ejemplo, tres días adelante, significa que el riesgo de perder 500 mil pesos o más, 500 mil pesos o más, porque fíjense aquí tenemos mayor, ¿cierto? 500 mil pesos o más, no supera un por ciento. En otra palabra, si voy a guardar 500 mil pesos de resguardo, estoy protegido al 99 por ciento. El 100 por ciento no es posible. 
+
+Es como dijo el Premio Nobel al inicio de su discurso. No podemos asegurarnos de no resbalarnos en la silla del baño, de no caerse en la calle, de comer algo infectado de un virus. El 100 por ciento olvidamos, pero con este riesgo de un por ciento estamos ahí protegido a nivel 90, 9 por ciento si guardamos 500 mil pesos.
+
+¿Ok? Sucede que si trabajamos con los logretornos, con un modelo GARDS, este valor de riesgo se calcula con una fórmula bastante simple aquí. Aquí es el valor a la fecha de hoy y aquí es el cuantil, una cierta probabilidad, en otra palabra, aquí el cuantil Q, del retorno futuro. Entonces, si yo sé lo que va a pasar mañana, puedo calcular mi valor de riesgo para mañana.
+
+Pero lamentablemente no tenemos retornos de mañana por H igual a 1. Por H igual a H sería la suma, lo cumulado de mi pérdida y ganancia, por dos, tres fechas adelante. Pero cuando H igual a 1 será solo retorno futuro. Entonces, este retorno futuro, por ejemplo, voy a tener, tiene un cuantil de tal valor, de nivel 1 por ciento, lo pongo aquí y tengo mi valor de riesgo.
+
+Pero obviamente, obviamente, el retorno de mañana no lo observamos. No observamos este retorno de mañana. Eso sí lo podemos aproximar con el modelo GARCH.
+
+Con el modelo GARCH, aquí voy a pasar este método. Con el modelo GARCH, porque yo esta cantidad lo puedo calcular dado el pasado, la sola cosa, este retorno futuro, esta misma ecuación, pero para la fecha RT más 1. RT más 1, esta cantidad lo puedo calcular, porque tengo mi retorno del martes, tengo mi volatilidad del martes, puedo calcular mi volatilidad para miércoles hoy día al cierre de la Bolsa de Santiago, eso lo puedo calcular. La sola cosa que me falta, todavía somos las 13, es lo que va a ocurrir en el día, la innovación.
+
+Eso me falta. Pero yo sé que esta innovación, por ejemplo, podemos suponer que sigue la ley normal, o incluso sin supuesto de la ley normal, que voy a sacar el cuantil empírico de mis residuos pasados. Entonces, por una forma u otra, podemos estimar este cuantil con aquí este cuantil de los errores, que es I, de idénticamente.
+
+Entonces, mi residuo pasado, mi innovación pasada, me va a decir cómo la innovación de mañana se distribuye. Puedo sacar el cuantil de los errores, y de acuerdo a este cuantil de los errores, lo multiplico con lo que tengo de pronóstico para la volatilidad de mañana, y bingo, estoy feliz, puedo ahora calcular este cuantil para mañana. Eso sería la solución, entonces, para hacer el cálculo del VAR, por lo menos por una fecha adelante, por dos, tres fechas adelante, hay un algoritmo que está en la misma diapositiva, de hecho, que debe ser ocupado, donde ocupamos justamente el bootstrap.
+
+No lo voy a tocar porque igual es un poco avanzado, pero ya usted tiene la herramienta. Si uno quiere calcular el nivel de riesgo dos, tres fechas adelante, no se puede ocupar de una forma tan simple, se deben calcular muchos escenarios, 50.000 escenarios con bootstrap, y ahí tenemos nuestro cálculo de riesgo. Pero es un poco más avanzado.
+
+Usted tiene el material si quiere aprender de manera autodidacta. Por supuesto, puede preguntar, con todo el placer le contesto. Entonces, aplicación de esta fórmula.
+
+Aquí, para calcular el valor de riesgo para el día de mañana de la acción BCI, me falta el cuantil del retorno futuro. Aquí el valor de la acción BCI vale, no sé, 10.000 pesos, 5.000 pesos, 30.000 pesos. No tengo idea, para ser sincero.
+
+Y aquí el cuantil del retorno futuro lo calculo aquí. Este cuantil sería entonces la desviación estándar de la volatilidad predicha. ¿Se acuerdan? Se calcula con la fórmula aquí del modelo GARCH, el último retorno al cuadrado, la última volatilidad calculada me da en la volatilidad para el día de mañana, multiplicada por el cuantil de los residuos, es decir, los errores que hemos hecho en el pasado.
+
+La innovación de los días del pasado. Y aquí, entonces, tengo mi cálculo del cuantil. Entonces, aquí tengo un primer cálculo de valor en riesgo.
+
+Perdón, aquí el riesgo de un por ciento. Recuerden, en finanzas vamos al riesgo del por ciento. Y quedamos con el hecho que si guardamos 1.672 pesos, estamos, por cada acción BSI que tenemos a mano, por cada acción BSI que tenemos a mano, si guardo 1.672 pesos, estoy protegido hasta mañana, horizonte 1, hasta mañana, con un nivel de 99% de no quebrar.
+
+O sea, yo tengo esta acción BSI, para simplificarlo, obviamente en la vida real, son cartera de acción diversificada entre transporte, industria, commodities, cobre, petróleo, para minimizar los riesgos. Pero para simplificarlo, vamos a decir que yo compré una acción BSI. Para evitar de quebrar, imagínense que yo, por ejemplo, he dicho a Carlos Vergara, ¿cierto? Por favor, Carlos, ¿me prestas una plata para comprar una acción BSI y mañana te la devuelvo? Con quizás algún interés pequeño, ¿ok? Pero yo tengo miedo que Carlos me va a decir, pero profe, mañana no me va a reembolsar, o sea, quebré en otra palabra, porque esta acción BSI que compré le fue muy mal mañana.
+
+Entonces, me voy a tratar de proteger. Tratar de proteger al 100% no es posible, lo repito otra vez, pero me voy a calcular un valor que me va a proteger a un cierto nivel, bastante seguro, del 99%. Bien, y sucede que si voy a guardar $1,672, estoy seguro de reembolsar a Carlos con una probabilidad del 99%.
+
+Porque el riesgo de perder más de este valor es sólo un por ciento. Y decirle a Carlos, bueno, lo siento, Carlos, mala suerte, no te voy a reembolsar todo tu plata. Me fue muy mal y no tengo fondo de riesgo suficiente, tengo sólo $1,672, ahí está, lo siento, pero no te voy a reembolsar todo porque perdí tu plata o parte de tu plata, ¿ok? El mundo de la finanza es decir que la institución financiera quebró.
+
+Producido en términos financieros, digamos, ¿ok? No reembolsar a la gente que prestaba plata, se llama quebrar. Aquí sí vamos con el supuesto que los errores siguen la ley normal. Tenemos un segundo cálculo, $1,501, pero bueno, podemos confiar más en este cálculo, dado que los errores no siguen la ley normal.
+
+Tenemos mucho extremo que se incluso traspasa en los errores, no sólo en el modelo Gatch. Y aquí, digamos, un método ingenuo que igual es fundamental, ojo. Bueno, puede decir, en mi historial, ¿cuál fue mi peor pérdida? Diferenciación de 1, pérdida, menos la diferenciación de 1 es pérdida.
+
+¿Cuál fue mi peor pérdida en mi historial a nivel 99%? Saco este cuantil, que es negativo, entonces pongo un menos, y ahí está mi valor de riesgo, digamos, histórico. Pero ya hemos visto que esta medida de riesgo es rígida. No puede tomar en cuenta la flexibilidad de los mercados financieros que pueden pasar de una situación poca riesgosa a muy riesgosa, muy rápido y al revés.
+
+Entonces, con este concepto, digamos, con esta idea, tenemos un cálculo de $1,312. Aunque es justificado, igual sabemos que no toma en cuenta los cambios. Entonces, no sé si cumplimos con este 1%, condicionalmente al hecho que en el último periodo, si veamos la serie, la volatilidad es algo alta, ¿cierto? No es tan baja, pero igual es algo alta.
+
+No es altísima como momento de crisis, pero es algo alta, entonces esta cifra es duro. Bien. Con eso, entonces, como una, digamos, una revisión un poco liviana de este tema, que puede ser un curso entero de bajista, por ejemplo, de todo un semestre o pregrau, como se puede imaginar, pero al menos hemos podido repasar la metodología de esos pasos 0, 1, etcétera.
+
+Y además, fuimos introducidos a la problemática específica de la finanza, que es una específica, cada problema tiene su problemática específica, en biología tiene su problema, en farmacéutica, etcétera. Hoy día, bueno, como hemos podido un poco indagar con este mundo de la finanza. Bien.
+
+Había prometido que será una clase corta para que podamos todos almorzar y que tengan toda la energía por la clase de mi colega Mario Guzmán. Voy a quedarme atento ahora para el cierre a preguntas, dudas, antes de cerrar. De todo modo, la clase grabada para que la gente, obviamente, no es un horario habitual, es una clase adicional.
+
+Pueden como no perder los contenidos de esa clase. Si usted, igual fuimos un poco rápido, también lo reconozco, si quieren repasar la clase, subiré mañana probablemente la grabación de esta clase en la misma carpeta de lo demás de clase que hicimos en el diploma. ¿Ya? En la misma carpeta.
+
+Bueno, les deseo buen provecho, bon appétit, como se dice en francés. Y sí, Aline, adelante voy a parar la grabación. Y les deseo buena continuación con el diploma o con el muy buen profesor Mario Guzmán.
+
+Ahí. Ahí está detenida la grabación. Los demás, si quieren irse para tenerla.

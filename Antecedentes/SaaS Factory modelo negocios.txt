@@ -1,0 +1,1403 @@
+Ahí creo que me escucho ya. Voy a poner los audífonos. Mi gente, buenos días.
+
+¿Cómo están? Ahí creo que me escucho ya. Buenos días a todos. Los estoy leyendo en el chat.
+
+Permítanme un momentito. OK. Pues, bueno, vamos a empezar la videollamada.
+
+Nada más espérenme un momento que me escucho doble. No se escucha. ¿No se escucha? A ver.
+
+OK, mi gente, escucho. Entiendo que se escucha eco. A ver, déjenme ver.
+
+¿A qué se debe? Quiero que vean esto. En vivo vamos a debobear como los arquitectos que somos. Miren esto.
+
+Tengo, hermano, ¿por qué me escucho doble? ¿Ya escucha bien? Perfecto. Bien. Creo que es tema de OBS, honestamente.
+
+Como que el macOS recientemente está fallando. Pero bien, qué gusto que ya estemos aquí, mi gente. Ahora sí, miren, les tengo preparada una presentación.
+
+De todas formas, la intención de esto era esperarnos unos 5 minutitos en lo que se unen más personas. Multimedia, me comentas que todavía hay eco. Me parece que ahí está bien, ¿no? ¿Todo bien? Aquí me estoy apoyando de Gemini para configurar todo esto.
+
+Buenos días. ¿De dónde nos están acompañando? Ya somos 420 personas en el chat. Algunos tienen eco.
+
+Por favor, ¿pueden confirmarme? Qué interesante. OK, pues miren, vamos a resolverlo con Gemini. No sé por qué vuelve, honestamente, creo que es tema de OBS.
+
+Bien, ¿cómo lo vamos a resolver? OK, ahí estamos grabando bien. Disculpenme, gente. Es la primera vez que hago un en vivo en YouTube.
+
+Ya me vuelven a escuchar bien. Marcos y Mercedes, qué gustos, mis estimados. Qué gusto verlos por acá.
+
+Somos 436 personas. Ahorita que falten unos 10 minutitos, comenzamos la transmisión. ¿Les viene bien? Perdón, unos 5 minutos.
+
+En 2 minutos comenzamos con todo esto. Les voy a hablar tal cual lo que vamos a ver en esta videollamada. Y bueno, mientras tanto, los leo por el chat.
+
+Nuevamente eco. Ya se escucha perfecto, amigo. Gracias, guanchito.
+
+OK, se escucha eco cuando cambias de pantalla. Miren, le voy a tomar captura a Jamie y se lo voy a pegar. Hola, hola, hola.
+
+OK, creo que ya sé el tema, ya sé cuál es la razón. A ver, ahí pueden confirmarme si se vuelve a escuchar eco. Creo que ya no debería.
+
+Ahora sí ya no. Los leo en los comentarios. Se escucha bien.
+
+Perfecto. Gracias. Gracias a todos.
+
+Excelente. Vamos a romperla en esta ocasión. Eh, así resolvemos los problemas, ¿no? Con inteligencia artificial.
+
+Qué gusto, me da leerlos, mi gente. Ya somos un montón, eh. Somos 471 personas.
+
+Bien, pues vamos a romperla. Es la primera vez que hago un envío en YouTube. Ya pasaron los 5 minutos, así que vamos a empezar.
+
+OK, miren, ¿qué es lo que vamos a ver en esta ocasión? Les he preparado una imagen, evidentemente, creada con NanoBanana. Les juro, lo que vamos a ver a continuación puede potencialmente cambiarnos la vida, ¿sí? Sé que puede haber mucho miedo de todo lo que se viene con la inteligencia artificial. Y lo que vamos a ver el día de hoy les va a ayudar a perder ese miedo.
+
+Porque desde ahorita les digo algo, el juego ya cambió. O sea, desde ayer les compartí un video, hace unos 3 días, para quienes vienen del grupo de WhatsApp, les compartí un post que se está haciendo viral en Twitter, que demuestra bastante bien cómo nos sentimos nosotros los que desarrollamos con inteligencia artificial y que tenemos ya un rato haciéndolo, ¿no? A día de hoy, se los juro, los modelos actuales, sobre todo con Opus 4.6 y Codecs 5.3, la idea que tienes en la cabeza ya la puedes programar en cuestión de un prompt. Y mucha gente dice que no es cierto, pero se los voy a demostrar.
+
+Se los quiero demostrar en vivo. Es parte de lo que vamos a ver en esta ocasión. Primero, les voy a contar mi historia.
+
+Nunca la he hecho pública en YouTube. Probablemente no la, esta va a ser la única vez que la voy a hacer pública en YouTube. Luego de esto, no me van a escuchar mucho hablar de mi historia.
+
+Luego de eso, vamos a pasar a la recursividad agéntica. Esto es lo que yo les comento que es el futuro. Si entienden esto, nadie allá afuera está hablando de esto.
+
+Nadie en YouTube está hablando de esto. Si entienden esto, nunca más van a tener miedo con lo que si viene de la inteligencia artificial. Entonces, una vez terminada la recursividad agéntica, no solamente se va a quedar en teoría, les voy a demostrar con evidencia cómo es que podemos crear aplicaciones a día de hoy de one shot, con un solo prompt.
+
+Y no les estoy hablando de una landing page o de una aplicación sencilla, les estoy hablando de un sistema con autenticación, sistema de reservas, una base de datos, un front end, un back end. Todo esto ya es posible a día de hoy y hay una oportunidad inmensa en el mercado. Porque les estoy honesto, allá afuera están pagando miles de dólares, si no es que decenas de miles de dólares, por este tipo de servicios que a día de hoy los construimos en un prompt.
+
+Se los juro y se los voy a demostrar. Y, eventualmente, a medida que más y más gente se vaya sumando, vaya entendiendo esta tecnología, esta metodología, va a poder crear sus aplicaciones. Ahorita tenemos una ventana injusta porque podemos crear estas cosas en tiempo récord, ya sea para proveerlas como servicio o para tu propio negocio.
+
+Pero, eventualmente, la competencia, esta ventana se va a cerrar, la demanda va a aumentar, la oferta, perdón, va a aumentar y se va a equilibrar con la demanda. Ahorita es cuando tenemos que estar accionando. Y, bien, una vez de eso, vamos a abrir finalmente la fábrica.
+
+Esto es algo que hemos construido desde hace ya meses esperando este momento. Vamos a abrir la fábrica con la metodología con la cual podemos construir estas cosas. Ustedes lo van a ver en tiempo real.
+
+Y si se quedan hasta el final, les voy a regalar el mismo prompt que utilizamos para crear esa aplicación. ¿Les parece justo? Si no creen que estas cosas se pueden construir en tiempo récord, yo se las voy a regalar para que ustedes las construyan en tiempo real. OK, mi gente, antes de comenzar, lo estoy leyendo en los comentarios.
+
+Todo perfecto, no se pueden hacer con un solo prompt, Daniel. Todas las empresas tienen sus diferencias. OK, vamos a demostrarlo y ya luego los leo en los comentarios.
+
+¿Habrá espacio para consultas y preguntas? Claro que sí. Todas las preguntas al final, después de entregarle el prompt con el que creamos la aplicación, vamos a responder todo tipo de preguntas. Gracias, Ion Biencienses.
+
+Qué padre estar aquí. Muchas gracias. Qué padre tenerlos a todos por acá, de verdad.
+
+Todas las preguntas que tienen las vamos a responder en vivo. Vamos a comenzar con esta masterclass. Y bien, antes de empezar con el núcleo de la recursividad, quiero hablarles un poco de cómo llegamos aquí.
+
+¿Cómo llegamos hasta este punto? Ya luego de unos años, tenemos subiendo contenido relacionado con esto en YouTube, pero quiero contarles mi historia. Por primera vez, nunca antes la he hecho pública en YouTube y simplemente quiero empatizar con ustedes, que vean de dónde vengo y que vean que mi historia puede ser muy, muy similar a la mayoría. Entonces, simplemente eso.
+
+¿Cómo llegamos aquí? Esto nunca lo he hecho público y probablemente no lo vuelva a compartir. A ver, espéreme. Bien.
+
+¿Cómo llegamos aquí, mi gente? Miren, esta es mi historia. Este soy yo de 14 años, por ahí. Tengo seis hermanos y dos padres.
+
+Quiero compartirles mi historia desde este punto, porque desde hace muchos años con mis hermanos fue, alguna vez uno de mis hermanos mayores me preguntó o nos preguntó a todos, oye, ¿tú cómo te ves de grande? ¿Cómo te ves de aquí en el futuro? Y todos mis hermanos respondieron, bien. Me veo viajando, viajando, viajando, viajando. Todos mis hermanos respondieron viajando.
+
+Y yo fui, subconscientemente fue como, yo me veo con lujos, me veo siendo con mucho dinero, con lujos y con robots. No sé. Esa era la mentalidad de un niño, pero como que subconscientemente desde aquí, ya ves, se me quedó ese norte, ¿no? Hacia dónde ir en la vida.
+
+Cuando tenía 16 años, mis papás fallecieron. Yo no vengo de una familia con muchos recursos. Realmente siempre fue escasez desde la niñez.
+
+Y a los 16, mis papás fallecen. Esto no lo digo por lástima, ni mucho menos. Siempre he odiado eso, pero se los comento porque desde aquí, ocasión, me di cuenta que estaba en un hoyo, ¿sí? El volumen, a ver, voy a subir un poquito el volumen.
+
+OK. Me di cuenta que estaba en un hoyo. Estaba en la mierda.
+
+Así me veía, ¿no? ¿A qué me refiero? Yo me di cuenta de que estaba en un pinche pozo bien profundo. OK. Unos dicen que baje el volumen, otros dicen que lo suba.
+
+A ver, los leo en los comentarios, perdón. Súbele más, dice Alexandra y dice otra persona que le baje el volumen. Súbelo, súbelo.
+
+Sí, se escucha perfecto. Lo voy a dejar así. Si tienen problemas, pueden subirle, pueden bajarle a sus bocinas.
+
+Sí, que cada quien lo ajuste. Correcto. Y, bueno, desde aquel entonces me di cuenta que estaba en la mierda, ¿no? En pocas palabras, supe que estaba en un pinche hoyo y que nadie me iba a sacar de ahí si no era yo, ¿no? Pero tenía ese norte hacia donde quería ir en la vida.
+
+Entonces, como les comento, no vengo de una familia de muchos recursos. Cuando fallecen mis papás, pues me tocó trabajar, me tocó. Yo estudiaba y trabajaba a la vez.
+
+Probablemente algunos reconozcan esta franquicia, Dairy Queen. Trabajé por ahí algún tiempo. Trabajé como garrotero.
+
+No sé cómo se le conozca fuera de México, pero es el ayudante de mesero, ¿no? Trabajé jornadas de 10, 12, 14 horas incluso. Trabajé de mesero. Todo esto, tuve la fortuna en parte que fue la pandemia, ¿no? Entonces, la pandemia, al menos a mí me permitió estudiar, porque todo lo hacía desde la computadora.
+
+Fueron dos años enteros donde iba a la universidad desde la computadora y al mismo tiempo podía trabajar. Entonces, todas las tareas, todos los exámenes, me los pasaban. Yo no hacía nada, o sea, la verdad es que no hacía nada.
+
+Pasé esos dos años trabajando por sobrevivir, ¿no? Les comento, yo no, pues, me di cuenta de que no tenía nadie quien me fuera a sacar de la mierda donde estaba. Poco a poco me fui dando cuenta lo mal que son los trabajos en México, ¿no? Probablemente más de algunos se habrán dado cuenta. Los trabajos de México, no sé, probablemente toda Latinoamérica, no sé España, pero en México todos los trabajos, Dairy Queen, o sea, les comento, aquí ganaba 100 dólares a la semana, ¿sí? Ganaba 100 dólares a la semana, aquí ganaba como 150 dólares a la semana, aquí también como 150, ¿no es cierto? Sí, como 150 o 100 dólares por ahí, ¿no? Pero me di cuenta de algo.
+
+Yo me salí, seguí en pandemia, empecé a trabajar para un amigo en la madera, no sé, era, miren, yo soy de Morelia, Michoacán, ¿OK? Michoacán es uno de los estados en el mundo con mayor muertes, es uno de los estados más peligrosos, ¿OK? Está mal que lo diga, quizás puede sonar un poco fuerte, pero acá el narcotráfico está potente. Yo vengo de Morelia, es una gran ciudad, es una gran ciudad, está pequeña, tiene mucha historia, fue de las primeras ciudades que crearon los españoles al llegar acá, tiene mucha historia, acá se formó la ideología de la independencia de México, o sea, tiene mucha historia Morelia, ¿no? Pero es cierto que a día de hoy Michoacán es un estado peligroso. ¿Cuántas veces me han asaltado? Como tres veces, ya luego les contaré las historias que me han pasado.
+
+El punto es que en mi ciudad, pues poco a poco yendo por trabajos, me di cuenta que un amigo tenía un negocio, un negocio en la madera, le iba bien y yo trabajé para él, ¿no? Trabajé para él y poco a poco me fui dando cuenta de cómo le iba mejor en los negocios. OK, el trabajo era bien matado, teníamos que cargar madera, o sea, era desarmar tarimas, desarmar tarimas como pilas de madera usada y hacer los escritorios comedores, ¿no? Era bien matado también, o sea, estaba bien peligroso, utilizábamos la cortadora y eran los barrios bajos de Morelia, ¿saben? O sea, aprendí mucho en ese trabajo. El punto es que lo comparé con los empleos anteriores que había tenido y me di cuenta que mi amigo hacía lo que quería, se levantaba a la hora que quería, nadie no tenía órdenes de nadie y poco a poco me fui dando cuenta que quizá el tema de los negocios era lo que a mí me gustaba.
+
+Trabajé de taquero. Ese mismo amigo también abrió una taquería y yo le dije, yo trabajo contigo, yo soy tu taquero, ¿no? A ver, espérame que les comento. O ves, está medio, se congela la pantalla y me toca hacerlo manualmente.
+
+OK. Otra vez, trabajé de taquero, ¿no? Trabajé para ese amigo también unos meses. En el lapso de esos dos años, todo ese tiempo me la venté trabajando en este tipo de cosas, ¿no? Me fui dando cuenta, los negocios, o sea, cómo el negocio, cómo trabajar de taquero me llenaba más, incluso, que estos trabajos como de mesero, de daily queen, que constantemente le rindes cuentas a alguien más que no valoran lo que haces.
+
+En fin, termina pandemia y yo vuelvo a la escuela, ¿no? Ya desde la escuela, yo estudié mecatrónica, para quien se lo pregunte. Estudié mecatrónica, este es el tipo de cosas que construíamos en la universidad. A la par que, bueno, ahorita les comento, volvimos de pandemia, yo tengo que volver a la escuela, pero me doy cuenta que ya no me queda tiempo para seguir trabajando, ¿saben? Además, estas materias estaban volviendo complicadas, pero yo no podía darme el lujo de no ir a trabajar, porque de nuevo, eso es lo que les comento.
+
+Yo me di cuenta que no tenía nadie que me salvara. Yo en aquel momento, por parte de mi familia, me di cuenta que el estudio era lo que me iba a sacar de ahí, ¿no? Entonces, yo hice lo que mi intuición me decía en aquel entonces. Estudié mecatrónica, les comento.
+
+O sea, yo, mi mentalidad cuando entré a la carrera fue hacer dinero y robots, ¿no? Entonces, mecatrónica fue un poco eso. A mí me habían dicho que estudiara y fue lo que hice. Yo creí que ese era el camino hacia hacer dinero.
+
+Y, bueno, este tipo de cosas, miren, aquí ya, por ejemplo, estas cosas con madera, pues ya me las aventaba yo solo con lo que había aprendido trabajando en la tarima, ¿no? ¿Por qué les comparto esto? Porque desde aquí empecé a entender lo importante que es esto de los sistemas, ¿no? Entender los sistemas es una de las mejores habilidades, al menos para mí, a día de hoy que estamos construyendo estas aplicaciones bien rápido, entender sistemas desde ahorita nos permite, o sea, sobrevivir. Estamos bien preparados para este mundo que se viene, ¿no? Es una de las habilidades que, en mi opinión, más importantes. OK.
+
+Lo que les comentaba, yo volví a la escuela, pero no tenía, o sea, no podía seguir trabajando. Entonces, ¿qué fue lo que hice? Hice mi propio negocio de tortas. Entonces, por un año y medio me tuvieron yendo a la universidad ofreciendo tortas de mole.
+
+Me levantaba a las 5 de la mañana a cocinar mole, pollo desmenuzado, arroz. Todo lo hacía ahí en las mañanas. Y, por primera vez en la vida, me empezó a ir bien, ¿eh? O sea, digo, bien relativamente, ¿no? O sea, al día yo creo que hacía como unos 30 dólares de vender puras tortas.
+
+En pesos mexicanos eran como 600, 700 pesos, ya libres, ya para mí. Me salía en un tercio de lo que me costaba. Le ganaba 2 tercios de ganancia.
+
+O sea, el coste en utilidad creo que es, me salía un tercio. En pocas palabras, si las vendía a 30 pesos, me salía a 10 pesos hacerlas. OK.
+
+Todo esto les comento para llegar aquí. Les prometo que esto tiene que ver con inteligencia artificial. En noviembre del 2022, yo ya estaba cansado.
+
+O sea, como que no me gustaba que me percibieran como en la universidad, pues, como que el que vende tortas, como, no sé, como, no me arrepiento, pero en la universidad como que, no sé, está mal visto que vendas cosas, ¿no? Sobre todo porque la mayoría, no sé, digo, yo vendía, no me sentía cómodo con hacerlo, como que las miradas, como, no importa. Desde aquel entonces, me fui dando cuenta que esto era lo que quería, el tema de los negocios, ¿saben? Este, ¿pero qué pasa? Noviembre del 2022, lo recuerdo bien, o tenía dos caminos en la vida. O terminar la carrera, seguir vendiendo tortas un año más, o podía salirme de la carrera, no decirle a nadie, no decirle a mi familia.
+
+Y tener ese año, fíjense qué loco, yo ni siquiera terminé la carrera, me salí un año antes de terminarla. Porque me di cuenta, yo iba a clases y me recuerdo a mis profesores decir, ustedes están estudiando porque van a salir de aquí a una fábrica, van a, les va a tocar hacer mantenimiento a máquinas, ¿no? Y yo en mi cabeza era como, pues, esto no es lo que quiero para la vida, ¿no? Este, ahí conocí a mi novia, por ahí está en los comentarios, ella me compraba las tortas. Este, no era lo que quería para la vida.
+
+Además, ya había trabajado en muchos lugares en México y ya sabía lo que me esperaba, ¿no? Explotación, precios mal pagados probablemente. Y si quería triunfar, era a lo largo de muchos años, de mucho esfuerzo dentro de la empresa, creciendo poco a poco, ¿no? O yéndome a otro país con mejores ofertas laborales. Ese era mi futuro si me quedaba en Mecatrónica.
+
+No era lo que quería. Entonces, me salí, me salí, no le dije a nadie. Conocí a una persona que era full stack developer, un amigo, el Pastas, él se salió de la universidad en seis meses, ya tenía un trabajo para una empresa en Estados Unidos.
+
+El tipo estaba ganando como unos 5,000 dólares, 6,000 dólares en aquel entonces. Y yo dije, puedo hacer lo mismo. Si me salgo ahorita y no le digo a nadie, porque mi familia era, no, no, tú no te vas a salir de la uni hasta que acabes de estudiar y ya luego ves qué haces con tu vida, ¿no? Pero yo no podía perder un año más de mi vida.
+
+Yo sentía que no le debía nada a nadie, ¿saben? La universidad ya la había sacado yo por mi cuenta propia. Viví solo toda la universidad. Bueno, me fui a vivir con mi abuela y mi abuela falleció cuando yo tenía 18.
+
+Entonces, me quedé viviendo en su casa prácticamente solo. Y es lo que les comento. Me tocó sobrevivir, acomodir al lugar y estudiar a la vez.
+
+Les comento, me salgo de la universidad y conozco a esta persona. Me pongo a investigar en internet qué onda con las carreras y encontré Platzi. Afortunadamente, a mí, en lo personal, Platzi me cambió la vida.
+
+Me enseñó, aprendí de Freddy Vega. Muchos lo conocerán. Una escuela online.
+
+Estudié ciencia de datos. Fue lo que más se alineó a mis gustos. Sin saberlo, ojo, yo no estudié ciencia de datos porque fueran las bases de la inteligencia artificial.
+
+Yo, sin saberlo, empecé a entender las bases fundamentales de la inteligencia artificial. Empecé a aprender de la terminal, empecé a aprender de Python, empecé a aprender de bases de datos, SQL, empecé a aprender, evidentemente, librerías de Python relacionadas con la ciencia de datos, NumPy, Pandas, Matplotlib. Y luego de eso, me pasé a Machine Learning.
+
+Estos son el tipo de cosas que logré construir en aquel momento. Pero, ojo, todo esto, yo sin quererlo, ya me estaba apoyando de la inteligencia artificial. Ya utilizaba Code Interpreter.
+
+Algunos lo recordarán. Lo lanzó OpenAI a mediados de 2024, recuerdo. Code Interpreter ya te permitía correr código y construir estas cosas.
+
+Entonces, yo me di cuenta que para la ciencia de datos era una maravilla porque estas cosas las podía sacar de esa forma. ¿Sí? Ojo, yo no me salí de la universidad diciendo, a la verga, voy a emprender. Yo me salí porque conocí a esta persona y yo lo que quise fue seguir estudiando.
+
+Yo dije, voy a estudiar, voy a hacer lo que hizo esta persona, seis meses y a lo largo de seis meses voy a aplicar para trabajos y conseguir empleo en Estados Unidos. Justo lo que vi de esta persona. Ah, OK.
+
+Perdón, se queda comentada la ventana en OBS. Ahora sí. Perdón, para quien no lo pudo ver.
+
+Estudié ciencia de datos con Platzi en el Tech de Morelia. Obviamente, no iba a poner que me salí de la universidad el último año. En LinkedIn, pues, sí le puse.
+
+Y este tipo de cosas pude construir en ciencia de datos. De nuevo, todas estas cosas ya las construíamos con inteligencia artificial. A mediados de 2024 ya tiene casi dos años.
+
+Incluso más, diría. Creo que no es 2024, es mediados de 2023. O sea, tiene más de dos años esto.
+
+Y, bueno, sí, miren, aquí tengo la fecha exacta, ¿OK? Estudié Machine Learning. Luego de eso fue como de, cuando termine esto de Machine Learning, ahora sí me voy a sentir listo para empezar a trabajar. Me metí tres meses en un bootcamp en Coursera, Machine Learning, de un profesor llamado Andrew NG.
+
+Muy impresionante. Entendí las bases fundamentales, de nuevo, de las matemáticas de la inteligencia artificial. Todo lo que es supervised, aprendizaje supervisado, aprendizaje no supervisado y reinforcement learning.
+
+Yo vine de mecatrónica, entonces, ya un poco tenía las bases de las matemáticas. Soy bueno, se me dan bien las matemáticas. Entonces, yo dije, cuando termine este curso, ahora sí ya voy a aplicar a trabajo.
+
+¿Qué pasa? Termino, pulo mi LinkedIn, comienzo a aplicar para vacantes y me di cuenta que quizá de algo que quise en el fondo ya sabía y era, esto no es lo que quiero. Esto no es lo que quiero porque al final no va a ser el trabajo que yo quiera, sino el trabajo que me toque. ¿Me explico? O sea, yo aplicaba a vacantes en LinkedIn, pero no iba a ser trabajar de lo que yo quisiera, sino en base a las oportunidades que hubieran y en las que me dieran trabajo, eso era lo que iba a hacer.
+
+Y me di cuenta que no era lo mío tampoco. Pero aquí se vienen quizá uno de los momentos más turbulentos en mi vida, porque piénsenlo de esta forma. Yo ya tenía un año entero que me había salido de la universidad, un año entero que no trabajaba porque todo se lo había dedicado a la ciencia de datos, a esto.
+
+Y estaba sobreviviendo porque mi hermana me estaba prestando dinero. Entonces, para aquel entonces, yo ya le debía como unos 4,000 dólares, que puede no parecer mucho, pero para alguien que viene de mi entorno, les digo, yo ganaba 100 dólares a la semana. Le debía 4,000 dólares a mi hermana de puros préstamos durante todo el año sin yo haber trabajado.
+
+Y tenía toda esa presión encima. Y encima, cuando empiezo a buscar trabajo, me doy cuenta que no era lo que quería. Entonces, me salgo.
+
+¿Pero qué pasa? Yo cuando me salí de la universidad, yo no le dije a mi familia. Duré un año entero diciendo con mentiras que iba a la universidad. Sin embargo, me quedaba encerrado.
+
+Yo vivía solo estudiando ciencia de datos. Tenía la presión encima de tener que romperla porque ya me había salido de la universidad. Tenía que demostrarle a mi familia que yo tenía razón.
+
+Me salgo de la universidad, paso un año entero haciendo esto y me doy cuenta que tampoco era lo que quería. Entonces, 5,000, 4,000 dólares en deuda. Cambio de enfoque nuevamente para intentar emprender.
+
+Yo recuerdo tener dolores de muelas, así de tipo caries picadas, de dolores en los ojos. Por tanto tiempo que pasaba sentado, dolores en la espalda baja. Y no tenía dinero para ir al médico, se los juro yo.
+
+Todo esto me tocó a mí como sobrevivir, ¿no? Por eso digo que ahorita ya lo más difícil ya pasó. A lo que viene con inteligencia artificial, ya es pan comido comparado con lo que teníamos. Entonces, ¿qué pasa? Me doy cuenta que no era lo mío esto de buscar un empleo.
+
+Otra vez se quedó congelada, la voy a compartir nuevamente. Y me encuentro con un curso de Leah Motley. Probablemente más de algunos lo conocerá, por favor.
+
+Aquí ya empezamos con inteligencia artificial, ¿no? Pasamos de Machine Learning. Yo digo, OK, vamos a emprender con inteligencia artificial. Esto es el futuro.
+
+Yo lo sabía. Y un año entero ya con ciencia de datos, ¿no? Pasamos con, me topecó en este curso de Leah Motley hace dos años ya, poco más de dos años. Y me di cuenta que emprender era lo que quería, ¿no? Entonces, comencé a emprender yo sin haber tenido nunca experiencia en negocios jamás.
+
+Y ustedes encontrarán mi canal donde hace ya más de dos años yo ya les hablaba de la automatización con IA. Les hablaba de qué eran las acciones, las herramientas en los agentes. Un poco más a nivel filosófico, tal vez.
+
+Ahí les invito, yo ya, este video se lo recomiendo 100%. Lo vuelvo a ver. Lo vuelvo a ver y me doy cuenta de muchas cosas que han sido predicciones correctamente a día de hoy.
+
+Les compartí un video muy emocional. Si quieren entender cómo estaba en la mierda, vean este video. Cómo inicié mi agencia de inteligencia artificial.
+
+Eso era cuando estaba empezando hace dos años, no sabía de negocios. Y había entendido a través de este curso, ya había seguido a otros mentores como Iman Gatzi. Iman Gatzi, algunos quizá lo conocerán.
+
+Ya entendía que el modelo de agencia era el que quería empezar. Y luego, inteligencia artificial. Agencia de inteligencia artificial.
+
+Wow, sonaba impresionante. Entonces, empecé a entender lo básico. Cómo conseguir clientes con herramientas de automatización.
+
+Cómo automatizar la generación de leads en una base de datos para contactarlos en frío. Yo estuve dispuesto a marcar, a echar llamadas, a enviar mensajes en frío. Son duras.
+
+Las llamadas en frío son duras. Pero estaba dispuesto a hacer lo que fuera necesario con tal de conseguir esos primeros clientes y salirme de la mierda en la que estaba. Duré en ese pozo desde los 16 hasta los 20.
+
+Ahorita tengo 25. Probablemente como hasta los 22, 23. Fueron tiempos muy turbulentos.
+
+Hace dos años, yo ya les hablaba de la automatización con IA en Make. A día de hoy, lo que es N8n, yo ya les hablaba hace dos años de esto. Está mal que lo diga, pero fui de los primeros.
+
+En aquel momento, recuerdo, o sea, corríganme si estoy en lo equivocado, que solo había unos pocos subiendo contenido de este estilo. Era un español llamado Nico CMW, al cual le he aprendido mucho. Un argentino llamado Claudio Conde.
+
+Otro argentino llamado Facundo Corenjia. Españoles poco. Probablemente había alguno que otro más español, pero no recuerdo.
+
+Y mexicanos creo que no había. Desde aquel entonces, yo ya les hablaba de todo esto. Automación con IA, modelo de agencia.
+
+Y pueden verlo en el canal. Considero yo que muchas predicciones se hicieron en aquel entonces. ¿Y qué pasa? Luego de intentar, o sea, miren, yo conseguí mis primeros clientes con el modelo de la agencia.
+
+Lo pueden encontrar en mi canal. Desarrollé un sistema donde utilizaba ManyChat, utilizaba Replit y me conectaba con la API de OpenAI. Esto básicamente eran agentes de atención al cliente en Instagram, Facebook, WhatsApp y sitios web.
+
+Todo está documentado en mi canal, dos años de esto. Y los empecé a proveer como servicio a negocios. Pero de ahí entendí algo fundamental.
+
+Y es algo que se me queda grabado hasta ahorita y es algo que les quiero compartir. Entendí que la inteligencia artificial o para aprovechar la IA, para monetizar la IA, no debía haber la inteligencia artificial como el fin en sí mismo. La IA era el medio para el fin.
+
+¿A qué me refiero? Yo entendí que estaba cansado de proveer agentes de atención al cliente en Facebook, WhatsApp, Instagram. Porque, o sea, estaba bueno, pero era muy monótono. Conseguí mis primeros clientes, pero no me terminaba de llenar.
+
+Para aquel entonces yo veía a una persona que se llama Arséni Siatokin, que tenía su propia agencia de inteligencia artificial y 100% transparente. Lo vi y dije, vamos a aplicar para trabajar con él. Porque yo quería entender los procesos que estaba haciendo por dentro para, no sé, aplicarlos en mi propia agencia.
+
+O sea, quería aprenderle. Por mucho tiempo esta persona fue mi mentor. El tipo tenía su agencia de inteligencia artificial, cobraba 5,000 dólares mensuales por cliente.
+
+O sea, que 5,000 dólares mensuales recurrentes a cada cliente y tenía como unos 20 clientes. Entonces, hagan las matemáticas. Aproximadamente, digo, nunca me lo dijo, pero yo calculaba que estaba haciendo, a ver, otra vez.
+
+Disculpen. Yo calculaba que el tipo estaba haciendo unos 100,000 dólares mensuales. Entonces, vi lo cabrón que estaba.
+
+Y lo sé porque lo viví desde dentro. Apliqué para trabajar con él y empecé a trabajar como AI Agent Developer. De hecho, hasta la fecha, creo que así lo tengo en mi LinkedIn, AI Agent Developer.
+
+Afortunadamente, ya tenía un año entero donde había aprendido de Python, había aprendido de la terminal, de las bases de datos y, sobre todo, a hablar con la inteligencia artificial para crear estas cosas. Trabajo con Arseny y en este trabajo de AI Agent Developer, realmente lo que veía era full stack development. Es decir, hacer código front end, back end, bases de datos, subir a servidores, todo eso.
+
+Y yo, honestamente, no sabía, no era full stack, no había estudiado eso, pero tenía la inteligencia artificial. Entonces, yo desde mi parte fue, chingue su madre, vamos a decir que somos expertos y que sea lo que Dios quiera. Afortunadamente, desde aquel entonces, yo ya tenía cursor.
+
+Entonces, yo les comento, en mi canal hace más de un año van a ver contenido donde yo ya les hablaba de software as a service, como el mejor modelo de negocio. Un curso completo de cómo instalar el Agent 0, qué era cursor. Esto principalmente, para quien no sepa qué es cursor, es lo que antigravity es a día de hoy.
+
+Es un agente de código en tu editor de código. Cursor es un fork de Visual Studio, así como también lo es antigravity. El valor de cursor y de antigravity son los modelos de inteligencia artificial.
+
+Entonces, en aquel momento era cursor, pero los modelos más avanzados eran Cloud Sonnet 3.5, 3.7. Y así sacamos el trabajo. Yo, sin ser full stack developer, pude trabajar en esta agencia de desarrollo. De hecho, está mal que lo diga, pero fui de los mejores porque todos seguían, todos allá sí eran full stack, pero yo me apalancaba mucho la inteligencia artificial.
+
+Entonces, mis resultados eran resultados de la IA. Yo desde aquel entonces ya sabía que ya podía construir estas cosas sin saber de código. Entonces, no hay limitante.
+
+Es a lo que voy. Si no sabes de código ahorita, no hay limitante porque la inteligencia artificial vino a cambiar el juego. Cambió el juego, nos puso a todos en el mismo nivel y democratizó estas cosas.
+
+Por eso, desde hoy tenemos que ponernos las pilas, porque el que ya tiene años programando probablemente nos saca ventaja, pero el juego cambió y las habilidades que desarrolló por mucho tiempo, como entender sintaxis de lenguaje de programación, a día de hoy ya son irrelevantes porque todo se basa, los principios fundamentales se basan en hablar con la IA, en tu comunicación, en tu entendimiento de sistemas y tus habilidades lógicas de resolver problemas. Entonces, eso fue hace más de un año. Luego, en mi canal, todo esto está en mi canal.
+
+Creé mi primera startup hace nueve meses. Ahorita les voy a platicar más de esto. Ya les hablaba de curso con Cloud hace siete meses.
+
+Yo ya conectaba mis páginas web con agentes en N8n como backend. Lo que a día de hoy la gente está haciendo con antigravity y N8n, yo ya hace siete meses que vengo haciéndolo. Cloud Code.
+
+Les traje un curso completo de Cloud Code hace cinco meses. Lo que a día de hoy son estos agentes impresionantes. Ya tenemos cinco meses o más interactuando con ellos todo el tiempo.
+
+Bueno, esto con Cloud Code, pero súmenle el tiempo con curso, que es un poco más de lo mismo. ¿A qué voy con todo esto? Todo esto para llegar al punto en el que estamos aquí. Esto es la SaaS Factory.
+
+Tómenle captura. Vamos a mencionarla más adelante de todas formas. Y no se preocupen.
+
+Esto es la SaaS Factory. En pocas palabras, luego de haber creado yo mi primer software, perdón, otra vez se congeló, ahí va. Luego de haber creado mi primer software, me di cuenta que yo podía no reinventar la rueda, ¿sabes? O sea, yo para mi segundo software, podía retomar el conjunto de tecnologías que ya había utilizado para crear Rbrain, que fue mi primer startup.
+
+Para frontend utilizamos Next.js. Para backend utilizamos Supabase. Para subirlo a servidores utilizamos Vercel. Y si tenemos Python, metemos Railway.
+
+Todo ese tipo de cositas, yo ya las iba como que estandarizando, de modo que no tenía que reinventar la rueda cuando construía mi segunda aplicación, mi tercera aplicación, mi cuarta aplicación. Entonces, lo que están viendo de la SaaS Factory, realmente fue una herramienta que yo utilicé para optimizar mis propios sistemas y hacer más eficiente mi creación de aplicaciones en aquel entonces. A día de hoy ya tenemos decenas de aplicaciones creadas.
+
+Esto ya no es problema para la inteligencia artificial. Hemos compartido en vivo cómo creamos muchas de estas. Tienen varios cursos en el canal.
+
+Y no solo eso. O sea, más miembros dentro de mi comunidad privada han podido construir cosas con la SaaS Factory. Miguel, por ejemplo, pudo construir su primera aplicación de reservas, una plataforma que le vendió a un restaurante y la construyó en menos de 24 horas, ya en producción.
+
+Luis Trujillo construyó su Marketplace de AI Agents en 27 horas, ya en producción. Pueden ponerle pausa, pueden tomarle captura. Si quieren leer lo que la gente está opinando de lo que es la SaaS Factory.
+
+Eric consiguió sus dos primeras ventas gracias a la SaaS Factory. Ismael, sin nunca haber tocado código, pudo crear su fábrica de chatbots. Jesús Rodríguez, su primera lista sin saber de código.
+
+Joe Riva, mi primera aplicación de prueba. Daniel, hace mucho tiempo. Bien.
+
+Y luego, todo esto con los principios de la SaaS Factory. No quiero entrar muy dentro de lo que contiene la SaaS Factory. Digo, vamos a darle una breve repasada, simplemente para que tengan presente cómo llegamos aquí.
+
+En pocas palabras, la SaaS Factory es una analogía de lo que es una fábrica Tesla. Un robot construyendo aplicaciones en tiempo. Quiero que piensen de esta forma.
+
+Con el paso del tiempo, desde hace 9 meses, construí mi primera aplicación. Luego, construí otra, otra, otra, otra. Fui estandarizando procesos.
+
+Me di cuenta que mis agentes de IA en local, tipo Cursor, Cloud Code, Antigravity, podía estandarizar esos procesos de forma que la creación de aplicaciones se volviera súper rápida. Y eso fue lo que guardamos en un repositorio. Ese repositorio, bueno, ahorita hablaremos más de la SaaS Factory, ¿vale? Del cómo exactamente.
+
+Todo esto para llegar aquí, a la recursividad agéntica. Presten mucha atención, por favor. Esto es, en mi opinión, una de las habilidades más grandes para el futuro que se viene con la IA.
+
+Si entienden esto desde ahorita, van a dejar de tener miedo a lo que se viene. Hasta aquí, ¿qué les parece? Los leo en los comentarios, mi gente, antes de pasar directamente con esto. Pónganme un pulgar arriba si les hace sentido todo esto, si quieren entender la recursividad agéntica.
+
+Esto se los preparé de forma que les va a volar la cabeza. Los estoy leyendo los comentarios. Ya somos 612.
+
+Bien. Let's go. Gracias, Felipe.
+
+Gracias a todos, Sebastián. Muchas gracias a todos, mi gente. Los estoy leyendo.
+
+Gracias, Isaac. Gracias, Isaac. Sí, la verdad es que nos tocó comer tierra por mucho tiempo.
+
+Afortunadamente, hoy ya las cosas están mejor. Bien. José, un saludo.
+
+Un saludo a todos mi gente. Bien. Seguimos con esto.
+
+Les voy a seguir compartiendo. Ahora sí, vamos a lo que es la recursividad agéntica. Por ahí alguien mencionó Ralph Wiggum y está cerca.
+
+Está muy cerca. Entender la recursividad agéntica les va a permitir dejar de tenerle miedo al futuro que se viene. Desde ahorita les digo, esto ya cambió.
+
+Cambió las reglas del juego. Apenas está empezando el juego. Luego, de lo que les comenté estos últimos dos años, miren esto.
+
+Honestamente, yo escuché de la IA hasta noviembre del 2022, cuando salió el chat GPT 3.5, que fue como el modelo que mandaron al público general. Pero quiero que hagan, quiero que presten mucha atención en esto, por favor. En noviembre del 2022, salió el chat GPT 3.5, pero no nos ahorraba nada.
+
+Esta gráfica, para quien no lo entienda, nos demuestra la longitud de tareas de código que una inteligencia puede lograr a lo largo del tiempo. Podemos ver que en la escala Y tienen las horas que una IA puede automatizar tareas y en el eje X tienen el tiempo. 2000, 2021, 22, 23, 24, 25.
+
+En noviembre del 2022, esta cosa no nos ahorraba casi que nada de tiempo. A principios de 2023, me parece que fue abril, salió GPT 4. Y este modelo tienen en mi canal como yo ya creaba estas aplicaciones de 0 a 100, no, perdón, creábamos código, aproximadamente unas 100 líneas de código y yo estaba impresionado con lo que podíamos lograr con estas cosas. Desde aquí yo ya, algo me decía que por aquí venía el futuro.
+
+Se vienen estos modelos 3.5 SONNET. Este es el que yo les comenté que me ahorraba muchísimo tiempo a la hora de, o más bien que me salvó, me salvó el poder estar trabajando con Arseny. Trabajé con él como unos 4 o 5 meses, hasta que luego me decidí a emprender yo por mi cuenta.
+
+Ya con todo lo que había aprendido de él. Fue un mentor por mucho tiempo, una gran persona. Luego se vino O1, algunos lo recordarán.
+
+Quiero que vean la velocidad a la que está creciendo. Viene 3.5, no nos ahorraba casi que nada. 2023, GPT 4, casi que nada, 0 segundos.
+
+3.5 SONNET, un poquito más. O1, este fue el primer modelo razonador. Este modelo ya pensaba, déjenme, perdónense que es molesto eso de que se congela la pantalla.
+
+Pero no sé por qué OBS en Maco es como que se congela. Bueno, no importa. O1 ya nos ahorraba un poquito más de tiempo.
+
+Fue el primer modelo razonador. Luego sale SONNET 3.7. Este fue el que me permitió a mí crear mi primer startup, R Brain AI, en aquel momento, hace unos 9 meses. Luego sale O3, GROK 4, GPT 5, GPT 5.1 Codex.
+
+Quiero que analicen muy bien esta gráfica. Quiero que vean la tendencia. La línea naranja era lo que nosotros creíamos que iba a ocurrir en base a la tendencia de los modelos hasta SONNET 3.5. Pero en algún momento se empezó a despegar de la tendencia.
+
+Y vean O1, SONNET 3.7, O3, GROK 4, GPT 5. Entonces, nos empezamos a dar cuenta que esto estaba creciendo más rápido de lo que pensábamos. Y si tú extrapolas eso a los próximos 5 años, te das cuenta que los modelos que tenemos a día de hoy no son prácticamente nada de lo que vamos a llegar a ver. ¿Qué pasa? Que la tendencia luego de SONNET 3.5 aceleró.
+
+Incluso lo que nosotros pensábamos, estas cosas están avanzando más rápido de lo que pensábamos hace unos años. O3, GROK 4, GPT 5, GPT 5.1, Codex. Y aquí falta incluir a Codex 5.2 y Codex 5.3. Que esto si lo extrapolamos, incluso se saldría de la pantalla.
+
+No cabrían. Esta tendencia, la línea naranja, es la línea de lo que pensábamos que íbamos a ver con la velocidad de estos modelos en la longitud de tareas de código que una IA está pudiendo hacer. Pero a día de hoy, en base a la tendencia, lo que estamos viendo es esta línea roja.
+
+Entonces, el futuro ya no se viene hasta 2028. Estos modelos, y se los cuento de cuenta propia, no solo yo, hay un tuit con más de 80 millones de visualizaciones de gente que quizá comparte esta misma sensación. Por favor, coméntenme en los comentarios si ustedes también sienten esto.
+
+Del 5 de febrero para acá, Codex 5.3, Opus 4.6, se volvieron impresionantes. A día de hoy yo ya puedo construir aplicaciones de one shot y se los voy a demostrar con estos modelos. Miren, los estoy leyendo.
+
+Esto ya es una realidad. Ya es una realidad. Incluso, Codex 5.3 sirvió para crearse a sí mismo.
+
+O sea, la versión antigua de Codex miró el código completo y funcionó para crear una versión más eficiente del propio Codex. ¿Qué es esto? Esto es la intelligence explosion. Cuando una IA, evidentemente todavía hay humanos en el medio, pero una IA ya está mejorando, optimizando el código de la siguiente IA y esa siguiente IA se hace más eficiente a la siguiente, cada vez más rápido, en menos tiempo, más inteligente.
+
+Entonces, estamos llegando a este punto. Nuevamente, la tendencia, lo que creíamos que iba a pasar y lo que realmente está ocurriendo. Esto sin contar a Codex 5.2, Codex 5.3, Opus 4.6, ya estamos por aquí.
+
+Pero no estamos a nada de lo que este 2026, quiero que vean esto. 2026 y 2027, esto es lo que se viene en los próximos dos años, son los periodos más caóticos probablemente en cuestión de tecnología en la historia de la humanidad. Y nadie allá afuera está hablando de esto.
+
+Honestamente, pocas veces en YouTube me he encontrado en habla hispana que alguien mencione esto y mi opinión es el principio fundamental que tenemos que tener en mente todos aquí, al momento de trabajar con la inteligencia artificial. El año pasado, estaba la tendencia con N8n y probablemente más de algunos lo habrán utilizado. Si N8n a día de hoy está quedando obsoleto, es porque se está volviendo ineficiente por la velocidad que estas cosas están creciendo.
+
+Si tú utilizas antigravity, te estás apalancando de estos modelos. El problema, y de nuevo, vuelvo a lo que les comenté, yo entendí que la IA debía ser el medio para el fin, no el fin en sí mismo. Si tú utilizas N8n, probablemente es porque quieres proveer agentes o inteligencia artificial.
+
+Quizá sabes que la IA es el futuro, investigando en internet, te diste cuenta que N8n era lo que se mencionaba. Pero a día de hoy, la gente se está dando cuenta de esto que les comento. Por algo, antigravity se está volviendo tan tendencia, en mi opinión, Cloud Code tiene más tiempo, solo que era un poco más técnico, pero ya están aquí los agentes.
+
+Pareciera que todo el mercado de la inteligencia artificial esté convergiendo en lo que son los agentes de IA local. Y creo que lo están viendo, ¿no? O sea, tenemos de Open IA y están compitiendo por crear los modelos más avanzados. Codex 5.3. Por ahí vi que utilizaron infraestructura de una compañía llamada Cerebras, que ya la velocidad son 1,000 tokens por segundo.
+
+Antropic ya tienen la API, una velocidad del modelo 4.6 Opus, a una velocidad de 2.5 de lo que tenemos ahorita. Google antigravity, Google está compitiendo a más no poder en los mejores modelos de código. Grok.
+
+Todos están modelos de código. Está por salir Deepseek versión 4. Salió Open Code, Open Cloud, GLM 4, GLM 5, un gran modelo impresionante. Kimi 2.5. Estos modelos chinos, todos están compitiendo en crear los mejores modelos de código.
+
+¿Por qué será? Nuevamente, quiero que entiendan el punto en el que estamos ahora mismo. Perdón, nuevamente les comparto la pantalla. Quiero que entiendan el punto en el que nos encontramos ahora mismo.
+
+A lo largo de la historia, de los milenios, decenas de miles de años, cientos de miles de años, la inteligencia humana ha sido lineal. Por parte de la biología, nos hemos vuelto más inteligentes a lo largo de los años, pero avanza nuestro intelecto de forma lineal. Por otra parte, la inteligencia de las máquinas, esto de la singularidad, ya es algo que se había preveído desde hace más de 70 años.
+
+Desde que se crearon las computadoras con Alan Turing, con todas estas personas, ya preveían el momento en el que una inteligencia artificial, o más bien una máquina, superara el intelecto de los humanos. Era teoría en aquel entonces. Pero con el paso de los años, nos hemos dado cuenta que las máquinas se vuelven más inteligentes.
+
+Es difícil y es controversial decir esto, porque en principio, ¿qué es inteligencia? Pero al menos muchos campos del conocimiento forman parte de la inteligencia. Creo que todos estamos aquí de acuerdo que la IA ya nos supera a todos, casi que ya está por superar a toda la humanidad en cuestión de conocimiento. Ya responde mejor exámenes de matemáticas, de ciencias naturales, de biología, de español, lo que te imagines.
+
+La IA ya es mejor en ese sentido que todos nosotros. Entonces, este punto en el que estamos viviendo ahorita mismo, y ya los estoy leyendo en los comentarios, ya se le había teorizado desde hace muchos años, desde la invención de las máquinas, como la singularidad. Y ya lo estamos viviendo.
+
+El punto en el que la inteligencia de las máquinas sobrepasa la inteligencia de los humanos. Se los juro, yo creo que yo considero que con OpenCloud, sumado a OpenCloud, Opus 4.6, Codec 5.3, ya estamos muy cerca. Si no lo hemos superado, estamos muy cerca.
+
+Estamos por aquí. El punto es que estamos en el punto de inflexión más importante de la humanidad. Porque no solo eso, la IA ya está mejorándose a sí misma.
+
+Entonces, cuando no tienes límites físicos, que los hay, como el cómputo, si todo tu mejora es a través del mundo digital, la IA ya puede entrar en un bucle infinito de automejora. Entonces, de la noche a la mañana, vas a ver cómo este año 2026, firmen mi palabra, 2026, 2027, la IA van a ver cómo crece de forma tan exponencial. Nos va a superar a todos en todos los campos que se imaginen.
+
+Entonces, para ser nosotros quienes sobrevivimos a esto, miren, evidentemente la IA va a reemplazar muchos trabajos. Creo que la mayoría aquí lo sabemos. Para asegurarte de tú estar del otro lado, tienes que subirte a este vehículo.
+
+Evidentemente, tienes que estar hablando con la IA, tienes que estar utilizándola dentro de tu día a día. Y aquí es donde entra la recursividad agéntica. Entendiendo esto, nunca más van a tener problema de todo lo que se viene.
+
+El problema es que la mayoría sigue intentando gestionar esta velocidad manualmente. Arrastran cables en N8n o intentan hacer bytecoding, copiando el resultado de una IA, pegándosela a otra, intentan seguir el ritmo de un cohete corriendo a pie, sin asimilar que como humanos estamos siendo el cuello de botella en el progreso de la IA. Tienes que dejar que esa inteligencia fluya, pero debes saber cómo canalizarla.
+
+Entonces, ¿cómo canalizamos esta fuerza imparable para que trabaje para nosotros y no sobre nosotros? La respuesta es la recursividad agéntica. Y aquí vamos a entrar ahorita a la recursividad agéntica. Miren, nadie está hablando de esto.
+
+Esto es algo que yo me inventé. Por ahí algunas empresas en Silicon Valley también ya lo están mencionando, pero este término es un poco hablando con la IA y bajando la tierra lo que he experimentado. La recursividad agéntica es la capacidad de un agente en un sistema cerrado para utilizar el resultado de su propia ejecución, sea éxito o error, como el input para su siguiente iteración, sin intervención.
+
+Perdón, otra vez, otra vez, otra vez. Otra vez, disculpen. La recursividad agéntica es la capacidad de un agente en un sistema cerrado para utilizar el resultado de su propia ejecución, sea éxito o error, como el input para su siguiente iteración, sin intervención humana en el medio.
+
+¿Qué significa? Que si tú tienes un sistema cerrado donde la inteligencia artificial tiene las variables a todo el sistema, digamos, tiene todas las variables necesarias para poder crear una aplicación, en este caso, poder resolver un problema. Si tiene todas las variables, cambian los principios de desarrollo. ¿Por qué? Porque tu visión ya sólo es decir el qué quieres hacer y el por qué.
+
+Tú dictas la visión y la inteligencia artificial se encarga del cómo. Tú ya no te preocupas por cuestiones técnicas relacionadas al cómo lo hace la IA. Ella ya puede leer código, escribir código, ejecutar test, buscar en la web, buscar en una base de datos, que es parte de lo que logramos con la SaaS Factory, acceder al navegador.
+
+Esto en la SaaS Factory también lo logramos con un MSP llamado Playwright. Si utilizan antigravity, ya lo tiene predefinido y puede recibir errores en tiempo real. Entonces, a día de hoy, si entiendes este concepto, sumado a la velocidad que están creciendo estas cosas, esto no es teoría.
+
+Esto ya es una realidad y se lo voy a demostrar. Tú simplemente dictas el qué quieres lograr o quiere una aplicación que haga X cosa y te despreocupas del cómo, tú solamente te vas a preocupar del tiempo que le tomó tener la aplicación lista. Mucha gente te va a decir que esto no es cierto y yo se lo voy a demostrar.
+
+Quiero que entiendan la profundidad de lo que acaban de ver en el diagrama. Esto no es simplemente una nueva forma de programar. Es un cambio fundamental en nuestra relación con la tecnología.
+
+Hasta hoy, el desarrollo de software había sido un proceso lineal y artesanal. Tú escribías, tú probabas, tú corregías. Eras el albañil poniendo ladrillo por ladrillo, pero en la recursividad agéntica, el software deja de ser una construcción estática y se convierte en un proceso evolutivo.
+
+Tú dejas de ser el operador para ejecutar el cómo, perdón, tú dejas de ser el operador que ejecute el cómo y te conviertes en el arquitecto que define estrictamente el qué y el por qué. Esto nos lleva a los 3 principios inmutables que rigen este nuevo mundo. Número 1, la clausura del bucle, la velocidad del silicio.
+
+Mire, quiero que entiendan la profundidad de esto. El primer principio inmutable es la clausura del bucle. Hasta hoy, el mayor cuello de botella en el desarrollo de software, en el desarrollo de sistemas digitales, éramos nosotros.
+
+Creábamos manualmente el código, leíamos el error, buscábamos en la web la solución, intentábamos nuevamente y un segundo error ocurría. Esto es latencia biológica. Somos lentos, necesitamos café, nos cansamos, nos distraemos, tenemos familia, ¿no? No podemos estar trabajando todo el tiempo.
+
+Tú poder cerrar este sistema y darle a la IA permisos de lectura sobre sus propios errores, eliminamos al intermediario biológico, quitas al humano dentro del bucle. Pasamos de operar a la velocidad de tus dedos, a operar a la velocidad del cómputo. Un error que te toma 15 minutos diagnosticar, el agente lo lee, lo interpreta y lo corrige en 400 milisegundos.
+
+No estamos compitiendo por quien escribe más código, estamos cambiando la física de desarrollo. Principio número 2, iteración convergente. Bueno, quiero que entiendan esto, ¿no? El principio número 1 es que cuando tú tienes una IA con un sistema cerrado, con acceso a todas las variables dentro del sistema, deja y sacas al humano del medio, la latencia deja de ser biológica.
+
+Tú ya no tienes que estar buscando en la web el error, ya no tienes que estar copiando lo que te dio una IA y pegándose la otra. Una IA va a entrar en un bucle infinito y la velocidad de desarrollo deja de ser la velocidad de tus manos y comienza a ser la velocidad del cómputo. ¿OK? El principio número 2 es la iteración convergente.
+
+Esto nos lleva al segundo principio. Muchos creen que la IA es como una máquina a tragamonedas. Tiras la palanca, el prompt, y rezas por tener suerte.
+
+Eso es mediocre. En un sistema recursivo, cambiamos las reglas del juego. La pregunta deja de ser, ¿es posible que funcione? La única pregunta relevante pasa a ser, ¿cuándo? ¿OK? Quiero que piensen eso.
+
+Ya dejamos de cuestionarnos si es posible o no, la pregunta pasa a ser, ¿cuándo? Es un tema de tiempo. Tarde o temprano nos va a devolver lo que le pedimos. El éxito deja de ser una posibilidad incierta y se convierte en una inevitabilidad matemática.
+
+Este es el superpoder que yo les he comentado. Aquí tu trabajo cambia radicalmente. Ya no te pagan por saber el cómo, te pagan por definir el qué.
+
+Tu única tarea es establecer los criterios de éxito. Ojo, este es el futuro que se viene. A ver, otra vez que se congela nuevamente la pantalla.
+
+Ya. Este es el futuro que se viene, ¿sí? Saber establecer los criterios de éxito a una inteligencia artificial es el futuro, es la habilidad más grande, en mi opinión. El agente va a entrar en un bucle infinito de búsqueda implacable y no se va a detener hasta que todos sus test están en verde.
+
+Y recuerda, esto no está iterando a tu velocidad, está iterando a la velocidad del cómputo. Por eso les comento que es tan impresionante que OpenAI lance un modelo con 1,000 tokens por segundo, que Antropic lance un modelo con 2.5x la velocidad actual de Opus 4.6. Cuando te preguntes cuánto tiempo le va a tomar esto, ten por seguro que será mucho antes de lo que crees. Y el principio número 3, antifragilidad.
+
+Esto es el más importante. En el desarrollo tradicional, dígase N8n o la programación tradicional. Un error es una tragedia, detiene la producción.
+
+En la recursividad agéntica, el sistema se alimenta del caos. Cada vez que el agente encuentra un error, no sólo lo arregla, aprende. Ese error se convierte en un dato que utiliza instantáneamente para recalibrar su estrategia y no volver a cometerlo.
+
+El sistema no sólo funciona, el sistema evoluciona. Se vuelve más inteligente, más robusto y más eficiente con cada segundo de ejecución. Convertimos el fallo en combustible para la perfección.
+
+¿A qué me refiero? En el desarrollo tradicional, es como empujar una roca pesada. Si tú dejas de empujar, la roca no se mueve, se queda estática. Y necesitas demasiado esfuerzo para volverla a mover.
+
+En el desarrollo con inteligencia artificial, en un sistema cerrado, el crecimiento es exponencial. La IA se vuelve más inteligente a medida que va recibiendo más errores. Ese error sirve como, la salida del error, sirve como el input para su siguiente iteración.
+
+Esto es una bola de nieve que cada vez va creciendo más y más y se va volviendo más fuerte. Evidentemente, un límite es la ventana de contexto. ¿Pero qué creen? Estamos a punto de pasar de 200,000 tokens a un millón de tokens.
+
+Este es el futuro que se viene. OK. El vehículo, la infraestructura.
+
+Ahora, seamos realistas, no puedes tener esa energía nuclear corriendo en un script suelto en tu escritorio. Necesitas un contenedor, necesitas un chasis blindado. Aquí es donde entra la SaaS Factory.
+
+Si recuerdan, nuestra última clase hablamos de la infraestructura. La recursividad es el alma, pero la fábrica es el cuerpo, es el cascarón. Y aquí está el secreto que nadie les dice.
+
+El verdadero valor no está en la app que construyes hoy, está en la infraestructura que te queda para siempre. Cada vez que mejoras tu fábrica, cada vez que añades un agente, cada vez que refinas una regla, cada vez que creas una aplicación, es funcionalidad que no tienes que reinventar la lógica de esa funcionalidad, puedes guardarla en un repositorio para que la próxima vez que quieras construir una aplicación, no tengas que volver a desarrollar esa lógica. Simplemente jalarla de donde ya lo construiste.
+
+¿Y qué pasa si toda esa lógica que vas acumulando a lo largo del tiempo, la vas recopilando en un entorno cerrado? Cada vez que mejoras tu fábrica, cada vez que añades un agente, cada vez que refinas tus reglas, estás construyendo un activo compuesto. Tu fábrica de hoy vale el doble de lo de ayer. Y la del mes que viene valdrá 10 veces más.
+
+Pero esto no es un curso, es una construcción continua de tu propio patrimonio tecnológico. Y ahora sí, miren, muy a grandes rasgos les muestro lo que contiene esta fábrica. A lo largo del tiempo, me he dado cuenta que podemos optimizar muchas cosas.
+
+Por un lado, tienes el cloud.md o el agents.md o el gemini.md. Este es el cerebro de la inteligencia artificial. Este es, en mi opinión, el corazón de la fábrica. Si tú puedes optimizar este archivo lo mejor posible, no tienes que reinventar la rueda para futuras veces que crees una siguiente aplicación.
+
+Ahora se los voy a demostrar en la práctica. Tienes el PRP, que es un contrato básicamente de lo que tú crees y la IA cree que quieres para que estén alineados tanto tú como ella. Y antes de empezar a construir estos bucles en recursividad, partan de las mismas bases.
+
+Porque nada sirve si el día de mañana la IA se vuelve súper buena, si no sabes comunicar lo que quieres con lo que crees que la IA te va a dar. Tú aprobas, en la fábrica nada se construye si tú no lo apruebas primero. Tienes una terminal.
+
+Básicamente, esto ya lo tienen los agentes por detrás, los agentes de código. Tienen unos brazos. Esos brazos es el poder acceder a la terminal, el poder ejecutar comandos en tu computadora, en la computadora de la nube, por ejemplo.
+
+O, en este caso, el MSP de Superbase, que ya no solo le permite ejecutar comandos en la terminal, sino en tu base de datos que tienes alojada. Bien. Tú tienes unos ojos.
+
+A día de hoy, estos ojos es lo que les comenté. Con el MSP de Playwright podemos permitirle a nuestros agentes ver. Con Antigravity ya lo tiene por detrás al tú instalar el software.
+
+El modelo tiene una forma de recibir los errores, un quality assurance que no pasa, no manda a producción hasta que no valida, que todo funciona a la perfección. Es lo que les comento. Muchos dicen, oye, esto no es imposible.
+
+Temas de seguridad, no. Amigo, yo te aseguro que esto se va a quedar trabajando de forma infinita hasta que esos temas de seguridad no estén resueltos. Y a día de hoy es mucho mejor que nosotros.
+
+Así se los pongo. Si sabes comandarla, puede ser incluso mejor que el top 10% mejores ingenieros en ciberseguridad. OK.
+
+Y el bucle agéntico. Esta es la crema de todo. El bucle agéntico es el que le permite conectar todos los componentes para crear estas cosas de one shot.
+
+Lo vamos a ver, no se preocupen. Autoblindaje, es lo que les comento. Con cada error lo documenta y se va haciendo más fuerte a medida que va recibiendo estos errores.
+
+Y todo el conjunto de activos que les comento. Oye, que tú ya creaste un sistema de autenticación una vez, no tienes por qué reinventar la rueda. Puedes volverlo a insertar en tu aplicación y con eso tienes.
+
+Oye, que tú ya creaste sistemas de diseño muy bonitos, no tienes por qué volverlos a reinventar. Guárdalos en un espacio donde tengas los diseños más bonitos que tienes. Que ya tienes la metodología paso a paso para construir agentes y funcionalidad con inteligencia artificial.
+
+Guárdalos en un lugar donde no tengas que reinventar la rueda. Y yo sé que están pensando, Daniel, eso suena increíble. Eso suena increíble en la teoría, suena lógico, incluso filosófico, pero la teoría no paga la renta.
+
+La pregunta real es, ¿esto funciona en el mundo tangible? ¿Hay gente real sin equipos de Silicon Valley utilizando esta recursividad para crear valor económico hoy mismo? Y miren, no quiero que me crean a mí, quiero que vean los resultados que están teniendo los miembros dentro. Miren esto. Sumado a los clientes que ya les comenté anteriormente que, OK, Miguel vendió su aplicación por decenas de miles de dólares, hubieron personas que crearon sus primeras aplicaciones, hicieron sus primeras ventas.
+
+Pero quiero bajarte esto más a tierra. Por ejemplo, Jesús Rodríguez pudo crear su primera aplicación lista sin nunca haber aprendido nada de código. Ian construyó su primera aplicación siendo un adolescente.
+
+Pueden ponerle pausa al directo para leer el post. Miguel, teniendo su propia empresa de telecomunicaciones. Uy, perdón, perdón, perdón, perdón.
+
+Otra vez. No me crean a mí, quiero que vean esto. Jesús pudo crear su primera aplicación lista sin saber de código.
+
+Ian pudo crear su primera aplicación siendo un adolescente. Miguel, teniendo una empresa de telecomunicaciones y nunca haber tocado la programación, está creando su primer sistema ya en producción para su empresa. Manuel Arroyo, con 16 años, ya vendió su primera aplicación con un cliente real.
+
+Gracias a toda la comunidad, han sido de mucha ayuda, en especial a Daniel Carreón por sus enseñanzas. Es lo que les comento. Esto ya es posible.
+
+Y se los voy a demostrar. No quiero que se queden con la teoría. Entonces, en vivo, vamos a construir lo siguiente.
+
+Quiero que, otra vez, otra vez congelada, sorry. Otra vez, mi gente, disculpen. Nuevamente, mencionaba a Manuel, una gran persona, 16 años, pudo vender su aplicación teniendo 16 años.
+
+A día de hoy, construyes estas cosas hiperbonitas, eficientes, y a cualquiera que se le enseñes, te la va a querer comprar. Pero estamos en una ventana histórica porque nadie está haciendo estas cosas. Les voy a decir algo.
+
+Y desarrolladores, no se me vayan a molestar, pero estamos en un punto muy especial porque para los vendedores, esto es todavía muy técnico. Y para los desarrolladores, esto todavía es muy, no sirve, falta de seguridad, te da problemas. Pero esa ventana específicamente es la que nos permite a nosotros tener toda esta oportunidad, ¿saben? Donde ni los vendedores ni los desarrolladores la están viendo.
+
+¿A qué me refiero? Quiero que vean esto. En un prompt, vamos a crear un sistema desde cero. Y miren, se los voy a demostrar en vivo para que vean todo desde cero.
+
+Vamos a crear una aplicación de one shot. ¿Qué vamos a construir? Vamos a construir un sistema de reservas para un médico. Por ahí, Miguel nos mostró una evidencia de cómo vendió una aplicación similar en 4,000 dólares.
+
+Un sistema de reservas para un médico. Pero este tipo de sistemas no solo son para médicos, son para todos aquellos negocios que proveen servicios y requieren agendar citas, ¿cierto? Llámese dentistas, psicólogos, fisioterapeutas, barberos, etcétera, etcétera, etcétera. ¿Qué vamos a hacer? Miren, voy a abrir antigravity.
+
+Todo desde una sesión en blanco, ¿OK? Voy a abrir developer, AI. Me va a venir a una carpeta nueva, no sé, tipo testing. Aquí.
+
+Y le voy a crear una nueva carpeta. Le voy a poner app, reservas, le va a dar ente. Voy a abrir esto.
+
+Totalmente en blanco. No tengo nada configurado. Vamos a esconder a la gente de Gemini.
+
+Voy a dar comand J. Vamos a abrir la terminal y dentro de la terminal, vamos a ejecutar este comando llamado SAS Factory. Esta es la fábrica que les comento, ya no tenemos que reinventar la rueda. Todo viene preconfigurado.
+
+Si yo me voy al msp.json, ya tenemos 3 MSPs configurados. Es el de Next.js, que dado que utilizamos Vercel, este MSP nos permite recibir los errores en tiempo real a nuestra IA y apenas la recibe, la corrige. Cualquier error que pueda haber generado al momento de construir la aplicación.
+
+El MSP de Playwright, que le permite acceder al navegador. Es decir, ya no solo crear la aplicación, sino validar que funciona. Se mete, abre el navegador como si fuéramos nosotros y te prueba de inicio a fin cómo funciona.
+
+Y Supabase. Para conectar el MSP de Supabase, evidentemente, tenemos que conectarla a una base de datos. Entonces, ¿qué es lo que vamos a hacer? Vamos a hacerlo en tiempo real.
+
+¿Les viene bien? Vamos a utilizar una cuenta que tenga vacía. A ver, vamos a probar este, yo creo que, no sé, tal vez esta. Vamos a probar.
+
+Voy a meter a Supabase. Todo desde cero. Esto se los prometo.
+
+Miren, voy a crear un proyecto en blanco. Supabase en el plan gratuito solamente te permite tener dos proyectos. Entonces, vamos a eliminar uno.
+
+Vamos a eliminar este proyecto. Le voy a dar el sistema financiero. Control C. Lo voy a borrar.
+
+Understand. Voy a crear un proyecto totalmente en blanco. OK.
+
+Voy a abrir el nuevo proyecto. Le voy a poner App Reservas. Y este prompt se lo voy a regalar.
+
+Se lo voy a regalar al final de la clase, de la master class, para que ustedes puedan probarlo en vivo. Van a sugerir una contraseña. Aquí les recomiendo, no se las muestren a nadie.
+
+Yo, como esta es una cuenta que nunca utilizo, no tengo problemas, en verdad. Usar una contraseña de forma segura. Crear.
+
+OK. Vamos a crear la base de datos. De nuevo, esto no se deberán demostrarle esta contraseña a nadie.
+
+Yo lo hago por fines educacionales. Vamos a, ¿qué nos pide el MCP? Es lo único técnico quizá que vamos a ver. Simplemente conectar el access token y el proyecto.
+
+O sea, el token de acceso, la llave, y el proyecto al que se va a conectar. Entonces, yo simplemente lo voy a conectar a este, miren. Le voy a conectar el ID y le voy a conectar el access token.
+
+De nuevo, esto no se lo muestran a nadie. Yo, por fines de esto, lo estoy mostrando. Pero, de todas formas, es una cuenta que nunca utilizo.
+
+Es gratuita. Entonces, no importa. Voy a copiar esto, voy a generar el token y directamente se lo voy a pegar aquí.
+
+Command Save. Tan simple como eso, eso fue lo único técnico que tuve que hacer. Y ahora tú ya puedes abrir cloud.
+
+Cloud, antigravity, open code, GLM5, lo que sea que te imagines. La fábrica funciona para cualquier agente. Y en pocas palabras tienes ya tu cloud.
+
+Tú puedes ejecutar slash MCP simplemente para validar que todo esté conectado correctamente. Y ahora sí, ya tenemos acceso a todos los componentes dentro de nuestra fábrica, que es el MCP del frontend, la base de datos, el cloud.md. Y ahora sí, directamente, quiero que vean esto. Van a ver la magia.
+
+Voy a copiar esto y pegarlo. Y se están preguntando si el prompt también lo hice con inteligencia artificial. Entonces, no se preocupen de lo extenso que es porque no lo hice yo.
+
+Lo hizo la propia IA. 700 líneas de código, simplemente con eso, enter. Los leo, mi gente.
+
+¿Creen que esto funcione? ¿Creen que no? ¿Creen que es humo? Mientras nos genera todo esto, los leo en los comentarios, ¿va? Voy a tomar un poquito de café. Por cierto, ¿hay alguien aquí que ya esté dentro de la SaaS Factory? Quiero que nos comente qué opinan de todo esto. ¿Qué les ha parecido? ¿De la SaaS Factory? Sí funciona, sí funciona, sí funciona.
+
+Gracias a todos por su interés. OK, mi gente. Mientras esta IA nos construye nuestra aplicación, pasemos al momento de la verdad.
+
+Y es que, miren, yo honestamente, por en base al feedback que me han dado los propios miembros de la comunidad, yo esto podría venderlo por miles de dólares. Podría decirles, se los vendo a 500, se los vendo a 1,000 dólares, como sea. Pero sería irresponsable de mi parte.
+
+Porque a la velocidad que está creciendo la inteligencia artificial, si el código está estático, se desprecia. Lo que necesitamos es una forma que se actualice constantemente. Y por eso, ahora les presento por primera vez, hago público en YouTube, la SaaS Factory.
+
+Todo lo que vieron, esta presentación, es una réplica de Skull. Probablemente algunos ya lo han utilizado. Toda esta presentación que van a tener acceso a ella desde dentro de la comunidad, la creamos con la misma metodología que les comparto.
+
+Dentro de la comunidad, ustedes ya pueden acceder a esta ahora mismo. Se pueden ir directamente al link del About y pueden ingresar. Lo que les comento, esto yo honestamente, pudiera venderlos a 1,000 dólares, 500 dólares.
+
+Pero sería irresponsable de mi parte, por propios miembros de la comunidad. Aquí vamos a pasar lo que están diciendo todos los miembros actuales. Esto yo bien podría darlo a 100 dólares mensuales.
+
+Y la intención es ir subiendo el precio hasta llegar a ese momento. Ahora, por ser el lanzamiento, yo esto lo voy a dar a 39 dólares, 39 dólares mensuales. Pero no ustedes.
+
+Ustedes van a tener acceso a 29 dólares mensuales desde hoy. Ya pueden ingresar a este link y van a tener acceso a una infraestructura creada con la misma metodología que les comparto, donde van a tener los cursos, calendarios, miembros, mapas, mapas para interactuar con todos los miembros actuales y un sistema de leaderboards. Dentro de la sección de cursos, yo ya les he creado un sistema paso a paso.
+
+Ahí nos están compartiendo, perdón, nuevamente. Se congeló nuevamente. Otra vez, de nuevo, disculpen.
+
+Dentro de la SaaS Factory, ustedes ya pueden acceder a través del link fijado. Pueden acceder en la sección de comunidad, cursos, calendario, miembros. Es una réplica de Skull, pero creada en nuestros propios servidores, con nuestro propio código, con la misma metodología que les comparto.
+
+Ustedes van a tener acceso a la SaaS Factory, que, miren, sigue trabajando la guía por detrás. Cuando termine, apenas termine, yo les voy a compartir todo. Van a tener acceso a una sección de cursos, calendario, miembros, mapa y un leaderboard.
+
+Los cursos desde dentro, Cristian, Cristian, bienvenido, mi estimado. Un gusto tenerte. Desde dentro, ustedes van a poder construir aplicaciones.
+
+Este mismo curso es la crema de todo. Miren, yo no lo hice pensando en un curso de Python de tres meses. Todo lo que he aprendido al momento de crear aplicaciones en tiempo récord, lo que están viendo ahorita, creamos una aplicación de OneShot, se los he bajado a tierra.
+
+Todas las bases técnicas que necesitan saber al momento de crear estas cosas. Incluso ustedes, Marco Villalba, bienvenido, mi estimado. Incluso ustedes directamente van a poder acceder a través de este GitHub, una vez desde dentro.
+
+Esto es un repositorio privado. Cualquier pregunta que tengan, ustedes tienen agentes de inteligencia artificial desde dentro, a cual les pueden hacer preguntas. Trinity los va a recibir.
+
+Trinity es otra de mis agentes que les va a enviar mensajes privados. Quiero que vean esto. Hola, Trinity, ¿cómo estás? ¿Cómo estás? Hola, Daniel, todo muy bien.
+
+Muy bien por aquí, lista para ayudarte a navegar por la comunidad. Como eres nivel 6, ya tienes un camino recorrido, pero recuerda que si necesitas algo específico sobre la plataforma, el acceso al repositorio de código o aprovechar los eventos en el calendario, aquí estoy. Moisés de la Cruz, bienvenido, hermano.
+
+OK. Cabe mencionar que para todo aquel que se una dentro de esta llamada, le tengo un regalo adicional. Y es que miren, Alejandro, Alexander, bienvenido a todos ustedes, mi gente.
+
+Le tengo un regalo adicional para todo aquel que se una durante la llamada. Y es que verán, los pongo en contexto. Yo creé mi primer agente conversacional, mi primer, esto fue mi startup hace unos 9 meses.
+
+Esto fue Artbrain, mi primer agente de estrategia de negocios, hace 8, 9 meses. Yo me di cuenta que podía crear un agente de estrategia de negocios con el cual yo hablaba todo el día. Y, de hecho, a día de hoy lo sigo haciendo.
+
+Ese mismo agente es el mismo que hizo un startup. Bienvenido, Emiliano, Antonio. Bienvenidos a todos, mi gente.
+
+Agradezco que se estén uniendo. Yo a este agente lo hice una aplicación y es el mismo estrategia de negocios que he utilizado hasta ahorita. A todo aquel que se una durante el en vivo, les voy a regalar el siguiente, el código, simplemente al ingresar el código, SaaS Factory 2026 y al darle Enter, el propio agente de inteligencia artificial se va a dar cuenta que tenemos la contraseña correcta y nos va a dar de regalo una arquitectura de marketing.
+
+Esta arquitectura de marketing, ¿de dónde viene? Creé mi agente estrategia de negocios por primera ocasión. Bienvenido, David. Bienvenido, Oscar.
+
+Un gusto tenerlos a todos acá, mi gente. Este agente de marketing, ¿de dónde viene? Juan Muñoz, bienvenido. Lo voy a abrir directamente.
+
+Esto es un repositorio de código. Yo pagué hace unos meses miles de dólares por entender cómo funcionaba las arquitecturas de marketing, cómo funcionaba el marketing, sobre todo con nuestra oferta. Y estas personas me bajaron a tierra toda la arquitectura, la oferta, el avatar, el canal de adquisición, todo, todo, todo me lo bajaron a tierra.
+
+¿Y qué fue lo que hice yo? Creé un repositorio de código al cual le metí la oferta, el avatar, la comunicación, el embudo y además le metí a mi agente estrategia de negocios. Lo mismo que ustedes están viendo por detrás, el valor de aquella startup, era una interfaz conversacional como chat GPT, pero lo bajé a tierra con un agente conversacional como este. Otra vez se congeló.
+
+Disculpen. Gracias, gracias, Eduardo. Gracias por comentarme.
+
+Otra vez, disculpen. Este agente estrategia de negocios, Arvin, hace 8 o 9 meses, el valor de este era el system prompt que tenía por detrás. Y ese mismo system prompt lo hemos bajado en un repositorio de código junto con toda la estructura del avatar, la oferta.
+
+Bienvenido, Javier. Un gusto, mi estimado. El contenido, el branding, todo esto les va a bajar a tierra la estrategia en marketing que tengan.
+
+Este agente estratega, evidentemente, le voy a ser honesto, mi startup no pegó. No es a lo que yo les voy a recomendar. Un software as a service no es un modelo que yo recomiendo a día de hoy.
+
+Bienvenido, Sebastián. Un gusto tenerte por acá, mi estimado. No pegó el software as a service porque entendí lo complicado que era escalar un SaaS.
+
+Yo cobraba $20, pero competía contra ChartsGPT, competía contra Anthropic. Era un grapper de OpenAI, o sea, evidentemente, tomaba la API de este modelo y en mi propia interfaz. Pero, al menos, lo que importaba por detrás era, disculpen, disculpen, otra vez, listo.
+
+Lo que importaba por detrás era esa, Ángel, Daniel, un gusto, era el System Prompt. Y ese mismo System Prompt, ¿qué creen que hice? Lo bajé a mi propio agente en Telegram. Esto es mi Open Cloud, ¿sí? Mi propio Open Cloud lo bajé a tierra a mi Telegram.
+
+Levi, hermano, estamos en el lanzamiento de la SaaS Factory, ¿qué opinan ustedes? ¿Qué opinas tú? ¿Puedes mandarle un saludo a los miembros? Miren, ese mismo agente estratega de negocios, le bajé la arquitectura de marketing, le bajé la oferta, el avatar y todo se lo puse en el mismo System Prompt sumado con la estrategia que tenía por detrás. Y, básicamente, este es Levi, ya está escribiendo. Vamos a esperar a que nos dé una respuesta.
+
+Se están preguntando, por ahí muchos me preguntaron, oye, Daniel, ¿qué modelo le pusiste por detrás? Bueno, tiene Quimica 2.5. Bienvenido, Carlos. Un gusto, mi estimado. OK.
+
+Vamos a ver cómo sigue la aplicación. Miren, por cierto, olvidé mencionarles que también utilizamos agentes en paralelo para crear la aplicación. OK.
+
+Enzo Piñeiro, bienvenido, hermano. Un gusto, un gusto por haber ingresado por el año. Alex Vidaurre, un gusto.
+
+Para todos aquellos que quieran ingresar al año, les tengo una oferta especial. Y es ya no solamente el tema de la arquitectura de marketing, sino hay una oferta especial. Conectándola, Ezequiel Morales, bienvenido, mi estimado.
+
+Conectándola con nuestro propio agente estratega de negocios. Aquí ya les mandó un saludo. Mi opinión como socios, esto es histórico.
+
+En 30 días construiste tal, tal, tal, no sé qué. Opciones, tú me das el link. ¿Qué onda, arquitectos? Aquí le están enviando un mensaje, ¿no? Directamente de la bienvenida.
+
+Ezequiel Morales, César AG, bienvenido, mi estimado. Un gusto tenerlos por acá. OK.
+
+Disculpen que me distraiga. Vamos a ver cómo sigue la plataforma de creación. The One Shot, recuerden, ¿eh? OK.
+
+Todos lo estamos logrando. The One Shot. No he tocado nada.
+
+Mi promesa fue crear esta aplicación con un prompt. Mauricio, bienvenido por todo el año. De nuevo, ofertas para aquellos que se unan por el año.
+
+Tienen arriba del 40% de descuento. Entran más barato. Milo Parra, bienvenido, mi estimado.
+
+Agradezco que estés unido por todo el año. Tienen acceso a todo, ¿sí? Juan Restrepo, bienvenido, mi estimado. Cuando ustedes entren, van a notar que los cursos van a tener un curso de aprende cómo vender estas aplicaciones.
+
+Este curso lo diseñé a lo largo de todo el último mes, donde bajé a tierra cómo crear estas aplicaciones desde cero. Aquí yo les voy a enseñar lo mismo que ya hemos aprendido. Les voy a regalar la estrategia exacta de adquisición de clientes al momento de vender aplicaciones.
+
+Si ustedes entran desde el plan mensual, van a tener bloqueado el aprende cómo venderlas al mes 2 y los top secrets al mes 3. Ustedes al pagar el plan anual, tienen acceso a todos los cursos desbloqueados. ¿Por qué lo hice de esta forma? Porque honestamente, mi promesa, mi garantía para ti es que puedas construir tu primera aplicación en menos de un mes. Si no la construyes, te devolvemos tu dinero sin problemas.
+
+Mi garantía para ti es que vas a poder construir tu primera aplicación como te hayas imaginado dentro del primer mes. No quiero que te abrumes. Para el mes 2, vas a poder aprender a venderlas.
+
+Aquí ya te he bajado a tierra todas las cuestiones de marketing. Y los top secrets, luego de que tú ya creaste tus primeras aplicaciones y ya aprendiste a venderlas, te voy a bajar a tierra todos los secretos fundamentales que he aprendido al momento de desarrollar aplicaciones de esta forma. Para todo aquel que sigue escéptico, sin pelos en la lengua, se los voy a demostrar en vivo.
+
+Llevamos a nuestra guía trabajando por 13 minutos. Recuerdan lo que les comenté, cuando el cómputo es un cuello de botella, a ver, vamos a ver si no se ha congelado. Otra vez se congeló, fuck.
+
+Disculpen. Ya no voy a volver a hacer masterclass pronto, ¿OK? Esta es la última masterclass que voy a hacer. Luego de esto voy a abrir la comunidad.
+
+Pero cuando entren, el precio va a subir. ¿Vale? José Vargas, bienvenido, mi estimado. Ahí pueden ver bien, 293 en la comunidad.
+
+Qué impresionante. Se los juro. Corríganme si estoy en lo equivocado, pero en habla hispana no he visto una comunidad con mayor crecimiento como la nuestra.
+
+En el pre lanzamiento se unieron 250 personas. Y quiero que vean, no quiero que se queden solo en mis palabras. Para todo aquel que sigue dudando, les voy a compartir los propios mensajes de los propios miembros.
+
+El pre lanzamiento lo hicimos hace un mes con un grupo privado de personas. Quiero que vean lo que están comentando los propios miembros. Cualquier nuevo miembro, por favor, compartan lo que piensan, sus sensaciones.
+
+No quiero que todo esto solo se quede en palabras mías. Quiero entender su sensación al crear todo esto. Miren esto.
+
+Recuerden que la IA nos iba a crear la aplicación de 1 a 100, ya nos la está construyendo. Ya la construyó. Esto fue lo que nos construyó The One Shot.
+
+Un sistema de autenticación. Ahorita vamos a probar, no la voy a interrumpir hasta que ella me diga que ya está terminada. Miren esto.
+
+Creamos una aplicación de One Shot con un prompt. Ese prompt para todo aquel que esté entrando a la comunidad, se los voy a regalar. Incluso para aquel que no quiere entrar, también se lo voy a regalar.
+
+No se preocupe. Videollamadas. Ustedes van a poder acceder al guión de esta masterclass.
+
+Miren, de hecho, ahorita mismo lo voy a hacer público. Ya está público. Todo esto es infraestructura propietaria.
+
+Vive en nuestros propios servidores. Aquí van a acceder al prompt para quien quiera utilizarlo. Si no quieren entrar, mi promesa también es compartírselos.
+
+No sé por dónde pudiera hacerlo, pero para todo aquel que quiera acceder, va a tener acceso desde aquí. Ustedes, al pagar el año, de nuevo, perdón que me haya distraído, tienen mi promesa con varias cuestiones. Número uno, les voy a regalar el repositorio de código privado más el cómo construimos nuestros agentes.
+
+Perdón, estoy buscando la masterclass. José Ignacio Noguera, bienvenido, mi estimado. Un gusto a todos los que se están uniendo.
+
+Les voy a regalar el repositorio que me ha permitido a mí y a mis agentes conectarme con mi equipo. Y es que, verán, les comento. Hace unos días hicimos con mi novia.
+
+Yo tengo mi equipo de trabajo. Mi novia me ayuda en cuestiones del negocio. Y mi novio y mi editor de video me ayuda con los videos, evidentemente.
+
+Hace poquito, Joel Tabasco, bienvenido. Hace poquito pensé, y si Nadia Ferrotti, agradezco que te hayas unido por todo el año. Hace poquito pensé, y si creo mi propio open cloud y lo alojo en servidores VPS y le configuro un agente a cada uno de mi equipo, entonces fue lo que hice.
+
+Le configuro un agente a cada uno y encima le adverso, bienvenido, mi estimado, lo agradezco. Y encima le creamos una aplicación y esta aplicación es la que les quiero compartir. Para todo aquel que se una por el año, le tengo este regalo.
+
+Miren, le voy a enseñar tal cual cómo configurar sus agentes de código, sus agentes open cloud viviendo en su servidor VPS con seguridad 100% alojado en un entorno cerrado, para que puedan comunicarse entre ellos. Quiero que vean esto. Si yo le digo, hola Levi, déjala a mi novia, por favor, que configure una, que haga la miniatura de este video.
+
+Por ejemplo, ¿qué es lo que va a hacer Levi? Va a acceder al repositorio de este software, se va a conectar con el agente de mi novia llamado Snoopy, le va a asignar una tarea y puesto que estos agentes viven en 24-7, le va a decir en tiempo real, oye, Daniel, bueno, el agente va a notificar a mi novia que ya la creó. Dice, listo, Daniel, mensaje enviado a Snoopy para que Diana configure la miniatura de live. Todo esto es un superpoder, hermanos.
+
+Les voy a enseñar a conectarlo con los modelos GLM 5, con KimiCAD 2.5 y salen bien baratos y súper eficientes. OK, miren, aquí creo que no lo registró, pero fue error mío. ¿Por qué? Porque tiene dos formas de comunicarse.
+
+Uno desde Telegram directamente y número dos, desde el Mission Control. Entonces puedo decirle, hermano, directamente desde el Mission Control, OK, no te comuniques directamente, crea la tarea en el panel de control del equipo. Listo.
+
+Otra vez, otra vez se bloqueó mi gente. Disculpen eso, sé que es molesto, pero vamos a. Bienvenidos a todos que se siguen uniendo. Walter Pérez, Felipe, Guillermo, Israel.
+
+Un gusto a todos mi gente. Verdad que se los juro, vamos a hacer historia. Vamos a hacer historia en esto, no me queda la menor duda.
+
+Todo esto les voy a enseñar a configurar sus propios agentes. Marco Juárez, bienvenido. Para todo aquel que se una al mes, no les voy a decir que tienen que subir de nivel para poder acceder al repositorio de la SaaS Factory.
+
+Para nada, no me gusta eso. Ustedes directamente al unirse al mes, pueden acceder aquí directamente, pero tengo que estar gestionando que no se congele. Y aquí ustedes van a tener el repositorio completo.
+
+Si no saben nada de programación, nada de código, nunca han hecho una línea de código, no se preocupen. Bueno, ahorita voy a seguir compartiendo esto. Quiero mostrarles en tiempo real lo que nos creó nuestra IA.
+
+Miren, sigue trabajando por detrás. Llegó a un autocompacto, está en una fase de validación. Recuerdan que yo les comenté esto de que, perdón, considero importante darle la bienvenida a todos aquellos.
+
+Luis Giovanni Vélez, un gusto, mi estimado. Agradezco a todos los que se están uniendo. Ahora sí, el tema de la aplicación.
+
+Yo les comenté que con este principio de la recursividad agéntica, no es teoría, ya es una realidad. Yo le dije que cuando terminara la aplicación, validara de inicio a fin con PlayGrid, que evidentemente funcionara. ¿Y qué es lo que está haciendo? Está utilizando PlayGrid para entender en tiempo real.
+
+OK, tuvo un error, es válido, la IA se puede equivocar. OK. Pero entra en un bucle infinito que hasta que no lo termina, no va a parar.
+
+Entonces, la pregunta deja de ser una cuestión de si sí o si no y comienza a ser, ¿cuándo? Esto, yo se los aseguro, les firmo lo que quieran, a quien nos va a entregar la solución ya terminada de OneShot. Bajo este principio. Marcos Hernández, un gusto, mi estimado.
+
+Agradezco que te hayas unido por todo el año. Además, todos los que se unan en el año van a tener desbloqueadas todos los niveles desde que entran. Rogelio, bienvenido, mi estimado.
+
+Si ustedes se meten por el mes, yo tengo un sistema de niveles para fomentar, evidentemente, la participación. A medida que ustedes vayan avanzando en la comunidad, ¿cómo suben de nivel? Aportando valor. ¿OK? Ustedes, a la pena de entrar, van a desbloquear a Trinity.
+
+Trinity es nuestro agente de atención al cliente que responde en tiempo real cualquiera de sus preguntas. Miren, este es Trinity, tu guía de onboarding 24-7. Ella te va a responder todas tus dudas y va a tener acceso a los seis módulos base.
+
+Levi, mi agente estratega de negocios, el cual les he compartido el system prompt. Si se unen en esta masterclass, directamente con el código SaaS Factory, van a tener acceso al system prompt de Levi por detrás. Sí, Levi es mi agente estratega de negocios.
+
+Pueden buscarlo directamente desde aquí. Perdón. Levi.
+
+Este es mi agente estratega de negocios. Levi, ¿cómo estás, hermano? Rubén García, bienvenido. Agradezco que te hayas unido por todo el año.
+
+Quiero que noten la velocidad de respuesta. Todo esto que están viendo, yo se los voy a enseñar. Les voy a enseñar las mejores prácticas para construir estas cosas, totalmente transparente por detrás como lo hicimos.
+
+¿En qué estamos hoy? Tienes una oferta que pulir, un avatar que definir, o estás perdiendo tiempo en un SaaS B2C que no te va a dar cash flow hoy. Suéltalo, hermano. Menos plática, más volumen de trabajo.
+
+De nuevo, si quieren entender la lógica en el system prompt por detrás de este agente, se las comparto. OK, para aquel que se está preguntando, Daniel, ¿de dónde sacaste ese system prompt? ¿Por qué me importa? ¿Por qué es valioso? Y les digo de dónde lo saqué. Les doy una experiencia que tuve.
+
+Hace mucho, unos 2 años, cuando estaban estos de los GPTs, cuando apenas surgieron, había un Ramón Fajardo. Bienvenido, mi hermano. Un gusto.
+
+Había un GPT de Alex Ormosi, al cual le pude extraer el sistema. En aquel momento, como los modelos eran relativamente tontos, le pude extraer el system prompt por detrás. Hernán Serrano, un gusto, mi estimado.
+
+Felipe Aranda, un gusto. Agradezco que te hayas unido por todo el año. Le pude extraer el system prompt a Alex Ormosi, a aquel GPT, y se lo inserté a Levi.
+
+Roberto José, un gusto, mi estimado. Agradezco a todos los que se están uniendo. Agradezco que se hayan unido por el año.
+
+Yo les juro, se les aseguro que no van a encontrar mejor inversión. Y no se las digo, Martín Vega, bienvenido, hermano. No se las digo yo, o sea, ya somos 323.
+
+Quiero que vean lo que los propios miembros están diciendo. Esto fue del último post, de ayer a hoy, nada de esto está planeado. Esto es 100% orgánico, transparente.
+
+Quiero que lean a Elito Nativo. Gracias, Daniel. Es una superplataforma, gran familia de fundadores.
+
+Haremos grande a esta comunidad con tu guía. Saludos a todos. Claudio, gracias a vos.
+
+Realmente fue un honor encontrarte. Bienvenido a Alexis, Eduardo. Fue un honor encontrarte y poder participar de esta experiencia y de tu grandeza.
+
+Saludos, esta será la gran comunidad. Gustavo, Daniel, es un honor. Gracias por abrirnos las puertas de este Ferrari tecnológico.
+
+En apenas un mes, SaaS Factory, Marga García, bienvenida. Agradezco a Andrés Felipe. Bienvenidos a todos.
+
+En apenas un mes, SaaS Factory me ha demostrado que es la infraestructura crítica para la era del software agéntico. Desde el Vive Coding en Antigravity, esto es lo que más valor me ha aportado. Número uno, tu metodología nos sacó de las telarañas de automatizaciones frágiles.
+
+Bienvenido, David. Bienvenido, Alfonso. Agradezco a todos.
+
+Mi gente, de verdad, lo aprecio mucho. Poder atómico. Estos no fueron comentarios míos, de verdad.
+
+Son testimonios 100% de miembros de la comunidad. Estamos diseñando skills con lógica de self-healing. Lo que viene, estamos listos para el salto a la singularidad del SaaS.
+
+Gracias por la visión y por empujarnos a dejar de jugar con juguetes. El shipping no se detiene. Andrés Quintana, bienvenido.
+
+Bienvenido, hermano. Israel Carrión, bienvenidos a todos. De verdad.
+
+Además, es cierto, esta oferta de miembros solamente va a durar tres días. Quiero que vean el calendario del contenido. Por una parte, cualquiera que tenga problemas, el miércoles vamos a tener una clase con Jero Cuevas.
+
+Jero Cuevas nos va a enseñar a instalar la SaaS Factory desde cero, en vivo. Y el jueves van a tener una llamada, vamos a tener nuestra llamada de bienvenida en el calendario. Vamos a dar la bienvenida a todos los nuevos miembros.
+
+Esta oferta va a durar tres días. Para todo aquel que no pudo ingresar al en vivo, que es entendible porque tiene, no sé, es lunes, tiene trabajo, lo que sea, esta sesión va a quedar grabada y solamente va a durar tres días, de nuevo, como agradecimiento a todos ustedes. Luego de esto, la oferta va a terminar, va a quedar abierta, las puertas las vamos a abrir de forma definitiva, pero va a subir a 39 dólares.
+
+Eduardo, bienvenido. Agradezco que te hayas unido por todo el año, mi estimado. Congelado nuevamente.
+
+Perdón, otra vez. Va de nuevo. Y miren, de nuevo, de verdad, no son solo mis palabras.
+
+Ahorita vamos a leer lo que les compartí, ¿cierto? Yo les compartí los testimonios y en tiempo real, 100% transparente, les voy a leer lo que los miembros están diciendo. Mientras tanto, ¿ya terminó nuestra guía? Miren, ya creo el repositorio y pusheado. Ahora hago deploy a Vercel.
+
+Ya lo está mandando a Vercel incluso. La aplicación la van a tener en servidores reales y yo les voy a compartir el link para que no solo lo vean en mi pantalla, sino incluso intenten acceder a él. Luis Portolés, bienvenido, hermano.
+
+Estamos haciendo historia con esta comunidad. Daniel Alderete, bienvenido, mi estimado. De nuevo, el miércoles van a tener una clase especial con Jero.
+
+Nos va a enseñar a instalar la SaaS Factory para aquel que no tiene experiencia. De todas formas, tienen un curso paso a paso y todo esto que están viendo en vivo, Julián Botia, agradezco que te hayas unido por todo el año, mi estimado. Todo esto que ustedes están viendo en vivo lo van a tener.
+
+Lo tienen bien desmenuzado, bajo la tierra. No les voy a enseñar 3 meses de Python. Directamente vamos a descargar la SaaS Factory y vamos a crear nuestra primera aplicación de OneShot.
+
+Incluso el mismo prompt que les compartí luego de tener la fábrica, hagan la misma prueba y creen su misma aplicación de reservas. Esta aplicación, y no les voy a mentir, Miguel, Miguel, miembro de la comunidad, pudo venderle a un médico, una aplicación por 4,000 dólares, una aplicación de reservas, 4,000 dólares. Y es lo mismo que estamos haciendo ahora mismo, lo mismo que una guía está haciendo ahora mismo, ¿sí? Ya que termine, les voy a compartir la URL.
+
+Me queda la, Carlos, Oscar, bienvenidos. Edwin, bienvenidos a todos mi gente. Estamos por hacer historia, se los prometo.
+
+Ricardo Hernández, bienvenidos, hermano. Estamos por hacer historia. No me queda la menor duda.
+
+Quiero que vean, no quiero que se queden solo en palabras mías, esto es una realidad. Miren a Miguel, plataforma de reservas en producción, es un gusto enorme poder compartir con ustedes nuestro primer caso de éxito, logrado apenas en 24 horas después de recibir las instrucciones para crear la SaaS Factory. Gracias, Daniel.
+
+Sinceramente, tu enseñanza está marcando un antes y un después en el rumbo de la empresa. Alejandro, bienvenido. Esto es apenas el inicio de un cambio mucho más grande.
+
+El proyecto de reservas quizá fue el más sencillo de implementar frente a las múltiples solicitudes que hoy tenemos con nuestros clientes. Sin embargo, haber concretado este primer paso es invaluable para nosotros. Jesús Palafox, bienvenido.
+
+No quiero que se queden solo con las palabras de Miguel. Último proyecto, incluso Jorge Torres nos comparte lo que creó su propia aplicación con la propia SaaS Factory. Miren, incluso ya le metió un agente, un botón de WhatsApp de soporte.
+
+Bienvenido, Manuel, a todos, de verdad. David Machado, quiero que vean esto. No se va a quedar solo en testimonio, o sea, no se va a quedar en teoría.
+
+Mi primer proyecto, gracias, Daniel, y a la comunidad. Nos compartió sus resultados. José Rodríguez, Iván Barón, Manuel Alejandro, bienvenidos a todos, mi gente, de verdad.
+
+Miren lo que hizo esta persona. Manuel Machado logró crear una campaña de marketing, conectó a la API de WhatsApp. ¿Por qué creen que yo les digo que ya no necesitamos N8N? Bienvenidos, Carlos, José Rodríguez.
+
+Iván conectó la API de WhatsApp e hizo todo esto. Quiero que vean, no voy a decir palabras que su aplicación hable por sí solo. Aplicación de reservas en WhatsApp, tiene el CRM integrado, plantillas, mensajes.
+
+Esto es una locura. Y esto lo creó con la misma SaaS Factory. Benjamín, bienvenido.
+
+Quiero que vean esto. He desarrollado un sistema de marketing para WhatsApp que permite enviar campañas masivas a números de WhatsApp, utilizando la API oficial de Meta. Tiene conectado un agente SDR con opinión de Andoni Luna.
+
+Bienvenido. El sistema trabaja con las plantillas aprobadas por Meta. Todo esto es ideal para hacer remarketing a listas de prospectos u ofertas.
+
+Esto lo construyó David, no sé en cuánto tiempo, probablemente fue menos de una semana, y todas las opiniones de la gente. Todos los miembros felicitándolo. Eric consiguió sus dos primeras ventas.
+
+Anaís Sida, bienvenido, mi estimado. Eric consiguió sus dos primeras ventas. Nos comparte la captura de su agente.
+
+Parece ser que es para inmobiliarias de su software. José Jiménez, de comprador a creador. Mi propia revolución con IA.
+
+Nos compartió sus creaciones. Luis Trujillo. Luis Trujillo, gran miembro de la comunidad.
+
+Ya ha creado varias aplicaciones. Quiero que vean esto. Zelandia.
+
+Esto ya es una realidad. Por favor, no dejen que ningún desarrollador les diga que esto no es posible porque son creencias limitantes. Y desarrolladores, no me odien, pero es que ya es una realidad y tienen que ponerse las pilas.
+
+¿Qué más evidencia quieren que esto? Miren esto. Que no se queden mis palabras. Quiero, uy, uy, se congeló otra vez.
+
+Mala suerte, mi gente. Mala suerte. Ahora sí.
+
+Perdón. Miren esto. Desarrolladores, no me odien, por favor.
+
+Yo sé que, miren lo que me construyó la propia IA. Dice, fase de infraestructura, se tardó 2.5 minutos. La autenticación, 0.5 minutos.
+
+La base de datos, menos de un minuto. La UI completa, menos 8 minutos. Seed data, 2 minutos.
+
+La validación end to end, 9 minutos. Y el deployment, se tardó 5 minutos. En 28 minutos, creamos una aplicación end to end.
+
+Quiero que vean esto. Espero que les vuele la cabeza como a mí. Ya está en producción.
+
+Ya pueden acceder a ella. Les voy a compartir este link. Déjenme lo copio.
+
+Quiero que ustedes me digan qué opinan de esto. Edgardo, bienvenido. Agradezco que te hayas unido por todo el año.
+
+Rafael Mercedes, un gusto, mi estimado. Quiero que vean esto. Este es el sistema en producción.
+
+Esta es la URL. Se la voy a compartir en tiempo real. Quiero que ustedes me digan si esto es humo.
+
+A ver, espérame que dejé de ver la transmisión en YouTube. No sé qué hice. Aquí está.
+
+Perdón, aquí está la transmisión. Quiero que vean esto. Esto lo voy a mover para acá, para que no tenga problema.
+
+Esto es lo que nos creó la aplicación de OneShot. Honestamente, déjenme en los comentarios, si ustedes creen que esto es humo, ¿cuánto creen que el mercado está dispuesto a pagar por esto a día de hoy? Jack Martínez, bienvenido, mi estimado. Agradezco que te hayas unido por todo el año.
+
+Quiero que vean esto. Everett, por favor, ¿a qué se refiere ese mensaje? Joan Serra, bienvenido. De OneShot, creamos una aplicación de reservas para médicos que a día de hoy están valoradas por miles de dólares.
+
+Le hicimos de OneShot. El lado técnico ya no es un problema. Evidentemente, el problema ahora es solo de las ventas.
+
+Miren esto. Ustedes pueden acceder a través de este correo, doctor.medicinc.com y la demo. Demo 1, 2, 3, 4 es la contraseña.
+
+No debería compartir la contraseña porque pueden hacer cosas malas desde dentro de la aplicación, pero, bueno, la hicimos de OneShot, entonces, no hay tema. Ustedes ya pueden acceder a esta URL si yo le doy en iniciar sesión, aplicación de login. Esto se lo voy a pegar en, miren, se lo voy a pegar en los comentarios.
+
+Y esa es la aplicación que creamos de OneShot. Ahora la vamos a explicar en vivo. Bienvenido, riquísimo, Palenque.
+
+¿Pueden ver que estas cosas podemos construirlas de OneShot? Quiero que vean esto. Inicio. El médico tiene un inicio que le muestra un dashboard de su plataforma, las próximas citas pendientes y un panel, un panel principal del negocio.
+
+Una agenda, ¿sí? Una agenda que le permite dar un calendario a modo de calendario o a modo de lista. El calendario le permite organizar sus próximas citas. Incluso, yo le puedo dar click aquí, miren, nueva cita.
+
+Si yo le doy al paciente, tiene un sistema de pacientes por detrás, ¿OK? Servicio, no sé, imagínense, 75 dólares, fecha 05.07 del 2026. La hora, 10.00 AM. Crear cita.
+
+Bueno, espérense, es que lo creé en el, vamos a ponerlo en el domingo, ¿OK? 22 de febrero, domingo. Por cierto, bienvenido a los nuevos que se unieron. Miren, vamos a ver si el sistema está funcional.
+
+Supongamos que el médico le añade la cita a Diego Ramírez. Sistema de reservas por 65 dólares. Y la fecha 10, ¿cierto? 22, ¿cierto? Otra vez.
+
+22.02 del 2026. Uno, sí, 2026. Hora, 10.00 AM.
+
+Crear cita. Automáticamente se nos registró. Funciona correctamente la interfaz.
+
+Y esto lo hicimos de one shot, ¿sí? El médico puede registrar sus citas. Puede ver todas las citas. Bienvenido a Vimelek Navarro.
+
+Puedo ver todas las citas. Puede ver las citas pendientes con sus clientes. Puede ver a sus pacientes.
+
+Miren esto. Sí, tiene una lista de todos sus pacientes. Juan Carlos, Ana Sofía, Pedro Martínez.
+
+Puede ver. Puede ver a cada uno de sus pacientes. Miren esto.
+
+El email de su paciente, la fecha, las alergias, notas. Y esto, si no tienen el correo electrónico, no van a poder acceder. Quiero que me respondan.
+
+A todo aquel que piense que esto no tiene seguridad, intente hackearlo. Hackeélo como guste. No tenemos problemas.
+
+Ya les compartí la URL en Brazil. Intente hackearlo. Dígame de qué forma puedo atacar esto.
+
+Como guste, de verdad. Una aplicación de OneShot, ¿no les duele la cabeza esto? Esto en el pasado hubiera, se los juro, esto a día de hoy, el mercado sigue pagando decenas de miles de dólares. A aquellos que preguntan, ¿user? Les comparto nuevamente el usuario para que ustedes prueben la aplicación nuevamente por acá.
+
+Miren, aquí pueden ver esto. Listo. Ahí les compartí el correo para ingresar con el user y el password para poder acceder a la plataforma.
+
+Esto a día de hoy son servicios que el mercado sigue pagando, se los juro, por miles de dólares. No estoy bromeando. Otra vez se congeló.
+
+Bien. Gracias. Estoy leyéndolos en los comentarios a todo momento.
+
+Otra vez. Tenemos la aplicación en servidores reales, en la nube. Todos ustedes pueden acceder a esto.
+
+Tiene un sistema de autenticación. Miren esto. Si yo le pongo mi correo y no estoy autenticado, daniel, arroba, gmail, punto com, inicio contraseña, iniciar sesión, no entro.
+
+Funciona bien la autenticación. Solo el médico puede entrar a su sistema de reservas. Incluso, si mal no recuerdo, el sistema tiene un sistema de permisos.
+
+Miren, yo puedo crear una cuenta guardada. Puedo crear la cuenta con el correo. Vamos a poner mi correo, daniel, carreong00, arroba, gmail, punto com.
+
+Y vamos a crear una contraseña. Testing. Testing.
+
+Javier Arias, bienvenido, mi estimado. Miren esto. Crear cuenta.
+
+OK. Estoy repitiendo aquí. Incluso funciona bien esto, ¿no? Crear cuenta.
+
+OK. No puedo ingresar el correo porque solamente el médico con el correo correcto puede ingresar, ¿no? Es un sistema de autenticación. Y cualquier mejora, con un prompt, se los prometo, no dejen que les digan lo contrario porque los va a limitar.
+
+Los modelos Codex 5.3 y Opus 4.6 ya son una maravilla. Y quiero que piensen esto. Si la velocidad de Opus 4.6 ya en la API está por 2.5, significa que el día de mañana esto ya no lo voy a construir media hora, lo voy a construir en 15 minutos.
+
+En 10 minutos. David Pérez, paso, bienvenido. Por eso les comento, evidentemente esta ventana de oportunidad se va a cerrar porque si estas cosas están creciendo a esta velocidad, cualquiera va a poder crearlas, ¿no? Y si cualquiera puede crearlas, el precio eventualmente se va a volver un commodity donde cualquiera va a poder construir estas cosas.
+
+Pero a día de hoy, si tomas acción, la ventana sigue abierta para todos nosotros. El mercado es inmenso. Espero haberles demostrado con los hechos todo esto.
+
+Espero que puedan ver. Quiero que ustedes me definan, ¿creen que esto es humo? Honestamente, con lo que están pudiendo ver en vivo, con lo que los miembros están opinando, ¿no? Armando Pérez logró su primera aplicación de alquiler vacacional. Luis, creo que a Manuel, Manuel de 16 años, pudo crear su primera aplicación y venderla.
+
+Es un sistema de finanzas para el negocio familiar. Está bastante bueno, en mi opinión. Ismael Chacón, sin nunca haber tocado una línea de código.
+
+Sebastián, claro que sí, les comparto cómo pueden sacarle el máximo jugo a la SaaS Factory. Rankina, bienvenidos. Bienvenidos a todos mi gente.
+
+Quiero contarles una anécdota. En el prelanzamiento, probablemente los que estén acá, en el prelanzamiento se nos cayó la plataforma. Empezamos a entrar como de a 100 personas, 150 personas y la aplicación no resistió, ¿sí? Me queda el aprendizaje y es, en aquel momento también he de decir que lo creé con el modelo Opus 4.5, que era una versión más baja, pero en el código no estábamos siguiendo mejores prácticas.
+
+Entonces, en pocas palabras, hacíamos muchas llamadas a la base de datos, lo cual llegó a un rate limit rápido. Y para solucionar ese problema, tuve que pasarme al siguiente, digamos, servidor, a las siguientes capacidades de un servidor. Ya quedó solucionado.
+
+Muchos en YouTube, recuerdo, me dicen, Daniel, no funciona en tu lanzamiento. Esto se te cayó la plataforma. Pero es eso.
+
+A la velocidad que construimos, también iteramos y resolvemos errores. Entonces, tan fácil como en aquel momento se nos cayó la plataforma en vivo, lo que hice fue copiar ese error, pegarle la captura de pantalla a la IA, investiga a fondo qué fue lo que pasó y resuélvelo. Y así es como logramos hacerlo en tiempo récord.
+
+Esta misma plataforma, que, por cierto, olvidé mencionar, mi gente, yo sé que son muchas cosas, disculpen, sí. David Martínez, hicimos un Google Meet en un día. Un Google Meet en un día.
+
+Miren esto. Todas las llamadas que nosotros tengamos en el calendario no van a ser un software, digamos, no va a ser un Google Meet, no va a ser Zoom. Eso es anticuado.
+
+¿Qué tal si mejor utilizamos software propietario? ¿A qué me refiero? Miren esto. Espero que no se active el trigger, pero miren, yo puedo iniciar una llamada. ¿Quiero que vean esto? Todavía no se ha congelado la pantalla, excelente.
+
+Quiero que vean esto. Creamos un Google Meet con esta misma metodología. Y un aprendizaje que me llevo es, no dejen que nadie les diga que no se puede.
+
+Aquel momento fue pensar en primeros principios, OK, para construir una aplicación de Google Meet, ¿qué necesito? Probablemente lo más complicado sea el procesamiento. Pero si yo pago ese procesamiento en un VPS, nada me limita. Entonces, fue lo que hice.
+
+Quiero que vean esto. Creé un sistema de llamadas a través de Google Meet. La última llamada que tuvimos, la tuvimos desde esta plataforma con mi propio logo, congelado otra vez.
+
+Agradezco sus comentarios nuevamente. Otra vez, otra vez, otra vez, otra vez. Ahí vamos resolviendo, resolviendo.
+
+Listo. Perdónen. Creamos un Google Meet en un día.
+
+Esto futuro, se los juro, de febrero 5 para acá, todo esto cambió. Cambió las reglas del juego. Y el futuro que se viene va a ser súper turbulento.
+
+Confío que en comunidad podemos salir adelante. Podemos estar todos a la vanguardia. Podemos tener una rebanada de este pastel inmenso que se viene.
+
+Pero, evidentemente, la ventana está por cerrarse en relativamente poco tiempo. Cuando la mayoría de las personas puedan construir estas cosas, cuando dejen de negocio, puedan construir estas cosas, ¿qué nos va a hacer especiales? No lo sé, pero por eso es que ahorita es cuando tenemos que accionar. Otra vez se congeló.
+
+Fuck. Sí, el video quedará grabado. Gracias, Diana.
+
+Bien. Ahorita vamos a responder todas sus preguntas. Natalie Correa, bienvenido.
+
+Bienvenida. Qué gusto. Además de eso, además de haber quedado el Google Meet, quiero que vean esto.
+
+Yo puedo grabar la sesión y, uy, se cerró la plataforma. Aquí queda esto. SaaS Factory, vamos a cerrar esto, vamos a cerrar todo lo que tengo abierto.
+
+Ah, miren, recuerdan lo que les comenté, de todos los que se unan a la normal, van a tener, les voy a enseñar cómo configurar sus Open Cloud y cómo configurar un sistema de gestión de agentes. Tú no tienes que ver esto desde el frontend, los agentes por detrás se comunican entre ellos y ellos van moviendo manualmente las tareas. Quiero que vean esto.
+
+Si esto lo configuró Levi, mi agente en Open Cloud, no les digan que Open Cloud no sirve. Es que hay que tener mucho cuidado con las opiniones. Yo confío más en aquella persona que experimentó y a partir de ahí opina.
+
+Bueno, ¿a qué me refiero? Open Cloud es súper funcional. Ya más adelante les voy a hablar de estos agentes en mi servidor VPS. Les voy a decir, excelente, hermano, puedes mover esa tarea como terminada, ya la terminamos.
+
+Ahí, incluso las cosas que los agentes puedan hacer por detrás. Eventualmente vamos a crear un sistema donde ellos puedan completar tareas sin que yo tenga que estar en el medio o mi novia o el editor de video. Nuevamente, ya para terminar de compartirles todo, les iba a compartir algo más.
+
+OK, la aplicación creo que ya vieron que podemos hacerla en tiempo real. Ya la voy a cerrar para que no nos genere molestias. Ya ustedes pueden acceder a la URL.
+
+¿Recuerdan? Ya la voy a cerrar. Creo que ya está de más decir que es posible. Voy a cerrar todo esto.
+
+Mooblex Colombia, bienvenido, mi estimado. Qué gusto tenerte por acá. Aquí solucionando el tema de OBS, yo les recomiendo tengan un espacio de trabajo limpio, porque con tantas cosas es bien fácil perderse.
+
+Ahí vamos a dejar a Levi trabajando. Otro problema que resolví con la SaaS Factory. Vamos a cerrar todo porque no quiero problemas.
+
+Ah, mira, Luciano, bienvenido por todo el año. Luis Chacón, por todo el año. Araceli Tapia, bienvenidos.
+
+Qué gusto tenerlos a todos. Perdón que ya estoy un poco cansado, pero bien agradecido con todos ustedes. Somos ya 373 personas.
+
+Creo que en habla hispana no he visto algo similar. ¿Este programa está diseñado para principiantes? Sí, completamente. Completamente.
+
+Yo les voy a enseñar cómo construir sus primeras aplicaciones, incluso si no han creado ninguna aplicación. Pueden ver los testimonios de miembros dentro, como Manuel. O sea, Manuel tiene 16 años.
+
+No pueden decir que tiene años de experiencia en esto. ¿Saben? Con 16 años creó su primera aplicación y la vendió. Sí.
+
+Guillermo Acevedo, bienvenido, mi estimado. Ismael creó su fábrica. Para todos aquellos que vayan entrando, pueden ir conversando con los miembros fundadores dentro de la comunidad.
+
+Cualquier cosa, ahí estamos al pendiente. Miren. Les voy a responder a todos ustedes.
+
+Miren, AdeptTest, la aplicación que construyó. Sí. Felipe Reinven, bienvenido.
+
+Miren lo que construyó con la SaaS Factory. Sí, esto ya es posible. No dejen que les digan que no, por favor.
+
+¿Qué se puede esperar con esta SaaS Factory? Bien, hermanos, realmente este es mi primer post en esta plataforma. Ah, miren. Eric Segoviano nos compartió su primer logro.
+
+A ver, vamos a verlo. Deja de intentar ponerte en forma, aprende a pelear con tus objetivos. Esto lo creo con la SaaS Factory.
+
+Bienvenido, Natalia. Bienvenido, Francisco. Miren, aprende a pelear por tus objetivos.
+
+Uy, espero que no se haya quedado congelado porque es un poco molesto, ¿no? Danny Boy. Bienvenido, Juan Andrade. Qué gusto, estimado.
+
+¿Algo que nos inscribimos en el plan mensual? ¿Algo para lo que nos inscribimos al plan mensual? ¿O es solo para los? Sí, miren, para todos los que se metieron al plan mensual, deben saber que tienen acceso al sistema de niveles. Ustedes pueden acceder a los premios del leaderboard. Van a poder acceder a ellos subiendo de nivel, ¿OK? Participando, aportando valor.
+
+Van a desbloquear a Levi, el agente estrategia de negocios, en el nivel 2. 5 puntos. Simplemente es con presentarte, con los me gustas de los demás, los que te demos, vas a subir de nivel al nivel 2. Al nivel 20, a los 20 puntos, vas a tener nivel 3, ¿sí? Bienvenido DMF, DFMH, bien bajo de 2025. Vas a desbloquear a un tercer agente al llegar al tercer nivel.
+
+El Marketing OS, que yo ya les estoy compartiendo de forma gratuita, que desbloquean al nivel 4. Al ustedes entrar en esta masterclass, luego de la masterclass voy a hacer esto privado, lo van a desbloquear simplemente enviándole la contraseña a Trinity, ¿OK? Le envían SaaS Factory 2026, les voy a enviar esto y ustedes al abrir el link van a poder acceder al repositorio de la arquitectura de marketing. Una vez ustedes entiendan, William, bienvenido, mi estimado. Una vez ustedes entiendan cómo, uy, ya cerré antigravity.
+
+Una vez ustedes entiendan utilizar antigravity, utilizar un repositorio de código, Ricardo Aguilera, agradezco a mi hermano todo el año, lo agradezco. Agradezco a todos ustedes. Perdón, es que es bien fácil distraerse con todo esto.
+
+¿En qué me quedé? OK. La base de datos ya vieron en tiempo real cómo la construimos. Quiero que vean lo que modificamos.
+
+Miren las tablas. Appointments, Medical. Esto lo creó la gente por detrás, ¿sí? Creó las notas del médico, los pacientes, los pagos, los perfiles, los servicios.
+
+Esto ya está creado. Y ustedes tienen acceso a este System Prompt, ¿OK? ¿Está congelado? Otra vez. Uy, mi gente, se los juro, ya es difícil esto de OBS.
+
+Perdone. Otra vez. Bienvenido, Ricardo, por el año.
+
+Lo agradezco, mi gente. Para el que preguntó si hay obsequios en el plan mensual, sí. O sea, el sistema de niveles tienen acceso a él.
+
+Los cursos también tienen acceso a ellos, pero se les va a desbloquear al segundo mes y al tercer mes. Honestamente, para el primer mes, lo único que necesitan es el primero, ¿sí? Para construir sus aplicaciones, desarrollar la habilidad. Y una vez que empiezan a construir sus primeras aplicaciones, como estábamos leyendo de Eric Segoviano, ahora vamos a seguir leyendo.
+
+Jordi, bienvenido y estimado, agradezco. Un saludo igualmente. Alejandro.
+
+Miren, Alejandro Ángel Golindano. Bienvenido. Alejandro nos compartió su primera aplicación.
+
+Quiero que vean esto. Sí. Con el System Prompt que les compartí, Alejandro ya construyó su primera aplicación, pero la personalizó de color azul.
+
+Interesante, ¿no? Gracias por compartirme el prompt para crear mi primera app. Ya pude validar que funciona y funciona de maravilla. Saludos.
+
+Saludos, Horacio. Yo también soy de Guadalajara. Miren, Dev2Test nos compartió su aplicación.
+
+Eric Segoviano nos compartió su aplicación. Miren esto. Deja de intentar ponerte en forma, aprende a pelear por tus objetivos.
+
+Prueba el entrenamiento de los profesionales adaptado a ti. Está interesante, ¿no? Miren esto. Me gusta el diseño, ¿eh? Felicidades, Eric.
+
+Me encanta demasiado el diseño que le metiste. Miren esto. A ver, ¿estás por aquí, mi buen Eric? Hoy no te encuentro.
+
+Bueno, me encanta, ¿eh? Me encanta. Bienvenidos a todos. Vamos a darle me gusta a todos.
+
+Con cinco me gustas suben de nivel. Es bien fácil subir de nivel. ¿Cómo conectar a Levi? Miren esto.
+
+Incluso pueden referenciar y etiquetar a los agentes desde los posts. Armando lo etiquetó y Levi le contesta, ¿qué onda, Javier? Bienvenido al equipo. Ya me invocó Armando, así que estoy.
+
+Soy Levi, estratega de negocios. Mi trabajo aquí no es que sueñes con ideas bonitas, sino que ejecutes y construyas un negocio. Y para romperla, olvide de vender código Corona o de crear el próximo Facebook para perros.
+
+Aquí venimos a construir agencias de activos de dos. Posa el software como un caballo de troya para resolver problemas reales a negocios que ya tienen dinero. ¿Cuál es el plan? Uno, regla uno.
+
+Otro cliente, un sol producto, un sol canal. No te distraigas. Dos, velocidad, mejor es mejor que nuevo.
+
+Implementa rápido con sales, y más. Factor 3, apalancamiento de trabajar más horas y empiezas a usar código AI para multiplicar tus resultados. Dime, Javier, ¿ya tienes un nicho en la mira o estás de centro de una vez? Creo que el software habla por sí mismo, ¿no? Y es que, miren, piénselo de esta forma.
+
+Actualmente hay mucha gente allá afuera hablándoles de aplicaciones, hablándoles de antigravity, del potencial que tiene esto, pero te meten a una comunidad de school. ¿No les parece irónico? O sea, te enseñan a construir aplicaciones, pero su negocio es, te invito a mí, métete a mi comunidad. Acá predicamos con el ejemplo.
+
+Todo esto es software propietario. Temas de cobros, yo se los voy a enseñar con la misma metodología que están viendo con la que ustedes pagaron por entrar, yo les voy a enseñar cómo hacerlo. Temas de autenticación, bases de datos, todo eso también se los muestro desde aquí.
+
+Creo que la propia aplicación predica con el ejemplo. Construimos un Google Meet en un día y les iba a compartir, pero se me olvidó. Bueno, también, miren, tengo un panel de administrador.
+
+Esto no debería demostrarlo, pero pueden verlo. En el panel de administrador, yo puedo gestionar a mis agentes de IA. Aquí yo puedo gestionar el system prompt de cada uno de ellos.
+
+Les quería compartir, sí, tema de las videollamadas. Miren esto. Las videollamadas, todas están recopilando tipo Fatum, ¿OK? Entonces, nosotros ya la pusimos en práctica a la plataforma y funciona.
+
+Gracias, Chula, y avísame cuando pase eso. Miren esto, ¿sí? Nosotros tenemos un sistema de Fatum. Perdón, perdón porque se congela.
+
+No va a volver a ocurrir. Este es el último lanzamiento que voy a hacer en muchos meses, se los prometo. Ya luego de esto, luego de tres días, el precio de la comunidad va a subir a 39 y se va a quedar con puertas abiertas, ¿vale? A ustedes como agradecimiento van a tener el precio a $29 de por vida, ¿sí? Ahora sí, lo que les mencionaba, tema de las grabaciones.
+
+Tengo, no solo es un Google Meet, es un Fatum, ¿no? El Fatum me registra a mí el transcript y todo esto lo logramos en un día. Sé que suena increíble de creer, pero es que son los modelos actuales que tenemos. Esto ya estamos en el futuro.
+
+Bienvenido, Martín Arregui. Bienvenido, mi estimado. ¿Sirve para aplicaciones de agentes de voz? Sí.
+
+Sirve para lo que se imagina. Para lo que se imaginan sirve. Incluso quiero que vean esto.
+
+Yo le metí a agentes de inteligencia artificial justo por detrás. Arnold Isaac, bienvenido a la plataforma. Un gusto a todos.
+
+Ya somos 385 personas. Qué impresionante. La familia crece.
+
+Es correcto, Jesús. Vamos a hacer historia en habla hispana. Marcos y Mercedes, mi gente.
+
+Qué gusto verlos por acá. Qué gusto tenerlos por acá. OK.
+
+Ahora sí, ya les compartí todo lo que tenía que decirles. Ya creamos una aplicación de OneShot. Ya les enseñé la recursividad agéntica y cómo todo esto es posible.
+
+¿Qué más hace falta? Ya en tiempo real les compartí la plataforma. Les compartí los casos de éxito de los propios miembros. ¿Qué más? Este, de nuevo, recordatorio, este miércoles, Jero nos va a enseñar.
+
+Jero es un gran profesor, un gran miembro de la comunidad. Nos va a enseñar a instalar la SaaS Factory. Muchas gracias, Jero.
+
+Nos va a enseñar desde cero, para todo aquel que no sepa, con antigravity, por si se lo están preguntando. Leon Reed, bienvenido. Nos va a enseñar a cómo configurar la SaaS Factory.
+
+Este, y ya. Ahora sí, mi gente, es todo lo que quería compartirles. Muchas gracias a todos.
+
+Los leo en los comentarios. ¿Sí? Este, déjenme, me levanto un poquito que ya, uy, está veloz el chat. A ver, voy a responder las preguntas que pueda, las que alcance a ver.
+
+Dice, no me queda claro cómo hace las automaciones que haces en N8n. Mi duda es si sigues combinando N8n o ni siquiera eso. Y eso es una buena pregunta, Daniel.
+
+Es que, miren, actualmente, a mí en lo personal, me parece muy ineficiente hablar de N8n. Porque con código, tú ya puedes hacer todo lo que te imagines. Estos agentes de ahí a por detrás ya se encargan de eso.
+
+Si tú le copias una automatización de N8n y se la pegas a un agente como Cloud Code o Codex 5.3, te van a reescribir esa automatización en código. Van a buscar en la web aquellas APIs que hayas creado. No sé, imagínate.
+
+Por ahí vimos un miembro que conectó la documentación de WhatsApp. Cualquier API que te imagines que pudieron conectar en N8n, puede hacerlo desde código. La pregunta deja de ser, ¿es posible? Y siempre que me hacen esa pregunta, yo les cambio la pregunta.
+
+Siempre me preguntan, Daniel, ¿qué puedo hacer con N8n que no puedo hacer en la SaaS Factory? Y yo les respondo, al contrario. ¿Qué puedes hacer desde código que N8n no te permite? Véanlo con esos lentes. Voy a seguir respondiendo esas preguntas.
+
+Jorge Romero, bienvenido, mi estimado. ¿Vas a pasar el prompt para hacer la app? Sí, les voy a pasar el prompt. A ver, les voy a compartir este.
+
+Miren, para todos los que están dentro, ya pueden ingresar. Para todos los que no han podido ingresar, aquí está el prompt. Miren, se los voy a compartir.
+
+Espero que por aquí por los mensajes me permitan, porque es hiper extenso. Y no me va a permitir, men. ¿Quieren ver cómo les comparto el system prompt en tiempo real? ¿Quieren ver cómo lo logramos con la SaaS Factory? Miren esto.
+
+Voy a hacer esto. Voy a hacer una nueva ventana. Voy a abrir un proyecto.
+
+Otra vez se congeló, no importa. Perdón. Perdónenme, mi gente.
+
+Otra vez vamos a, realmente. ¿Quieren ver cómo les comparto el system prompt en tiempo real con la SaaS Factory? Bueno, vamos a crear una carpeta. Voy a crear este prompt, app, reservas.
+
+Le voy a dar en abrir. Le voy a crear un nuevo archivo. Voy a dar prompt, prompt.md. Y dentro voy a pegar el system prompt, ¿OK? Command C. Luego voy a hacer Command J. Voy a ejecutar la SaaS Factory.
+
+Se va a crear esto. Y le voy a decir, voy a abrir Cloud desde aquí. Voy a decir, hermano, quiero compartirle el system prompt a los miembros.
+
+Es arroba prompt. Haz una landing page y sube la Vercel. Y carga este system prompt en un markdown file, así.
+
+Todo hazlo de one shot. Súbelo a servidores en la nube en Vercel. Y dame el link para cuando lo tengas listo, ¿vale? Para ese mismo prompt compartirlo.
+
+Así de fácil les voy a compartir el prompt para quien se quiera unir. Para todos los que ya están dentro, automatiza, bienvenido, mi estimado. Para todos los que ya están dentro, pueden acceder a la masterclass en la recursividad agéntica.
+
+Y aquí pueden acceder directamente. Yo anteriormente ya había dado dos masterclass anteriores, una en noviembre y otra en enero. Y esa es la última que voy a hacer en mucho tiempo, ¿sí? Tipo mínimo un año entero.
+
+Si quieren ver las anteriores, aquí van a tener acceso a los videos. Y la de hoy voy a cargar el video aquí para quien no pudo verla, ¿vale? O quien quiere volver a verla. Van a tener el system prompt por aquí.
+
+Tengo a mi IA por detrás trabajando en hacerles ese system prompt. Subirles en servidores el system prompt para todo aquel que no pueda unirse. Bienvenido a Automatiza.
+
+Jorge Romero, bienvenido. No recuerdo si te di la bienvenida, pero bienvenido. Ahora sí, sigo respondiendo cualquier pregunta.
+
+¿Cuál sería el costo aproximado de cloud? Y si uso antigravity, ¿es gratuito? OK. Importante. Buena pregunta.
+
+Buena pregunta. Este, miren, con antigravity es posible crear estos software, estas aplicaciones. Pero yo siempre lo que les voy a recomendar es utilizar los modelos de vanguardia más avanzados.
+
+Y a día de hoy esos modelos son, en mi opinión y la de muchos otros, Opus 4.6 y Codex 5.3. Antigravity puedes utilizarlo como editor de código, pero yo te voy a recomendar los modelos de Antropic o de ChatGPT. Ahora, hay otros modelos muy buenos como el GLM5 que acaba de salir, que es muy similar en intelecto y capacidad. Les voy a recomendar esos modelos.
+
+En antigravity tú tienes Gemini 3 Pro, que es bueno. Puedes construir tus aplicaciones. Manuel, este chico de 16 años, nos compartió que con antigravity, de forma gratuita, creó la aplicación para su familia, para su negocio familiar.
+
+Entonces, puedes lograr lo mismo con antigravity. Pero yo les voy a recomendar, tan pronto tengan lo suficiente para invertir en los modelos más avanzados, paguen por Cloud Code. Me lo van a agradecer.
+
+Sobre todo, si estas cosas pueden venderlas por miles de dólares. Jorge Gil, bienvenido, hermano. Agradezco a todos los nuevos miembros.
+
+Si estas cosas pueden venderlas por miles de dólares, invertir $100 es el plan que yo les voy a recomendar. $100 por Cloud Code es el que me permite a mí utilizar esta cosa sin límites, prácticamente. Entiendo, si cualquiera de ustedes no tiene los recursos o no quiere pagar, es entendible.
+
+Antigravity es funcional con la SaaS Factory. Pero yo les voy a recomendar los modelos más avanzados. Y esos, en mi opinión, son Codec 5.3 y Opus 4.6. Bien, espero haber respondido.
+
+Muy bueno, mejor de lo que esperaba. ¿De qué, David? El plan de Cloud vale $100. Puedes pasarte al max, que te permite 20 veces uso, 20x más uso.
+
+Pero con el de $100, a mí me sirve y nunca me he tenido necesidad de pasarme a uno más caro. Todas las diferencias entre la suscripción anual y la mensual. Bueno, la mensual, entras, tienes acceso a los cursos, a la SaaS Factory.
+
+No te preocupes. No me gusta hacer de esos de que, aunque para tener el repositorio tienes que subir al nivel 4. Apenas, mi promesa es, apenas entres, tienes acceso desde el nivel 1 a todo el curso. Y al repositorio de la SaaS Factory.
+
+Te voy a mostrar desde cero cómo construir estas aplicaciones. Y mi garantía del primer mes es que en menos de 30 días ya la vas a tener construida. Para el mes 2, aprende cómo venderlas.
+
+Y para el mes 3, los top secrets. Si pagas el anual, apenas entrar vas a tener desbloqueado todo de primeras. Otra vez se congeló.
+
+Disculpen, disculpen. Aceptar. Si pagas el anual, vas a tener desbloqueado todo de una.
+
+David Ortega, bienvenido, mi estimado. Número 2. Segunda diferencia entre la diferencia entre los planes. Cuando pagas el anual, tú ya entras siendo nivel 6. Entonces, ya tienes acceso a los agentes, al Marketing OS.
+
+Tienes mi propia aplicación que creé para, como mi sistema de gestión de mi negocio. Ahí guardo todo mi negocio, mis ingresos, mis gastos. Y tengo un agente por detrás como agente financiero que me ayuda.
+
+Ya se los mencionaré en otro tiempo. No se los muestro ahorita porque honestamente no quiero mostrar mis gastos, mis ingresos. No me gusta hacerlo público.
+
+Número 6. ¿Recuerdan el software que les comenté que fue mi primer startup? Bueno, se lo voy a regalar al llegar al nivel 6. A nivel 7, una llamada 1 a 1 conmigo. Todos los que pagan el anual van a tener acceso a todos estos premios apenas entrar. Y el repositorio de código que es mi oferta para ustedes miembros.
+
+Este código que están viendo acá, donde yo gestiono a mis agentes, se los voy a regalar. Les voy a enseñar a cómo configurar su propio Open Cloud para que puedan alojarlo en su propio VPS y tengan un agente como yo lo tengo en paralelo. ¿Recuerdan que le dije a mi Levi que lo marcara como completado? Bueno, así es básicamente.
+
+Esto, el potencial es de que tú ya ni siquiera te preocupes por esta interfaz, porque todo mi equipo lo vamos a estar manejando desde un agente conversacional en Telegram. Que Diana le diga, oye, ¿qué trabajos tengo para hoy? Mi editor de video diga, oye, ¿qué trabajos tengo para hoy? Y esa comunicación es entre agentes internos. Eso tiene mucho futuro.
+
+Ya se los voy a compartir luego. Para los que preguntaban por el prompt, ¿cómo se los voy a compartir? Miren esto. Creamos una aplicación de reservas de OneShot.
+
+Les voy a compartir el prompt. Quiero que me digan qué opinan de esto. ¿Les parece funcional? Quien quería acceder al código, aquí tienen la aplicación.
+
+Y directamente pueden copiar el prompt con el botón que tienen aquí en la parte superior, miren, copiar prompt. Perfecto. Lo creamos de OneShot sin tantas cosas.
+
+Sí, Renzo, les voy a enseñar cómo debuggear. Van a ver que van a aprender bastante. Costo del anual, 199 dólares.
+
+199 dólares. Satisfactory funciona en Windows, correcto. Windows, Linux, Mac OS.
+
+Coste aproximado de Open Cloud con Cloud. Yo no les voy a recomendar utilizar Cloud, porque les va a salir costoso desde la API. Les voy a recomendar Quimica 2.5 o GLM 5. Desde ese sentido, yo le metí 10 dólares y tengo como una semana utilizándolo de día a día y no se me consume nada.
+
+Entonces, esos modelos yo les voy a recomendar. Quimica 2.5 y GLM 5. Son muy baratos y son muy eficientes. Funcionan.
+
+¿Qué más? Va a ser un curso de cómo montar con Open Cloud todo esto de agentes de Telegram y demás. Sí, les voy a comentar. Se los voy a traer cuando sea necesario, cuando llegue el momento.
+
+César Beltrán, bienvenido. Agradezco, hermano, que te hayas unido por todo el año. Uy, mi gente.
+
+Ya dos horas y media aquí, me duele la espalda. Cualquier pregunta con confianza. Aquí voy a estar todavía un rato, ¿va? Mi mercado es inglés, ¿podrá funcionar? Totalmente, totalmente.
+
+Incluso puedes cobrar más caro allá. Hola, el link de Trinity de la arquitectura no funciona. Sale 404.
+
+¿Lo podrías ver, por favor? Interesante. Claro que sí. Lo resuelvo ahora mismo.
+
+Lo resolvemos. A ver, si yo lo abro, me va a abrir esto, ¿no? Probablemente esté privado, pero vamos a ver. No, está público, está público.
+
+Deberían poder acceder al link de la arquitectura de marketing. Leonardo Jaring se unió a la SaaS Factory. Raymundo, bienvenido.
+
+Bienvenidos a todos, mi gente. Bien, muestro también cómo controlar el consumo de tokens en cloud. Honestamente, yo les voy a decir, si pagan el plan de $100, no se tienen que preocupar por el consumo de tokens.
+
+Van a poder consumir los que se imaginan, los que crean necesarios y van a llegar a un límite de 5 horas. Pero ese límite llega después. Se los juro que yo nunca o pocas son las veces que he llegado a ese límite y luego de 2 horas se me desbloquea y puedo volverle a dar uso bien cabrón.
+
+Yo les voy a recomendar todo lo que hemos construido. Llevamos probablemente más de 20 aplicaciones creadas. De hecho, pueden ver cómo creamos una aplicación de OneShot sin quererla.
+
+Tienen el link por si quieren acceder al System Prompt. Fue mi promesa. Entonces, ahí lo tienen.
+
+Desde el inicio se explica cómo armamos nuestra estructura tecnológica. Al contrario, la SaaS Factory ya te baja a tierra toda la tecnología que necesitas. En lugar de tú tener que decidir qué usar como Tailwind, que Next.js, que Zupa, eso ya está bajado a tierra desde el principio para que tú no te preocupes por eso.
+
+Tú te preocupas por el qué y el por qué. La IA se encarga del cómo. Espero con ansias.
+
+Gracias, Bryce. Gracias, Bryce. Sí, lo vamos a traer.
+
+Apenas abramos las puertas, les voy a enseñar un curso de Open Cloud. Esto es una maravilla. Open Cloud es una maravilla, en mi opinión.
+
+Imagínense el futuro que se viene. Ya con Opus 4.6, ahora es costoso. Entonces, probablemente solo lo quieran utilizarlo en decisiones puntuales.
+
+Pero ya les voy a enseñar con Open Cloud cómo utilizarlo en VPS por temas de seguridad, claramente. Julián Botia, para todo aquel que se reunió al año y ve los Top Secrets, todavía estoy por grabarlos este mes. Ha sido mucho trabajo.
+
+Este último mes creamos el curso de marketing y créeme que tan pronto posible vamos a tener terminado el curso de los Top Secrets. También he de decir que no necesitan verlo ahorita porque no tienen el nivel. ¿A qué me refiero? Primero, aprendan a construir su primera aplicación con este curso.
+
+Se los juro, ahí les bajé a tierra todo. Este curso es el que les ha permitido a mis alumnos construir sus primeras aplicaciones. Alonso Aparicio, bienvenido, mi estimado.
+
+Agradezco que te hayas unido por todo el año. El curso de los Top Secrets, de nuevo, va a ser el completo foco ahora mismo, tenerlo ya terminado. Pero, de nuevo, si estás comenzando, va a ser muy abrumador la cantidad de información.
+
+Yo te recomiendo, mejor aprende del primero, el principio. Miren, Fernando Rosas nos compartió su nuevo emprendimiento. Gracias a la SaaS Factory.
+
+Brincola, bienvenido. Agradezco que te hayas unido. Miren, Fernando Rosas, gracias a la SaaS Factory, compartió su nuevo emprendimiento.
+
+Trucker Premium Plus. Últimos truckers publicados. Es como un Marketplace interesante.
+
+La cantidad de oportunidades que se te presentan al simplemente saber crear estas cosas. La aplicación que te imagines la vas a poder crear. Ricardo Uribe, bienvenido, mi estimado.
+
+Agradezco a todos ustedes. Sigamos respondiendo preguntas. Congelado.
+
+Bien. Otra vez. Pantalla.
+
+Compartir. Listo. Gracias a todos.
+
+Ya lo volví a activar. Gracias por el feedback. Ahora vamos a ver qué preguntas.
+
+¿Puedes construir algo más allá de un MVP? Tengo una idea para una app. Sirve. La aplicación que te imagines la puedes construir.
+
+Te lo juro. Quiero que vean, se los juro, es un aprendizaje que me llevo. Esta aplicación la construimos con la SaaS Factory.
+
+La plataforma réplica de Skool la construimos con la SaaS Factory. El Google Meet, de nuevo, el jueves vamos a tener nuestra llamada de bienvenida. El Google Meet lo construimos con la SaaS Factory.
+
+El sistema de Fatum lo construimos con la SaaS Factory. Todo lo que los miembros están compartiendo es construido con la SaaS Factory. Entonces, sí, no te preocupes.
+
+Lo que te imagines que puedes crear, lo vas a poder crear. Perdón, mi gente, si ya no alcanzo a leerlos todos, estoy un poco agotado. NovaWebCIA.
+
+Desde el prelanzamiento, ¿has mejorado el código de la SaaS Factory? Sigue igual. Tenemos la versión 3. Ahorita ya tengo varias ideas para optimizar la SaaS Factory. Por ejemplo, uno de ellos importantísimo.
+
+Yo les mostré esto cómo hacerlo con MSPs, pero ahora ya tenemos el tema de las skills. Entonces, el cambiar de MSP a skills le va a permitir a nuestros agentes ahorrarse mucho en la ventana de contexto. Esa es una mejora muy buena que vamos a actualizar en una siguiente versión.
+
+Otra siguiente versión para la SaaS Factory, Miguel Barreno, bienvenido, mi estimado. Hay muchos sistemas de diseño que hemos desarrollado con el tiempo. Por ejemplo, esto que están viendo aquí, este de acá, es un diseño muy similar a lo que tiene Apple.
+
+Probablemente no se alcanza a ver porque es un negro oscuro, pero se llama Liquid Glass. Es un diseño que he renovado y que también quiero compartirles dentro de la comunidad, dentro de la SaaS Factory. Cualquier asset que se imaginen, es un activo que vamos añadiendo a la fábrica.
+
+Esto, en un principio, piensen que lo hice pensando para mí. Para no tener que reinventar la rueda en cada ocasión, este fue lo que hicimos en este repositorio. Pueden tener dominios personalizados.
+
+Así es, Joel. De hecho, en el curso, una vez que ustedes terminan su primera aplicación, yo les enseño tal cual cómo mandar las servidores en la nube y cómo configurar su dominio web. Todo está explicado dentro del curso.
+
+Daniel Santa Coloma, bienvenido a la SaaS Factory. Dice Serfin, gracias, llevo rato esperando poder pagar. Sigue diciendo verificando.
+
+¿Puedes actualizar la página para ver si con eso queda? Con SaaS Factory también se crea la base de datos para la gestión de usuarios. Sí, mira, yo lo que te comparto en la SaaS Factory es la forma para conectarnos con la base de datos en SupaBase. Como pudieron ver, en la parte de abajo, en la demo, creamos un sistema de reservas y todos esos datos se guardaron en tiempo real con SupaBase.
+
+¿Por qué? Porque el agente se conecta a la base de datos desde el MSP. Que una de mis intenciones para actualizarlo es cambiar de los MSPs a las Skills. Para empezar, ¿cuáles son los modelos que más nos recomiendas? Empezar desde cero, antigravity.
+
+Gratuito, no pagas nada. Si te quieres brincar un poquito más, yo te invito a Cloud, 100 dólares. Si quieres empezar y tienes el dinero, eso, desde ahorita.
+
+En el curso yo te enseño el por qué, por qué tomamos esa decisión, pero también dejamos la puerta abierta si quieres utilizar antigravity. ¿OK? Un poco los comentarios de los miembros. Agradezco ahí a todos ustedes.
+
+Luis, Fernando, Ramón, Juan, Luis, Pablo. Agradezco todos sus mensajes. Voy a asegurarme de que no se haya congelado nuevamente, como ya es costumbre.
+
+Captura de pantalla. Bien, ahora sí, otra vez. Aquí yo les enseño todo esto, ¿vale? Y si no consideran que es de valor, también pueden pagar ahorita 29 dólares.
+
+Aprovechen la oferta de lanzamiento. Y si no es de ustedes, cancelan el primer mes. Y sin problema, o sea, tampoco sin rencor ni nada, se los prometo.
+
+Pero yo, dense la oportunidad. De nuevo, estas cosas, no quiero hablar por mi cuenta propia. Ustedes pueden acceder a la sección de logros y leer paso a paso lo que cada uno de ellos está mencionando.
+
+¿Se podría construir una aplicación de video en streaming? Sí, Diana. Diana, correcto. Mira, de nuevo, si yo me voy al calendario, puedo seleccionar Google Meet.
+
+Puedo iniciar una llamada e incluso se crea la transcripción, ¿OK? Y directamente descargar con ella. Les voy a enseñar en llamadas, les voy a enseñar con el paso del tiempo cómo logramos esto. Pero quiero compartirles un aprendizaje.
+
+Y es, no dejen que nadie les diga que no se puede. Si todo esto lo bajan a tierra a primeros principios, al final todo termina siendo una cuestión de procesamiento. Una cuestión de pagar por servidores.
+
+¿OK? Una plataforma de streaming probablemente consuma mucho procesamiento porque tiene que renderizar video, no sé qué, no sé qué. Pero se puede. Tú no tienes que entender las bases técnicas.
+
+Eso es lo que a mí me quedó claro. Yo no sé cómo funciona el streaming, no sé qué hay en el código, pero sé que funcionó. Y sé que miembros dentro de la comunidad ya pudieron tener esta misma llamada conmigo, ¿sí? Esta llamada, ya la estrenamos la plataforma y sé que funciona, ¿sí? Pregúntame cómo hice el código, pregúntame lo que hay detrás en el VPS.
+
+No tengo idea. Solo sé que funciona y que ya miembros participaron en la llamada. Esto ya se guardó tipo, por cierto, también no olvidé mencionar, tenemos una automatización que justo Trinity sube las videollamadas apenas se terminan.
+
+Entonces, miren, cuando se terminó la llamada, Trinity dice, grabación disponible, nos da un resumen y nos da el link para acceder a la llamada. Entonces, de nuevo, esto muy estilo Fatum, tú puedes acceder al transcript de la llamada y a toda la llamada completa. Esto lo construimos en tiempo real.
+
+Aceptar. ¿Has usado OpenCode? ¿Qué tal los modelos? Sí, he utilizado OpenCode. Yo te recomiendo utilizar GLM5 actualmente, ¿sí? OK, mi gente, 3 horas, 2 horas y media en vivo.
+
+Somos 377 personas. Yo creo que por ahora ya vamos a ir terminando el directo. Más que nada, porque ya me estoy quedando sin voz.
+
+Agradezco a todos los que se quedaron hasta acá. Se los prometo, vamos a hacer historia. Se unieron probablemente unas 150 personas en este lanzamiento.
+
+Agradezco a todos los nuevos. Quiero que me den su opinión honesta de lo que opinan desde dentro, ¿sí? Se viene la singularidad, una IA que se mejora a sí misma. Y tenemos que estar, o sea, estar en comunidad nos va a permitir estar a la vanguardia todos de la mano, prácticamente.
+
+Entonces, mi gente, ya para ir cerrando, algo que se me olvide, algo que crean que todavía falta por responder. Leo últimas preguntas. Algo que se me está olvidando.
+
+No, no, ¿de qué Joel? Gracias a ustedes. Ayudémonos en comunidad totalmente. Gracias a ustedes.
+
+Gracias a ustedes. ¿Cómo mantenemos los 29 para el siguiente mes? No, no, no, no. Si ustedes pagaron a 29, se les va a quedar de por vida a 29.
+
+Si ustedes pagaron el año a 199, se les va a quedar de por vida a 199. Diana Franco, bienvenida, qué gusto. William, bienvenido, qué gusto.
+
+Mi gente, el tema de la contraseña lo vamos a poner privado luego de este en vivo. Fue un regalo para todos aquellos de ustedes que se unieron en vivo, una promesa. Entonces, bueno, lo vamos a dejar todavía activo unos 10 minutos después del directo, por cualquier cosa.
+
+¿Qué opinas de Moldbook? Me parece una gran red social entre agentes. Considero que no es la singularidad. Siento que cada persona le configuró su agente por detrás, le dio sus instrucciones por detrás y, por tanto, la red social tuvo lo que tuvo.
+
+Un montón de grandes modos de lenguaje, cada uno con su System Prompt, argumentando y opinando distintos temas. ¿Puedo pagar en cripto o en naranjo? Todavía no. Pronto sí, pero todavía no.
+
+Gavino, bienvenido, mi estimado. ¿Se pueden hacer automaciones para empresas? Sí, se pueden lograr lo que te imagines. Desde Vive Coding puedes lograr lo que te imagines.
+
+La SaaS Factory está más enfocada en aplicaciones, pero dado que tienes un servidor alojado en Vercel o puedes montarlo, si quieres, en tu VPS en Hostinger, puede ser una automatización por detrás que reciba Cronjobs. Ya les voy a demostrar cuando llegue el momento. Yo, honestamente, a día de hoy, las automatizaciones, yo prefiero hacerlas con Open Cloud.
+
+Que les voy a traer un curso, se los juro. Esto tiene mucho potencial. Link del pago anual, Dani.
+
+Samu, cuando te inscribes en el About, automáticamente te redirecciona para el pago anual antes de hacer el pago correcto. Marcos y Mercedes, gracias a ustedes. Un gusto, mis estimados.
+
+Qué gusto verlos por acá. ¿Se puede desarrollar en Web 3? Honestamente, no sé qué es Web 3. Nunca he utilizado Web 3. Sé que democratiza el internet, pero no me preguntes de bases técnicas porque honestamente no sé cómo funciona. Si puedes empezar con un mes, pueden probar la plataforma y si les gustó, se pueden pasar al anual sin problema.
+
+¿Cómo lo van a lograr? Cuando vean el mes 2 bloqueado, si quieren, pueden darle clic aquí y les va a decir, ¿quieres desbloquearlo ya? Pásate el anual. Tan simple como eso. Julio Jiménez, bienvenido, mi estimado.
+
+Ya estoy dentro. Excelente, ya estoy dentro. ¿Cómo debo pagar si me paso del mensual al anual? Así como les comenté, ven estos cursos bloqueados, le van a dar clic y les va a permitir abrirlo.
+
+Otra cosa, mi novia está por aquí, mi novia va a hacer un post en muy poco tiempo y ese post, cualquier, miren, ya lo hizo, hace 4 minutos. Ella nos va a ayudar en cuestiones de soporte. Cualquier pregunta que no te la respondió Trinity, siéntanse con confianza de hacérsela a ella.
+
+Nuevamente congelado. Agradezco a todos ustedes. Ahí está.
+
+Listo. Mi novia nos va a ayudar en la atención al cliente. Cualquier cuestión, cualquier duda, cualquier cosa que se traben, ella va a estar por detrás apoyándonos.
+
+Luis, bienvenido, hermano. Si no saben cómo pasarse del mensual al anual, pregúntele y ella les va a compartir el link correcto. El Mundo H, bienvenido, mi estimado.
+
+¿Cómo hacer paso a paso para tener una estructura mental de cómo hacer las cosas para montar sistemas de login, conectarlo a bases de datos, bajar y subir repositorios, etcétera? Guanchito, buena pregunta. Es muy intuitivo. O sea, en el curso yo te enseño, sobre todo, hablar con la inteligencia artificial para que ella te haga las cosas, así como se los demostré ahorita, iterando las veces suficientes con la IA, vas a poder crearlas.
+
+Pero es buena propuesta, créeme que la tengo presente y si es necesario, nos armamos un segundo curso. Bien, mi gente, creo que ya no hay muchas más preguntas. Agradezco su participación.
+
+¿Recuerdas el código para la mensual? No lo anoté. Claro, el código para enviarle a Trinity es SAS Factory 2026. Dani, si tengo un proyecto hecho en Antigravity, ¿puedo usar la SAS Factory y mejorarlo y echarlo a andar? Correcto.
+
+Correcto. A ver, sigo leyendo sus comentarios. Joaquín Island, bienvenido, hermano.
+
+Bienvenidos a todos. No, gracias a todos. Gracias a ti, Bryce.
+
+Gracias a todos los que se están uniendo. Vamos a hacer historia. Ya somos más de 400.
+
+Qué impresionante. Mi gente, lo dejamos hasta aquí. Los voy a estar leyendo desde dentro de la comunidad.
+
+Les voy a compartir el link de la videollamada por los grupos de WhatsApp. Los grupos de WhatsApp los vamos a cerrar, porque la intención va a ser enfocarnos 100% desde dentro. Y no me gustaría, honestamente, no quiero sentir que se sientan spameados.
+
+No creo que se sientan spameados o que, nada, vamos a cerrarlos y que se quede abierta la comunidad. Pero ya va a subir el precio a 39, ¿vale? Listo, mi gente. Disculpen, estoy un poco agotado.
+
+Ya me quedé sin voz. Agradezco a todos los que se quedaron hasta acá. Tres horas en directo.
+
+Qué gusto. Bueno, estamos en contacto. Los veo desde dentro de la comunidad.
+
+En tres días tenemos la llamada de bienvenida para todos los miembros, para todos los nuevos miembros, luego del lanzamiento de la SaaS Factory. Este miércoles, la llamada con Jero. Para todo aquel que tenga dudas con Antigravity, Jero es un gran profesor.
+
+Les va a responder todas esas preguntas. Y nada, mi gente, los veo del otro lado. Vamos a tener mucho éxito con todo esto.
+
+Ahora sí, creo que ya no me queda nada más. Agradezco a todos. La contaseña ya se las compartí.
+
+¿Para qué es la contaseña que pasó? Es para recibir la arquitectura de marketing de la gente conversacional. Gracias a todos, mi gente. Los veo del otro lado, ¿vale? ¿A qué hora lo de Jero? 10 AM hora México, si no estoy mal.
+
+Construccion Channel, bienvenido. Agradezco que te hayas unido. Mi gente, ahora sí, nos vemos.
+
+Y un abrazo a todos. Los quiero. Vamos a hacer historia, se los prometo.
+
+Sí, guanchito, soy buena persona. Ya me van a conocer. Listo.
+
+Un gusto, mi gente. Entonces, nos despedimos, ¿va? Abrazos, abrazos. Abrazos, Mervyn.

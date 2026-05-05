@@ -1,0 +1,3 @@
+[submodule "trademind"]
+	path = trademind
+	url = https://github.com/cataldo89/trademind.git
