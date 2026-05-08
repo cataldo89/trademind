@@ -45,6 +45,8 @@ const addPositionSchema = z.object({
 
 type AddPositionForm = z.infer<typeof addPositionSchema>
 
+const DEFAULT_VIRTUAL_BALANCE = 10000
+
 async function fetchPositionsWithPrices(userId: string): Promise<Position[]> {
   const supabase = createClient()
   const { data: positions } = await supabase
@@ -81,6 +83,9 @@ async function fetchPositionsWithPrices(userId: string): Promise<Position[]> {
 
 export function PortfolioClient() {
   const [showAddForm, setShowAddForm] = useState(false)
+  const [showBalanceForm, setShowBalanceForm] = useState(false)
+  const [balanceAmount, setBalanceAmount] = useState('')
+  const [balanceSaving, setBalanceSaving] = useState(false)
   const [quoteLoading, setQuoteLoading] = useState(false)
   const queryClient = useQueryClient()
   const supabase = createClient()
@@ -91,6 +96,15 @@ export function PortfolioClient() {
       const { data: { user } } = await supabase.auth.getUser()
       return user
     },
+  })
+
+  const { data: profile } = useQuery({
+    queryKey: ['profile', user?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from('profiles').select('virtual_balance').eq('id', user!.id).single()
+      return data
+    },
+    enabled: !!user,
   })
 
   const { data: positions = [], isLoading } = useQuery({
@@ -105,6 +119,15 @@ export function PortfolioClient() {
     return new Map(ZESTY_SYMBOLS.map((item) => [item.symbol, item]))
   }, [])
 
+  const { data: signals = [] } = useQuery({
+    queryKey: ['signals', user?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from('signals').select('*').eq('status', 'active').order('created_at', { ascending: false })
+      return data || []
+    },
+    enabled: !!user,
+  })
+
   const { register, handleSubmit, reset, watch, setValue, formState: { errors, isSubmitting } } = useForm<AddPositionForm>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(addPositionSchema) as any,
@@ -112,6 +135,13 @@ export function PortfolioClient() {
   })
 
   const watchedSymbol = watch('symbol')
+  const virtualBalance = Number(profile?.virtual_balance ?? DEFAULT_VIRTUAL_BALANCE)
+
+  useEffect(() => {
+    if (showBalanceForm) {
+      setBalanceAmount(String(virtualBalance))
+    }
+  }, [showBalanceForm, virtualBalance])
 
   useEffect(() => {
     const symbol = watchedSymbol?.trim().toUpperCase()
@@ -175,6 +205,7 @@ export function PortfolioClient() {
     reset()
     setShowAddForm(false)
     queryClient.invalidateQueries({ queryKey: ['positions'] })
+    queryClient.invalidateQueries({ queryKey: ['portfolio-summary'] })
   }
 
   const closePosition = async (id: string, symbol: string) => {
@@ -182,9 +213,47 @@ export function PortfolioClient() {
       .from('positions')
       .update({ status: 'closed', closed_at: new Date().toISOString() })
       .eq('id', id)
-    if (error) { toast.error('Error al cerrar posición'); return }
-    toast.success(`Posición en ${symbol} cerrada`)
+    if (error) { toast.error('Error al cerrar posicion'); return }
+    toast.success(`Posicion en ${symbol} cerrada`)
     queryClient.invalidateQueries({ queryKey: ['positions'] })
+    queryClient.invalidateQueries({ queryKey: ['portfolio-summary'] })
+  }
+
+  const updateVirtualBalance = async (nextBalance: number) => {
+    if (!user) { toast.error('Inicia sesion para modificar el capital'); return }
+    if (!Number.isFinite(nextBalance) || nextBalance < 0) {
+      toast.error('Ingresa un capital virtual valido')
+      return
+    }
+
+    setBalanceSaving(true)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const response = await fetch('/api/profile/virtual-balance', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
+        body: JSON.stringify({ virtualBalance: nextBalance }),
+      })
+
+      if (!response.ok) {
+        const body = await response.json().catch(() => null)
+        throw new Error(body?.error || 'No se pudo actualizar capital virtual')
+      }
+
+      queryClient.setQueryData(['profile', user.id], { virtual_balance: nextBalance })
+      toast.success(nextBalance === 0 ? 'Capital virtual eliminado' : `Capital virtual actualizado a ${formatCurrency(nextBalance)}`)
+      setShowBalanceForm(false)
+      queryClient.invalidateQueries({ queryKey: ['profile'] })
+      queryClient.invalidateQueries({ queryKey: ['portfolio-summary'] })
+    } catch (err) {
+      console.warn('[update virtual balance]', err)
+      toast.error('Error al actualizar capital virtual')
+    } finally {
+      setBalanceSaving(false)
+    }
   }
 
   // Portfolio totals
@@ -201,17 +270,85 @@ export function PortfolioClient() {
           <h1 className="text-2xl font-bold text-white">Portafolio</h1>
           <p className="text-sm text-gray-400 mt-0.5">{positions.length} posiciones abiertas</p>
         </div>
-        <button
-          onClick={() => setShowAddForm(!showAddForm)}
-          className="flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-white text-sm font-semibold rounded-lg transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          Nueva posición
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowBalanceForm((current) => !current)}
+            className="flex items-center gap-2 px-3 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm font-semibold rounded-lg transition-colors border border-gray-700"
+          >
+            Ajustar capital
+          </button>
+          <button
+            onClick={() => setShowAddForm(!showAddForm)}
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-white text-sm font-semibold rounded-lg transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Nueva posición
+          </button>
+        </div>
       </div>
 
+      {showBalanceForm && (
+        <div className="glass rounded-xl p-5 border border-emerald-500/20">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <h3 className="text-sm font-semibold text-white">Capital virtual del simulador</h3>
+              <p className="text-xs text-gray-400 mt-1">Define el capital total disponible. Puedes bajarlo o dejarlo en cero sin afectar tus posiciones.</p>
+            </div>
+            <form
+              onSubmit={(event) => {
+                event.preventDefault()
+                const nextBalance = balanceAmount.trim() === '' ? Number.NaN : Number(balanceAmount)
+                updateVirtualBalance(nextBalance)
+              }}
+              className="flex flex-col gap-3 sm:flex-row sm:items-end"
+            >
+              <FormField label="Capital total">
+                <input
+                  type="number"
+                  min="0"
+                  step="100"
+                  value={balanceAmount}
+                  onChange={(event) => setBalanceAmount(event.target.value)}
+                  placeholder="10000"
+                  className={inputClass}
+                />
+              </FormField>
+              <div className="flex gap-2">
+                {[0, 5000, 10000, 25000].map((amount) => (
+                  <button
+                    key={amount}
+                    type="button"
+                    onClick={() => setBalanceAmount(String(amount))}
+                    className="px-3 py-2 rounded-lg border border-gray-700 bg-gray-800/50 text-xs font-semibold text-gray-300 hover:border-emerald-500/50 hover:text-emerald-300 transition-colors"
+                  >
+                    {amount === 0 ? 'Cero' : formatCurrency(amount)}
+                  </button>
+                ))}
+              </div>
+              <button
+                type="submit"
+                disabled={balanceSaving}
+                className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-white text-sm font-semibold rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {balanceSaving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                Guardar
+              </button>
+              <button
+                type="button"
+                disabled={balanceSaving}
+                onClick={() => updateVirtualBalance(0)}
+                className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-300 text-sm font-semibold rounded-lg transition-colors border border-red-500/30 disabled:opacity-50"
+              >
+                Eliminar capital
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Summary cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+        <SummaryCard label="Capital Virtual" value={formatCurrency(virtualBalance)} color="emerald" />
         <SummaryCard label="Valor total" value={formatCurrency(totalValue)} />
         <SummaryCard label="Costo total" value={formatCurrency(totalCost)} />
         <SummaryCard
@@ -227,6 +364,31 @@ export function PortfolioClient() {
       {showAddForm && (
         <div className="glass rounded-xl p-5">
           <h3 className="text-sm font-semibold text-white mb-4">Nueva posición</h3>
+          
+          {signals.length > 0 && (
+            <div className="mb-6 p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-lg">
+              <label className="block text-[10px] font-bold text-emerald-400 uppercase tracking-wider mb-2">Sincronizar con señal guardada</label>
+              <div className="flex flex-wrap gap-2">
+                {signals.map((sig: any) => (
+                  <button
+                    key={sig.id}
+                    type="button"
+                    onClick={() => {
+                      setValue('symbol', sig.symbol, { shouldValidate: true })
+                      setValue('market', 'US' as any)
+                      setValue('entryPrice', sig.price, { shouldValidate: true })
+                      toast.success(`Datos de ${sig.symbol} cargados`)
+                    }}
+                    className="px-2.5 py-1.5 text-[11px] font-medium bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 rounded-md transition-colors flex items-center gap-2"
+                  >
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                    {sig.symbol} @ {formatCurrency(sig.price)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit(addPosition)} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <FormField label="Símbolo *" error={errors.symbol?.message}>
               <input {...register('symbol')} list="portfolio-symbols" placeholder="NVDA, AMZN, SPY..." className={inputClass} />

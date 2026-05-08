@@ -19,6 +19,7 @@ export function RealtimeChart() {
       layout: {
         background: { type: ColorType.Solid, color: 'transparent' },
         textColor: '#9CA3AF', // text-gray-400
+        attributionLogo: false,
       },
       grid: {
         vertLines: { color: 'rgba(255, 255, 255, 0.05)' },

@@ -9,7 +9,7 @@ export function cn(...inputs: ClassValue[]) {
 export function formatCurrency(
   value: number,
   currency = 'USD',
-  locale = 'en-US'
+  locale = 'es-CL'
 ): string {
   return new Intl.NumberFormat(locale, {
     style: 'currency',
@@ -20,25 +20,33 @@ export function formatCurrency(
 }
 
 // Format percentage
-export function formatPercent(value: number, decimals = 2): string {
+export function formatPercent(value: number, decimals = 2, locale = 'es-CL'): string {
   const sign = value >= 0 ? '+' : ''
-  return `${sign}${value.toFixed(decimals)}%`
+  const formattedValue = value.toLocaleString(locale, {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  })
+  return `${sign}${formattedValue}%`
 }
 
 // Format large numbers (volume, market cap)
-export function formatLargeNumber(value: number): string {
-  if (value >= 1e12) return `${(value / 1e12).toFixed(2)}T`
-  if (value >= 1e9) return `${(value / 1e9).toFixed(2)}B`
-  if (value >= 1e6) return `${(value / 1e6).toFixed(2)}M`
-  if (value >= 1e3) return `${(value / 1e3).toFixed(2)}K`
-  return value.toFixed(2)
+export function formatLargeNumber(value: number, locale = 'es-CL'): string {
+  if (value >= 1e12) return `${(value / 1e12).toLocaleString(locale, { maximumFractionDigits: 2 })}T`
+  if (value >= 1e9) return `${(value / 1e9).toLocaleString(locale, { maximumFractionDigits: 2 })}B`
+  if (value >= 1e6) return `${(value / 1e6).toLocaleString(locale, { maximumFractionDigits: 2 })}M`
+  if (value >= 1e3) return `${(value / 1e3).toLocaleString(locale, { maximumFractionDigits: 2 })}K`
+  return value.toLocaleString(locale, { maximumFractionDigits: 2 })
 }
 
 // Format price with dynamic decimals
-export function formatPrice(price: number, currency = 'USD'): string {
+export function formatPrice(price: number, currency = 'USD', locale = 'es-CL'): string {
   const decimals = price < 1 ? 4 : price < 10 ? 3 : 2
-  const symbol = currency === 'CLP' ? '$' : '$'
-  return `${symbol}${price.toFixed(decimals)}`
+  return new Intl.NumberFormat(locale, {
+    style: 'currency',
+    currency,
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(price)
 }
 
 // Get color for positive/negative values

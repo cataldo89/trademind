@@ -14,12 +14,15 @@ interface PortfolioStats {
   dayPnL: number
   dayPnLPercent: number
   positionsCount: number
+  virtualBalance: number
 }
 
 async function fetchPortfolioStats(): Promise<PortfolioStats | null> {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
+
+  const { data: profile } = await supabase.from('profiles').select('virtual_balance').eq('id', user.id).single()
 
   const { data: positions } = await supabase
     .from('positions')
@@ -28,7 +31,7 @@ async function fetchPortfolioStats(): Promise<PortfolioStats | null> {
     .eq('status', 'open')
 
   if (!positions || positions.length === 0) {
-    return { totalValue: 0, totalPnL: 0, totalPnLPercent: 0, dayPnL: 0, dayPnLPercent: 0, positionsCount: 0 }
+    return { totalValue: 0, totalPnL: 0, totalPnLPercent: 0, dayPnL: 0, dayPnLPercent: 0, positionsCount: 0, virtualBalance: profile?.virtual_balance ?? 10000 }
   }
 
   // Fetch current prices for each position
@@ -68,6 +71,7 @@ async function fetchPortfolioStats(): Promise<PortfolioStats | null> {
     dayPnL,
     dayPnLPercent,
     positionsCount: positions.length,
+    virtualBalance: profile?.virtual_balance ?? 10000
   }
 }
 
@@ -76,7 +80,9 @@ export function PortfolioSummaryWidget() {
     queryKey: ['portfolio-summary'],
     queryFn: fetchPortfolioStats,
     refetchInterval: 2 * 60 * 1000,
-    staleTime: 60 * 1000,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+    staleTime: 0,
   })
 
   if (isLoading) {
@@ -101,19 +107,25 @@ export function PortfolioSummaryWidget() {
         </div>
         <div className="text-center py-6">
           <p className="text-sm text-gray-500 mb-3">No tienes posiciones abiertas</p>
-          <Link
-            href="/portfolio"
-            className="inline-flex items-center gap-1.5 text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1.5 rounded-lg hover:bg-emerald-500/20 transition-colors"
-          >
-            Agregar posición
-          </Link>
+          <div className="flex items-center justify-center gap-4">
+             <div className="text-left">
+                <p className="text-[10px] text-gray-500 uppercase tracking-wider">Capital Virtual</p>
+                <p className="text-lg font-bold text-white font-mono">{formatCurrency(stats?.virtualBalance ?? 10000)}</p>
+             </div>
+             <Link
+                href="/portfolio"
+                className="inline-flex items-center gap-1.5 text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1.5 rounded-lg hover:bg-emerald-500/20 transition-colors"
+              >
+                Agregar posición
+              </Link>
+          </div>
         </div>
       </div>
     )
   }
 
-  const dayPositive = stats.dayPnL >= 0
-  const totalPositive = stats.totalPnL >= 0
+  const dayPositive = (stats.dayPnL || 0) >= 0
+  const totalPositive = (stats.totalPnL || 0) >= 0
 
   return (
     <div className="glass rounded-xl overflow-hidden">
@@ -122,9 +134,15 @@ export function PortfolioSummaryWidget() {
           <Briefcase className="w-4 h-4 text-emerald-400" />
           Portafolio
         </h2>
-        <Link href="/portfolio" className="text-xs text-emerald-400 hover:text-emerald-300">
-          Ver todo →
-        </Link>
+        <div className="flex items-center gap-4">
+           <div className="text-right">
+              <p className="text-[10px] text-gray-500 uppercase tracking-wider">Capital Virtual</p>
+              <p className="text-sm font-bold text-emerald-400 font-mono">{formatCurrency(stats.virtualBalance ?? 10000)}</p>
+           </div>
+           <Link href="/portfolio" className="text-xs text-emerald-400 hover:text-emerald-300">
+             Ver todo →
+           </Link>
+        </div>
       </div>
 
       <div className="p-5 grid grid-cols-2 lg:grid-cols-4 gap-4">

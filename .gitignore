@@ -57,6 +57,11 @@ supabase/.temp/
 
 # QuantConnect workspace (local only)
 qc-workspace/
+lean-workspace/
+
+# Python virtual environments
+venv/
+quant-engine/venv/
 
 # Python cache
 __pycache__/

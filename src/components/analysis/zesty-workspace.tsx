@@ -3,7 +3,7 @@
 import { useCallback, useState, useMemo, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { getCategorizedZestySymbols } from '@/lib/market-data'
-import { CHART_RANGES, type ChartRange } from '@/lib/chart-ranges'
+import { CHART_RANGES, normalizeChartRange, type ChartRange } from '@/lib/chart-ranges'
 import { Market } from '@/types'
 import { CandlestickChart } from '@/components/analysis/candlestick-chart'
 import { TechnicalSummary } from '@/components/analysis/technical-summary'
@@ -78,17 +78,27 @@ export function ZestyWorkspace() {
   const categories = useMemo(() => getCategorizedZestySymbols(), [])
   const initialSymbol = searchParams.get('symbol')?.trim().toUpperCase() || categories[0]?.symbols[0]?.symbol || 'SPY'
   const initialMarket = (searchParams.get('market') || 'US') as Market
+  const initialRange = normalizeChartRange(searchParams.get('range'))
   
   const [activeCategoryId, setActiveCategoryId] = useState<string>(categories[0]?.id || '')
   const [searchQuery, setSearchQuery] = useState('')
   const [symbol, setSymbol] = useState(initialSymbol)
   const [market, setMarket] = useState<Market>(initialMarket)
-  const [chartRange, setChartRange] = useState<ChartRange>('1D')
-  const [effectiveRange, setEffectiveRange] = useState<ChartRange>('1D')
+  const [chartRange, setChartRange] = useState<ChartRange>(initialRange)
+  const [effectiveRange, setEffectiveRange] = useState<ChartRange>(initialRange)
   const [marketOpen, setMarketOpen] = useState(false)
   const [categoriesOpen, setCategoriesOpen] = useState(true)
   const [symbolsOpen, setSymbolsOpen] = useState(!searchParams.get('symbol'))
   const [summaryOpen, setSummaryOpen] = useState(true)
+
+  // Sync with URL params
+  useEffect(() => {
+    const s = searchParams.get('symbol')?.trim().toUpperCase()
+    if (s && s !== symbol) {
+      setSymbol(s)
+      setSymbolsOpen(false)
+    }
+  }, [searchParams, symbol, chartRange])
 
   // Check market status
   useEffect(() => {
@@ -101,6 +111,12 @@ export function ZestyWorkspace() {
   useEffect(() => {
     const nextSymbol = searchParams.get('symbol')?.trim().toUpperCase()
     const nextMarket = (searchParams.get('market') || 'US') as Market
+    const nextRange = normalizeChartRange(searchParams.get('range'))
+
+    if (nextRange !== chartRange) {
+      setChartRange(nextRange)
+      setEffectiveRange(nextRange)
+    }
 
     if (nextSymbol && nextSymbol !== symbol) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -228,7 +244,7 @@ export function ZestyWorkspace() {
       <div className="flex flex-1 overflow-hidden">
         {/* Left Sidebar: Categories */}
         <div className={cn(
-          'flex flex-col border-r border-gray-800 bg-gray-900/30 flex-shrink-0 transition-[width] duration-300',
+          'hidden lg:flex flex-col border-r border-gray-800 bg-gray-900/30 flex-shrink-0 transition-[width] duration-300',
           categoriesOpen ? 'w-[clamp(9.5rem,13vw,13rem)] overflow-y-auto' : 'w-10 overflow-hidden'
         )}>
           {!categoriesOpen && (
@@ -274,7 +290,7 @@ export function ZestyWorkspace() {
 
         {/* Middle Sidebar: Symbols List */}
         <div className={cn(
-          'flex flex-col border-r border-gray-800 bg-gray-900/30 flex-shrink-0 transition-[width] duration-300',
+          'hidden md:flex flex-col border-r border-gray-800 bg-gray-900/30 flex-shrink-0 transition-[width] duration-300',
           symbolsOpen ? 'w-[clamp(15rem,22vw,20rem)]' : 'w-10 overflow-hidden'
         )}>
           {!symbolsOpen && (
@@ -369,8 +385,8 @@ export function ZestyWorkspace() {
           
           <div className="flex flex-1 overflow-hidden">
             {/* Chart */}
-            <div className="flex-1 min-w-0 p-4">
-              <div className="relative h-[58vh] min-h-[340px] max-h-[520px] w-full">
+            <div className="flex-1 flex flex-col min-w-0 p-4 h-[50vh] lg:h-[65vh]">
+              <div className="flex-1 glass border-y lg:border-x border-gray-800 relative overflow-hidden">
                 <div className="absolute bottom-3 right-3 z-20 flex items-center gap-2 bg-gray-900/80 backdrop-blur border border-gray-800 px-3 py-1.5 rounded-full">
                   <span className={`w-2 h-2 rounded-full ${marketOpen ? 'bg-emerald-500 animate-pulse' : 'bg-gray-500'}`} />
                   <span className={`text-xs font-medium ${marketOpen ? 'text-emerald-400' : 'text-gray-400'}`}>{marketOpen ? 'EN VIVO' : 'CERRADO'}</span>
@@ -402,7 +418,7 @@ export function ZestyWorkspace() {
                 </button>
               )}
               {summaryOpen && (
-              <TechnicalSummary symbol={symbol} market={market} range={chartRange} />
+                <TechnicalSummary symbol={symbol} market={market} range={chartRange} />
               )}
             </div>
           </div>

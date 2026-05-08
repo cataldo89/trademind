@@ -1,5 +1,5 @@
-/**
- * Candles API Route — OHLCV data
+﻿/**
+ * Candles API Route â€” OHLCV data
  * Primary: Yahoo Finance (yahoo-finance2)
  * Supports: US stocks, ETFs, Crypto
  */
@@ -17,8 +17,8 @@ import { yahooFinance } from '@/lib/yahoo-finance'
 
 const ONE_DAY_LOOKBACK_DAYS = 5
 const US_MARKET_TIMEZONE = 'America/New_York'
-const EXTENDED_SESSION_OPEN_MINUTES = 4 * 60
-const EXTENDED_SESSION_CLOSE_MINUTES = 20 * 60
+const REGULAR_SESSION_OPEN_MINUTES = 9 * 60 + 30
+const REGULAR_SESSION_CLOSE_MINUTES = 16 * 60
 
 const easternSessionFormatter = new Intl.DateTimeFormat('en-US', {
   timeZone: US_MARKET_TIMEZONE,
@@ -46,21 +46,43 @@ function getEasternSessionInfo(time: number) {
   }
 }
 
-function trimToLatestIntradaySession(candles: Candle[]): Candle[] {
-  if (candles.length === 0) return candles
+function isCryptoSymbol(symbol: string) {
+  return /-USD$/i.test(symbol)
+}
 
-  const latest = getEasternSessionInfo(candles[candles.length - 1].time)
-  const sessionCandles = candles.filter((candle) => {
-    const session = getEasternSessionInfo(candle.time)
+function isRegularSessionCandle(candle: Candle) {
+  const session = getEasternSessionInfo(candle.time)
+  return session.minuteOfDay >= REGULAR_SESSION_OPEN_MINUTES && session.minuteOfDay <= REGULAR_SESSION_CLOSE_MINUTES
+}
 
-    return (
-      session.dateKey === latest.dateKey &&
-      session.minuteOfDay >= EXTENDED_SESSION_OPEN_MINUTES &&
-      session.minuteOfDay <= EXTENDED_SESSION_CLOSE_MINUTES
-    )
-  })
+function filterRegularSession(candles: Candle[]): Candle[] {
+  const regularCandles = candles.filter(isRegularSessionCandle)
+  return regularCandles.length > 0 ? regularCandles : candles
+}
 
-  return sessionCandles.length > 0 ? sessionCandles : candles
+function trimToLatestRegularSession(candles: Candle[]): Candle[] {
+  const regularCandles = filterRegularSession(candles)
+  if (regularCandles.length === 0) return candles
+
+  const latest = getEasternSessionInfo(regularCandles[regularCandles.length - 1].time)
+  const sessionCandles = regularCandles.filter((candle) => getEasternSessionInfo(candle.time).dateKey === latest.dateKey)
+
+  return sessionCandles.length > 0 ? sessionCandles : regularCandles
+}
+
+function trimToLatestRegularSessions(candles: Candle[], sessionsCount: number): Candle[] {
+  const regularCandles = filterRegularSession(candles)
+  const sessionKeys = Array.from(new Set(regularCandles.map((candle) => getEasternSessionInfo(candle.time).dateKey)))
+  const visibleKeys = new Set(sessionKeys.slice(-sessionsCount))
+  const sessionCandles = regularCandles.filter((candle) => visibleKeys.has(getEasternSessionInfo(candle.time).dateKey))
+
+  return sessionCandles.length > 0 ? sessionCandles : regularCandles
+}
+
+function hasEnoughIntradayCandles(range: ChartRange, candles: Candle[]) {
+  if (range === '1D') return candles.length >= 20
+  if (range === '5D') return candles.length >= 30
+  return true
 }
 
 function getYahooInterval(timeframe: Timeframe): YahooChartInterval {
@@ -70,7 +92,7 @@ function getYahooInterval(timeframe: Timeframe): YahooChartInterval {
     '15m': '15m',
     '30m': '30m',
     '1h': '1h',
-    '4h': '1h',   // Yahoo doesn't have 4h — use 1h
+    '4h': '1h',   // Yahoo doesn't have 4h â€” use 1h
     '1d': '1d',
     '1w': '1wk',
   }
@@ -79,7 +101,7 @@ function getYahooInterval(timeframe: Timeframe): YahooChartInterval {
 
 function getRangeForTimeframe(timeframe: Timeframe): string {
   switch (timeframe) {
-    case '1m': return '5d' // Retroactivo por si el mercado está cerrado (After-Hours)
+    case '1m': return '5d' // Retroactivo por si el mercado estÃ¡ cerrado (After-Hours)
     case '5m': return '5d'
     case '15m': return '1mo'
     case '30m': return '1mo'
@@ -105,6 +127,31 @@ type YahooChartResult = {
   timestamp?: number[]
   indicators?: {
     quote?: YahooQuote[][]
+  }
+}
+
+function toFinitePositiveNumber(value: number | null | undefined): number | null {
+  const numericValue = Number(value)
+  return Number.isFinite(numericValue) && numericValue > 0 ? numericValue : null
+}
+
+function normalizeYahooCandle(q: YahooQuote, time: number): Candle | null {
+  const open = toFinitePositiveNumber(q.open)
+  const high = toFinitePositiveNumber(q.high)
+  const low = toFinitePositiveNumber(q.low)
+  const close = toFinitePositiveNumber(q.close)
+
+  if (!Number.isFinite(time) || time <= 0 || open === null || high === null || low === null || close === null) {
+    return null
+  }
+
+  return {
+    time,
+    open,
+    high: Math.max(high, open, close),
+    low: Math.min(low, open, close),
+    close,
+    volume: Math.max(0, Number(q.volume) || 0),
   }
 }
 
@@ -134,17 +181,10 @@ async function fetchCandles(symbol: string, interval: YahooChartInterval, period
         time = Math.floor(Date.now() / 1000) - (quotes.length - i) * 86400
       }
 
-      return {
-        time,
-        open: q.open ?? 0,
-        high: q.high ?? 0,
-        low: q.low ?? 0,
-        close: q.close ?? 0,
-        volume: q.volume || 0,
-      }
+      return normalizeYahooCandle(q, time)
     })
-    .filter((c) => {
-      if (c.open <= 0 || c.close <= 0) return false
+    .filter((c): c is Candle => {
+      if (!c) return false
       if (uniqueTimes.has(c.time)) return false
       uniqueTimes.add(c.time)
       return true
@@ -159,9 +199,19 @@ async function fetchCandlesForRange(symbol: string, requestedRange: ChartRange) 
     const config = getChartRangeConfig(range)
     const period1 = range === '1D' ? subtractDays(new Date(), ONE_DAY_LOOKBACK_DAYS) : config.period1
     const rawCandles = await fetchCandles(symbol, config.interval, period1)
-    const candles = range === '1D' ? trimToLatestIntradaySession(rawCandles) : rawCandles
+    const candles = isCryptoSymbol(symbol)
+      ? rawCandles
+      : range === '1D'
+        ? trimToLatestRegularSession(rawCandles)
+        : range === '5D'
+          ? trimToLatestRegularSessions(rawCandles, 5)
+          : rawCandles
 
     if (candles.length > 0) {
+      if (!isCryptoSymbol(symbol) && (range === '1D' || range === '5D') && !hasEnoughIntradayCandles(range, candles)) {
+        continue
+      }
+
       const fallback = range !== requestedRange
 
       return {
@@ -171,7 +221,7 @@ async function fetchCandlesForRange(symbol: string, requestedRange: ChartRange) 
         interval: config.interval,
         fallback,
         fallbackReason: fallback
-          ? `Sin datos para el rango solicitado; se usó ${config.label}`
+          ? `Sin datos para el rango solicitado; se usÃ³ ${config.label}`
           : undefined,
       }
     }

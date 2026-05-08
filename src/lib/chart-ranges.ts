@@ -87,7 +87,7 @@ export function getChartRangeConfig(range: ChartRange): ChartRangeConfig {
 
 export function getFallbackChartRanges(range: ChartRange): ChartRange[] {
   const fallbacks: ChartRange[] = ['1D', '5D', '1M'].includes(range)
-    ? [range, '6M', '1Y', '5Y']
+    ? [range, '5D', '1M', '6M', '1Y', '5Y']
     : [range, '1Y', '5Y', 'ALL']
 
   return Array.from(new Set(fallbacks))

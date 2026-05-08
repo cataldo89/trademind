@@ -159,5 +159,18 @@
     margin-left: 0.25rem;               /* ml-1 */
     animation: pulse-dot-anim 1.5s ease-in-out infinite;
   }
+
+  /* Hide TradingView Attribution Logo */
+  div[class*="tv-embed-widget-wrapper"] .tv-embed-widget-wrapper__logo,
+  div[class*="tradingview-widget-container"] .tradingview-widget-copyright,
+  .tv-logo,
+  .tv-logo__wordmark,
+  [class*="tv-logo"],
+  [class*="logo-"] {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
 }
 

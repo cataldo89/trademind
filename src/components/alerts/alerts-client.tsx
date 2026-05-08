@@ -1,6 +1,6 @@
-'use client'
+﻿'use client'
 
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
 import { AlertCondition, AlertStatus, Market } from '@/types'
@@ -10,6 +10,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { cn } from '@/lib/utils'
+import { ZESTY_SYMBOLS } from '@/lib/market-data'
 
 interface Alert {
   id: string
@@ -23,6 +24,11 @@ interface Alert {
   message?: string
   created_at: string
   triggered_at?: string
+}
+
+type SymbolSuggestion = {
+  symbol: string
+  name: string
 }
 
 const CONDITION_LABELS: Record<AlertCondition, string> = {
@@ -44,7 +50,7 @@ const alertSchema = z.object({
     'price_above', 'price_below', 'change_percent_above', 'change_percent_below',
     'volume_above', 'rsi_above', 'rsi_below', 'ma_crossover_bull', 'ma_crossover_bear',
   ] as const),
-  value: z.string().transform((v) => parseFloat(v)),
+  value: z.string().min(1, 'Requerido').refine((v) => Number.isFinite(Number(v)), 'Valor invalido'),
   notifyEmail: z.boolean().default(false).optional(),
   message: z.string().optional(),
 })
@@ -58,6 +64,48 @@ type AlertForm = {
   message?: string
 }
 
+function normalizeText(value: string) {
+  return value.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+}
+
+function normalizeSymbol(value: string) {
+  return value.trim().toUpperCase()
+}
+
+function uniqueSymbols(symbols: SymbolSuggestion[]) {
+  const seen = new Set<string>()
+  return symbols.filter((item) => {
+    if (seen.has(item.symbol)) return false
+    seen.add(item.symbol)
+    return true
+  })
+}
+
+function getSymbolSuggestions(query: string) {
+  const normalizedQuery = normalizeText(query)
+  if (!normalizedQuery) return []
+
+  const exactSymbol: SymbolSuggestion[] = []
+  const symbolPrefix: SymbolSuggestion[] = []
+  const namePrefix: SymbolSuggestion[] = []
+  const contains: SymbolSuggestion[] = []
+
+  for (const item of ZESTY_SYMBOLS) {
+    const symbol = item.symbol.toUpperCase()
+    const name = item.name
+    const normalizedSymbol = normalizeText(symbol)
+    const normalizedName = normalizeText(name)
+    const candidate = { symbol, name }
+
+    if (normalizedSymbol === normalizedQuery) exactSymbol.push(candidate)
+    else if (normalizedSymbol.startsWith(normalizedQuery)) symbolPrefix.push(candidate)
+    else if (normalizedName.startsWith(normalizedQuery)) namePrefix.push(candidate)
+    else if (normalizedName.includes(normalizedQuery) || normalizedSymbol.includes(normalizedQuery)) contains.push(candidate)
+  }
+
+  return uniqueSymbols([...exactSymbol, ...symbolPrefix, ...namePrefix, ...contains]).slice(0, 6)
+}
+
 async function fetchAlerts(userId: string): Promise<Alert[]> {
   const supabase = createClient()
   const { data } = await supabase
@@ -68,8 +116,23 @@ async function fetchAlerts(userId: string): Promise<Alert[]> {
   return data || []
 }
 
+async function fetchQuote(symbol: string, market: Market) {
+  const res = await fetch(`/api/market/quote?symbol=${encodeURIComponent(symbol)}&market=${market}`, { cache: 'no-store' })
+  if (!res.ok) return null
+  const payload = await res.json()
+  const quote = payload.data || payload
+  const price = Number(quote?.price || quote?.regularMarketPrice)
+  if (!Number.isFinite(price) || price <= 0) return null
+  return {
+    price,
+    name: quote?.name || quote?.shortName || quote?.longName || symbol,
+  }
+}
+
 export function AlertsClient() {
   const [showForm, setShowForm] = useState(false)
+  const [symbolPreview, setSymbolPreview] = useState<SymbolSuggestion | null>(null)
+  const [quoteLoading, setQuoteLoading] = useState(false)
   const queryClient = useQueryClient()
   const supabase = createClient()
 
@@ -88,30 +151,111 @@ export function AlertsClient() {
     refetchInterval: 60 * 1000,
   })
 
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<AlertForm>({
+  const { register, handleSubmit, reset, watch, setValue, formState: { errors, isSubmitting } } = useForm<AlertForm>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(alertSchema) as any,
     defaultValues: { market: 'US' as const, condition: 'price_above', notifyEmail: false },
   })
 
+  const watchedSymbol = watch('symbol')
+  const watchedValue = watch('value')
+  const watchedMarket = watch('market')
+  const suggestions = useMemo(() => getSymbolSuggestions(watchedSymbol || ''), [watchedSymbol])
+
+  const selectSuggestion = (suggestion: SymbolSuggestion) => {
+    setValue('symbol', suggestion.symbol, { shouldDirty: true, shouldValidate: true })
+    setValue('market', 'US', { shouldDirty: true, shouldValidate: true })
+    setSymbolPreview(suggestion)
+  }
+
+  useEffect(() => {
+    const raw = watchedSymbol?.trim()
+    if (!raw) {
+      setSymbolPreview(null)
+      return
+    }
+
+    const best = getSymbolSuggestions(raw)[0] || null
+    if (!best) {
+      setSymbolPreview(null)
+      return
+    }
+
+    setSymbolPreview(best)
+
+    const normalizedRaw = normalizeSymbol(raw)
+    const normalizedName = normalizeText(best.name)
+    const normalizedRawText = normalizeText(raw)
+    if (normalizedRaw !== best.symbol && normalizedName.startsWith(normalizedRawText)) {
+      setValue('symbol', best.symbol, { shouldDirty: true, shouldValidate: true })
+    }
+  }, [setValue, watchedSymbol])
+
+  useEffect(() => {
+    const symbol = symbolPreview?.symbol || normalizeSymbol(watchedSymbol || '')
+    if (!symbol) return
+
+    const controller = new AbortController()
+    const timer = setTimeout(async () => {
+      setQuoteLoading(true)
+      try {
+        const res = await fetch(`/api/market/quote?symbol=${encodeURIComponent(symbol)}&market=${watchedMarket || 'US'}`, {
+          cache: 'no-store',
+          signal: controller.signal,
+        })
+        if (!res.ok) return
+        const payload = await res.json()
+        const quote = payload.data || payload
+        const price = Number(quote?.price || quote?.regularMarketPrice)
+        const name = quote?.name || quote?.shortName || quote?.longName || symbolPreview?.name
+        if (name) setSymbolPreview({ symbol, name })
+        if (!watchedValue && Number.isFinite(price) && price > 0) {
+          setValue('value', price.toFixed(2), { shouldDirty: true, shouldValidate: true })
+        }
+      } catch (error) {
+        if ((error as Error).name !== 'AbortError') console.warn('[alert quote lookup]', error)
+      } finally {
+        if (!controller.signal.aborted) setQuoteLoading(false)
+      }
+    }, 350)
+
+    return () => {
+      controller.abort()
+      clearTimeout(timer)
+      setQuoteLoading(false)
+    }
+  }, [setValue, symbolPreview?.symbol, symbolPreview?.name, watchedMarket, watchedSymbol, watchedValue])
+
   const onSubmit = async (data: AlertForm) => {
     if (!user) return
-    const numericValue = parseFloat(data.value)
-    if (isNaN(numericValue)) { toast.error('Valor inválido'); return }
+
+    const suggestion = getSymbolSuggestions(data.symbol)[0]
+    const symbol = suggestion?.symbol || normalizeSymbol(data.symbol)
+    const numericValue = Number(data.value)
+    if (!Number.isFinite(numericValue)) { toast.error('Valor invalido'); return }
+
+    const quote = await fetchQuote(symbol, data.market)
+    if (!quote) {
+      toast.error(`No reconozco el simbolo ${symbol}`)
+      return
+    }
+
     const { error } = await supabase.from('alerts').insert({
       user_id: user.id,
-      symbol: data.symbol.toUpperCase(),
+      symbol,
       market: data.market,
       condition: data.condition,
       value: numericValue,
+      current_value: quote.price,
       notify_email: data.notifyEmail || false,
       notify_app: true,
       message: data.message,
       status: 'active',
     })
-    if (error) { toast.error('Error al crear alerta'); return }
-    toast.success(`Alerta creada para ${data.symbol.toUpperCase()}`)
+    if (error) { toast.error(`Error al crear alerta: ${error.message}`); return }
+    toast.success(`Alerta creada para ${symbol}`)
     reset()
+    setSymbolPreview(null)
     setShowForm(false)
     queryClient.invalidateQueries({ queryKey: ['alerts'] })
   }
@@ -135,7 +279,6 @@ export function AlertsClient() {
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">Alertas</h1>
@@ -152,14 +295,38 @@ export function AlertsClient() {
         </button>
       </div>
 
-      {/* Create form */}
       {showForm && (
         <div className="glass rounded-xl p-5">
           <h3 className="text-sm font-semibold text-white mb-4">Crear alerta</h3>
           <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div>
-              <label className="text-xs text-gray-400 block mb-1">Símbolo *</label>
-              <input {...register('symbol')} placeholder="AAPL" className={inputClass} />
+            <div className="col-span-2 lg:col-span-1 relative">
+              <label className="text-xs text-gray-400 block mb-1">Simbolo *</label>
+              <input {...register('symbol')} placeholder="nvid, tesla, aapl..." autoComplete="off" className={inputClass} />
+              {quoteLoading && <Loader2 className="absolute right-3 top-8 h-4 w-4 animate-spin text-emerald-400" />}
+              {symbolPreview && (
+                <button
+                  type="button"
+                  onClick={() => selectSuggestion(symbolPreview)}
+                  className="mt-2 w-full rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-left text-xs text-emerald-200 hover:bg-emerald-500/15"
+                >
+                  Sugerido: <span className="font-mono font-bold text-white">{symbolPreview.symbol}</span> · {symbolPreview.name}
+                </button>
+              )}
+              {suggestions.length > 1 && (
+                <div className="mt-2 max-h-40 overflow-y-auto rounded-lg border border-gray-800 bg-gray-950/95 p-1 shadow-xl">
+                  {suggestions.slice(0, 5).map((suggestion) => (
+                    <button
+                      key={suggestion.symbol}
+                      type="button"
+                      onClick={() => selectSuggestion(suggestion)}
+                      className="flex w-full items-center justify-between gap-3 rounded-md px-2 py-1.5 text-left text-xs text-gray-300 hover:bg-gray-800 hover:text-white"
+                    >
+                      <span className="font-mono font-bold">{suggestion.symbol}</span>
+                      <span className="truncate text-gray-500">{suggestion.name}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
               {errors.symbol && <p className="text-xs text-red-400 mt-1">{errors.symbol.message}</p>}
             </div>
             <div>
@@ -169,7 +336,7 @@ export function AlertsClient() {
               </select>
             </div>
             <div>
-              <label className="text-xs text-gray-400 block mb-1">Condición</label>
+              <label className="text-xs text-gray-400 block mb-1">Condicion</label>
               <select {...register('condition')} className={inputClass}>
                 {Object.entries(CONDITION_LABELS).map(([value, label]) => (
                   <option key={value} value={value}>{label}</option>
@@ -178,12 +345,12 @@ export function AlertsClient() {
             </div>
             <div>
               <label className="text-xs text-gray-400 block mb-1">Valor *</label>
-              <input type="number" step="any" {...register('value')} placeholder="150.00" className={inputClass} />
+              <input type="number" step="any" {...register('value')} placeholder="Precio objetivo" className={inputClass} />
               {errors.value && <p className="text-xs text-red-400 mt-1">{errors.value.message}</p>}
             </div>
             <div className="col-span-2">
               <label className="text-xs text-gray-400 block mb-1">Mensaje (opcional)</label>
-              <input {...register('message')} placeholder="Descripción de la alerta..." className={inputClass} />
+              <input {...register('message')} placeholder="Descripcion de la alerta..." className={inputClass} />
             </div>
             <div className="col-span-2 flex items-center gap-4">
               <label className="flex items-center gap-2 text-sm text-gray-400 cursor-pointer">
@@ -194,10 +361,10 @@ export function AlertsClient() {
             <div className="col-span-2 lg:col-span-4 flex gap-3">
               <button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || quoteLoading}
                 className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-white text-sm font-semibold rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
               >
-                {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                {(isSubmitting || quoteLoading) && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                 Crear alerta
               </button>
               <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm rounded-lg">
@@ -208,7 +375,6 @@ export function AlertsClient() {
         </div>
       )}
 
-      {/* Alerts list */}
       <div className="glass rounded-xl overflow-hidden">
         {isLoading ? (
           <div className="flex items-center justify-center py-16">
@@ -296,4 +462,3 @@ function AlertRow({
 }
 
 const inputClass = 'w-full px-3 py-2 bg-gray-800/50 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-600 outline-none focus:border-emerald-500 transition-colors'
-

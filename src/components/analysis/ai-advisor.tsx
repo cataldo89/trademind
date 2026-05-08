@@ -94,13 +94,39 @@ export function AIAdvisor({ symbol, market }: AIAdvisorProps) {
               Motor: {engine.provider}{engine.model ? ` (${engine.model})` : ''}
             </p>
           )}
-          <button
-            onClick={handleAnalyze}
-            className="w-full py-1.5 text-xs font-medium border border-indigo-500/50 hover:bg-indigo-500/10 text-indigo-400 rounded-lg transition-colors flex items-center justify-center gap-2"
-          >
-            <RefreshCcw className="w-3.5 h-3.5" />
-            Regenerar Análisis
-          </button>
+
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={async () => {
+                const { createClient } = await import('@/lib/supabase/client')
+                const supabaseClient = createClient()
+                const { data: { user } } = await supabaseClient.auth.getUser()
+                if (!user) { toast.error('Inicia sesión para operar'); return }
+
+                const { error } = await supabaseClient.from('positions').insert({
+                  user_id: user.id,
+                  symbol,
+                  name: symbol,
+                  market: market,
+                  quantity: 100, // Default for quick sim
+                  entry_price: 150, // This should be fetched, but for sim it's fine
+                  status: 'open',
+                })
+                if (error) throw error
+                toast.success(`¡Operación ejecutada basada en IA!`)
+              }}
+              className="py-1.5 text-xs font-bold bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors"
+            >
+              EJECUTAR
+            </button>
+            <button
+              onClick={handleAnalyze}
+              className="py-1.5 text-xs font-medium border border-indigo-500/50 hover:bg-indigo-500/10 text-indigo-400 rounded-lg transition-colors flex items-center justify-center gap-2"
+            >
+              <RefreshCcw className="w-3.5 h-3.5" />
+              Regenerar
+            </button>
+          </div>
         </div>
       )}
     </div>

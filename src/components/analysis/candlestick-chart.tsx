@@ -125,6 +125,35 @@ function formatChartTime(time: number, range: ChartRange) {
   return datePart
 }
 
+function getChartBarSpacing(range: ChartRange, candlesCount: number) {
+  if (candlesCount <= 30) return 14
+  if (range === '1D' || range === '5D') return 4
+  if (candlesCount <= 90) return 8
+  return 5
+}
+
+function normalizeChartCandle(candle: Candle): Candle | null {
+  const open = Number(candle.open)
+  const high = Number(candle.high)
+  const low = Number(candle.low)
+  const close = Number(candle.close)
+  const time = Number(candle.time)
+
+  if (![time, open, high, low, close].every((value) => Number.isFinite(value)) || time <= 0 || open <= 0 || high <= 0 || low <= 0 || close <= 0) {
+    return null
+  }
+
+  return {
+    ...candle,
+    time,
+    open,
+    high: Math.max(high, open, close),
+    low: Math.min(low, open, close),
+    close,
+    volume: Math.max(0, Number(candle.volume) || 0),
+  }
+}
+
 export function CandlestickChart({ symbol, market, range, onMetadataChange }: CandlestickChartProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null)
   // Use any to avoid LWC v5 type issues
@@ -216,6 +245,7 @@ export function CandlestickChart({ symbol, market, range, onMetadataChange }: Ca
           textColor: '#94a3b8',
           fontFamily: 'JetBrains Mono, Inter, monospace',
           fontSize: 11,
+          attributionLogo: false,
         },
         localization: {
           timeFormatter: (time: Time) => formatCrosshairTime(time),
@@ -353,16 +383,23 @@ export function CandlestickChart({ symbol, market, range, onMetadataChange }: Ca
   }, [chartMode])
 
   useEffect(() => {
+    didFitContentRef.current = false
+  }, [symbol, effectiveRange])
+
+  useEffect(() => {
     if (!candlestickSeriesRef.current || !areaSeriesRef.current || !volumeSeriesRef.current) return
 
-    const rightPadding = effectiveRange === '1D' ? 28 : 4
     chartRef.current?.timeScale().applyOptions({
-      rightOffset: rightPadding,
-      barSpacing: effectiveRange === '1D' ? 4 : 6,
+      rightOffset: 2,
+      barSpacing: 6,
+      fixLeftEdge: true,
+      fixRightEdge: true,
       tickMarkFormatter: (time: Time) => formatAxisTime(time, effectiveRange),
     })
 
-    if (candles.length === 0) {
+    const drawableCandles = candles.map(normalizeChartCandle).filter((c): c is Candle => Boolean(c))
+
+    if (drawableCandles.length === 0) {
       try {
         candlestickSeriesRef.current.setData([])
         areaSeriesRef.current.setData([])
@@ -375,7 +412,7 @@ export function CandlestickChart({ symbol, market, range, onMetadataChange }: Ca
       return
     }
 
-    const candleData = candles.map((c) => ({
+    const candleData = drawableCandles.map((c) => ({
       time: c.time,
       open: c.open,
       high: c.high,
@@ -383,20 +420,20 @@ export function CandlestickChart({ symbol, market, range, onMetadataChange }: Ca
       close: c.close,
     }))
 
-    const areaData = candles.map((c) => ({
+    const areaData = drawableCandles.map((c) => ({
       time: c.time,
       value: c.close,
     }))
 
-    const volumeData = candles.map((c) => ({
+    const volumeData = drawableCandles.map((c) => ({
       time: c.time,
       value: c.volume,
       color: c.close >= c.open ? 'rgba(148, 163, 184, 0.25)' : 'rgba(148, 163, 184, 0.16)',
     }))
 
-    const first = candles[0]
-    const last = candles[candles.length - 1]
-    candlesByTimeRef.current = new Map(candles.map((c) => [c.time, c]))
+    const first = drawableCandles[0]
+    const last = drawableCandles[drawableCandles.length - 1]
+    candlesByTimeRef.current = new Map(drawableCandles.map((c) => [c.time, c]))
     const activeColor = last.close >= first.open ? '#00c896' : '#ff6380'
     const topColor = last.close >= first.open ? 'rgba(0, 200, 150, 0.28)' : 'rgba(255, 99, 128, 0.28)'
     const bottomColor = last.close >= first.open ? 'rgba(0, 200, 150, 0.02)' : 'rgba(255, 99, 128, 0.02)'
@@ -413,13 +450,30 @@ export function CandlestickChart({ symbol, market, range, onMetadataChange }: Ca
         bottomColor,
         visible: chartMode === 'mountain',
       })
-      candlestickSeriesRef.current.setData(candleData)
-      areaSeriesRef.current.setData(areaData)
-      volumeSeriesRef.current.setData(volumeData)
-      const from = 0
-      const to = candles.length - 1 + rightPadding
+      chartRef.current?.timeScale().applyOptions({
+        barSpacing: getChartBarSpacing(effectiveRange, drawableCandles.length),
+        rightOffset: 2,
+        fixLeftEdge: true,
+        fixRightEdge: true,
+      })
 
-      chartRef.current?.timeScale().setVisibleLogicalRange({ from, to })
+      try {
+        candlestickSeriesRef.current.setData(candleData)
+      } catch (e) {
+        console.error('[Chart] Candlestick data update error:', e)
+      }
+      try {
+        areaSeriesRef.current.setData(areaData)
+      } catch (e) {
+        console.error('[Chart] Area data update error:', e)
+      }
+      try {
+        volumeSeriesRef.current.setData(volumeData)
+      } catch (e) {
+        console.error('[Chart] Volume data update error:', e)
+      }
+
+      chartRef.current?.timeScale().fitContent()
       didFitContentRef.current = true
     } catch (e) {
       console.error('[Chart] Data update error:', e)

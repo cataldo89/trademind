@@ -74,7 +74,7 @@ export function AppSidebar({ user }: AppSidebarProps) {
   return (
     <aside
       className={cn(
-        'flex flex-col border-r border-gray-800 bg-gray-900/80 backdrop-blur transition-all duration-300',
+        'hidden lg:flex flex-col border-r border-gray-800 bg-gray-900/80 backdrop-blur transition-all duration-300',
         collapsed ? 'w-16' : 'w-60'
       )}
     >

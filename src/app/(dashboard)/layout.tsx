@@ -3,6 +3,7 @@ import type { User } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
 import { AppSidebar } from '@/components/layout/sidebar'
 import { AppHeader } from '@/components/layout/header'
+import { MobileNav } from '@/components/layout/mobile-nav'
 import { MarketTicker } from '@/components/market/market-ticker'
 
 export const metadata: Metadata = {
@@ -33,7 +34,7 @@ export default async function DashboardLayout({
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-950">
-      {/* Sidebar */}
+      {/* Sidebar (Desktop only) */}
       <AppSidebar user={currentUser} />
 
       {/* Main content */}
@@ -45,11 +46,13 @@ export default async function DashboardLayout({
         <AppHeader user={currentUser} />
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto pb-20 lg:pb-0">
           {children}
         </main>
+
+        {/* Mobile Navigation */}
+        <MobileNav />
       </div>
     </div>
   )
 }
-

@@ -33,6 +33,10 @@ export function AppHeader({ user }: AppHeaderProps) {
       {/* Market status badges */}
       <div className="flex items-center gap-3">
         <MarketStatusBadge market="US" />
+        <div className="hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-[10px] font-bold text-indigo-400 uppercase tracking-wider">
+          <div className="w-1 h-1 rounded-full bg-indigo-400 animate-pulse" />
+          Paper Trading
+        </div>
       </div>
 
       {/* Right side actions */}

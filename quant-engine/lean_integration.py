@@ -16,7 +16,7 @@ class TradeMindExportedAlgorithm(QCAlgorithm):
     def Initialize(self):
         self.SetStartDate(2023, 1, 1)
         self.SetCash(100000)
-        self.AddEquity("{symbol}", Resolution.Daily)
+        self.AddEquity("{symbol}", Resolution.DAILY)
         
         self.rsi_period = {parameters.get('rsi_period', 14)}
         self.var_threshold = {parameters.get('var_threshold', 0.05)}

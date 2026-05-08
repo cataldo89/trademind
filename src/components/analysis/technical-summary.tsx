@@ -7,8 +7,8 @@ import {
   calculateRSI, calculateMACD, calculateBollingerBands,
   calculateSMA, calculateVWAP, generateSignal, interpretRSI
 } from '@/lib/indicators'
-import { Loader2, TrendingUp, TrendingDown, Minus, ChevronRight } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { Loader2, TrendingUp, TrendingDown, Minus, ChevronRight, Zap } from 'lucide-react'
+import { cn, formatCurrency } from '@/lib/utils'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { useState } from 'react'
@@ -25,6 +25,17 @@ async function fetchCandles(symbol: string, market: Market, range: ChartRange): 
   if (!res.ok) return []
   const data = await res.json()
   return data.data || []
+}
+
+function parseSimulatedOrderAmount(value: string) {
+  return Number(value.trim().replace(',', '.'))
+}
+
+function formatSimulatedQuantity(quantity: number) {
+  return quantity.toLocaleString('en-US', {
+    minimumFractionDigits: quantity < 1 ? 4 : 0,
+    maximumFractionDigits: quantity < 1 ? 8 : 6,
+  })
 }
 
 function getPerformanceLabel(range: ChartRange) {
@@ -313,11 +324,111 @@ export function TechnicalSummary({ symbol, market, range }: TechnicalSummaryProp
       </button>
 
       {/* Add to portfolio CTA */}
+      <button
+        onClick={async () => {
+          setIsSaving(true)
+          try {
+            const { createClient } = await import('@/lib/supabase/client')
+            const supabaseClient = createClient()
+            const { data: { user } } = await supabaseClient.auth.getUser()
+            if (!user) { toast.error('Inicia sesion para operar'); return }
+
+            const price = Number(lastCandle.close)
+            if (!Number.isFinite(price) || price <= 0) {
+              toast.error('No hay precio valido para ejecutar la compra')
+              return
+            }
+
+            const { data: profile, error: profileError } = await supabaseClient
+              .from('profiles')
+              .select('virtual_balance')
+              .eq('id', user.id)
+              .maybeSingle()
+            if (profileError) throw profileError
+
+            const virtualBalance = Number(profile?.virtual_balance ?? 0)
+            if (!Number.isFinite(virtualBalance) || virtualBalance <= 0) {
+              toast.error('No tienes capital virtual disponible. Ajusta el capital en Portafolio.')
+              return
+            }
+
+            const amountInput = window.prompt(
+              `Monto virtual a invertir en ${symbol}. Saldo disponible: ${formatCurrency(virtualBalance)}`,
+              String(Math.min(100, virtualBalance))
+            )
+            if (amountInput === null) return
+
+            const amount = parseSimulatedOrderAmount(amountInput)
+            if (!Number.isFinite(amount) || amount <= 0) {
+              toast.error('Ingresa un monto valido')
+              return
+            }
+            if (amount > virtualBalance) {
+              toast.error(`Saldo insuficiente. Disponible: ${formatCurrency(virtualBalance)}`)
+              return
+            }
+
+            const quantity = Number((amount / price).toFixed(8))
+            const nextBalance = Number((virtualBalance - amount).toFixed(2))
+            const { data: position, error } = await supabaseClient.from('positions').insert({
+              user_id: user.id,
+              symbol,
+              name: symbol,
+              market,
+              quantity,
+              entry_price: price,
+              entry_date: new Date().toISOString().split('T')[0],
+              currency: 'USD',
+              notes: 'Compra fraccional simulada desde analisis tecnico',
+              status: 'open',
+            }).select('id').single()
+            if (error) throw error
+
+            const { error: balanceError } = await supabaseClient
+              .from('profiles')
+              .update({ virtual_balance: nextBalance })
+              .eq('id', user.id)
+            if (balanceError) {
+              if (position?.id) await supabaseClient.from('positions').delete().eq('id', position.id)
+              throw balanceError
+            }
+
+            const { error: transactionError } = await supabaseClient.from('transactions').insert({
+              user_id: user.id,
+              symbol,
+              name: symbol,
+              market,
+              type: 'BUY',
+              quantity,
+              price,
+              currency: 'USD',
+              notes: 'Compra fraccional simulada desde analisis tecnico',
+            })
+            if (transactionError) console.warn('[analysis fractional transaction]', transactionError)
+
+            toast.success(`Compraste ${formatSimulatedQuantity(quantity)} ${symbol} por ${formatCurrency(amount)}`)
+            queryClient.invalidateQueries({ queryKey: ['positions'] })
+            queryClient.invalidateQueries({ queryKey: ['profile'] })
+            queryClient.invalidateQueries({ queryKey: ['portfolio-summary'] })
+          } catch (err) {
+            console.warn('[analysis fractional buy]', err)
+            toast.error('Error al ejecutar operacion simulada')
+          } finally {
+            setIsSaving(false)
+          }
+        }}
+        disabled={isSaving}
+        className="flex items-center justify-center gap-2 w-full py-2 text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-white rounded-lg transition-all shadow-lg shadow-emerald-500/20 active:scale-95 disabled:opacity-50"
+      >
+        {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
+        EJECUTAR COMPRA FRACCIONAL
+      </button>
+
       <Link
         href={`/portfolio?add=${symbol}&market=${market}`}
-        className="flex items-center justify-center gap-2 w-full py-2 text-xs font-medium bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 rounded-lg transition-colors"
+        className="flex items-center justify-center gap-2 w-full py-2 text-xs font-medium bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors border border-gray-700"
       >
-        + Agregar al portafolio
+        + Ajustar y agregar manualmente
       </Link>
     </div>
   )
