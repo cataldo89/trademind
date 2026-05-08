@@ -1,0 +1,2609 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.30">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>invertir_gpt</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js" integrity="sha384-ZvpUoO/+PpLXR1lu4jmpXWu80pZlYUAfxl5NsBMWOEPSjUn/6Z/hRTt8+pR6L4N2" crossorigin="anonymous"></script><script src="invertir_gpt_files/libs/clipboard/clipboard.min.js"></script>
+<script src="invertir_gpt_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="invertir_gpt_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="invertir_gpt_files/libs/quarto-html/popper.min.js"></script>
+<script src="invertir_gpt_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="invertir_gpt_files/libs/quarto-html/anchor.min.js"></script>
+<link href="invertir_gpt_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="invertir_gpt_files/libs/quarto-html/quarto-syntax-highlighting-b6a8276bf55561bdbc268162d41bd1f7.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="invertir_gpt_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="invertir_gpt_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="invertir_gpt_files/libs/bootstrap/bootstrap-efbb37e9afcc02144ebbc7afd12a776f.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script src="https://cdn.jsdelivr.net/npm/requirejs@2.3.6/require.min.js" integrity="sha384-c9c+LnTbwQ3aujuU7ULEPVvgLs+Fn6fJUvIGTsuu1ZcCf11fiEubah0ttpca4ntM sha384-6V1/AdqZRWk1KAlWbKBlGhN7VG4iE/yAZcO6NZPMF8od0vukrvr0tg4qY6NSrItx" crossorigin="anonymous"></script>
+
+<script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
+
+
+</head>
+
+<body class="fullcontent quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+
+
+
+<div id="54549e5b" class="cell" data-execution_count="2">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ============================================================</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co"># ZESTY SCREENER AUTOMATIZADO - VERSION ROBUSTA</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co"># - Corrige errores de sintaxis del script original</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># - Mantiene los tickers embebidos en el código</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co"># - Reemplaza el Monte Carlo "spaghetti" por visuales más limpios:</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co">#     1) Fan chart de percentiles</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co">#     2) Histograma terminal</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co"># - Usa ARIMA + GARCH-t + bootstrap de residuos estandarizados</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co"># ============================================================</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Si falta instalar:</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="co"># !pip install yfinance pandas numpy matplotlib statsmodels arch scipy</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> __future__ <span class="im">import</span> annotations</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> warnings</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> dataclasses <span class="im">import</span> dataclass</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> typing <span class="im">import</span> Dict, List, Optional, Tuple</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> yfinance <span class="im">as</span> yf</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> statsmodels.tsa.arima.model <span class="im">import</span> ARIMA</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> arch <span class="im">import</span> arch_model</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a><span class="co"># ------------------------------------------------------------</span></span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a><span class="co"># CONFIG</span></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a><span class="co"># ------------------------------------------------------------</span></span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>PERIODO <span class="op">=</span> <span class="st">"5y"</span></span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>TOP_N <span class="op">=</span> <span class="dv">30</span></span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>DIAS_PROYECCION <span class="op">=</span> <span class="dv">30</span></span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a>N_SIM <span class="op">=</span> <span class="dv">3000</span></span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>SEED <span class="op">=</span> <span class="dv">42</span></span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a>MIN_DIAS <span class="op">=</span> <span class="dv">260</span></span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>HIST_DIAS_GRAFICO <span class="op">=</span> <span class="dv">120</span></span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a>TOP_GRAFICOS <span class="op">=</span> <span class="dv">5</span></span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a><span class="co"># Método de simulación:</span></span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a><span class="co">#   "bootstrap" -&gt; más robusto ante colas pesadas</span></span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a><span class="co">#   "normal"    -&gt; más simple</span></span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a>MC_METODO <span class="op">=</span> <span class="st">"bootstrap"</span></span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a>ARIMA_CANDIDATOS <span class="op">=</span> [</span>
+<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a>    (<span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">0</span>),</span>
+<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a>    (<span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">1</span>),</span>
+<span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a>    (<span class="dv">2</span>, <span class="dv">0</span>, <span class="dv">0</span>),</span>
+<span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a>    (<span class="dv">2</span>, <span class="dv">0</span>, <span class="dv">1</span>),</span>
+<span id="cb1-51"><a href="#cb1-51" aria-hidden="true" tabindex="-1"></a>    (<span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">0</span>),</span>
+<span id="cb1-52"><a href="#cb1-52" aria-hidden="true" tabindex="-1"></a>    (<span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>),</span>
+<span id="cb1-53"><a href="#cb1-53" aria-hidden="true" tabindex="-1"></a>    (<span class="dv">2</span>, <span class="dv">1</span>, <span class="dv">0</span>),</span>
+<span id="cb1-54"><a href="#cb1-54" aria-hidden="true" tabindex="-1"></a>    (<span class="dv">2</span>, <span class="dv">1</span>, <span class="dv">1</span>),</span>
+<span id="cb1-55"><a href="#cb1-55" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb1-56"><a href="#cb1-56" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-57"><a href="#cb1-57" aria-hidden="true" tabindex="-1"></a>warnings.filterwarnings(<span class="st">"ignore"</span>, category<span class="op">=</span><span class="pp">UserWarning</span>)</span>
+<span id="cb1-58"><a href="#cb1-58" aria-hidden="true" tabindex="-1"></a>warnings.filterwarnings(<span class="st">"ignore"</span>, category<span class="op">=</span><span class="pp">FutureWarning</span>)</span>
+<span id="cb1-59"><a href="#cb1-59" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-60"><a href="#cb1-60" aria-hidden="true" tabindex="-1"></a>RNG <span class="op">=</span> np.random.default_rng(SEED)</span>
+<span id="cb1-61"><a href="#cb1-61" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-62"><a href="#cb1-62" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-63"><a href="#cb1-63" aria-hidden="true" tabindex="-1"></a><span class="co"># ------------------------------------------------------------</span></span>
+<span id="cb1-64"><a href="#cb1-64" aria-hidden="true" tabindex="-1"></a><span class="co"># TICKERS EMBEBIDOS</span></span>
+<span id="cb1-65"><a href="#cb1-65" aria-hidden="true" tabindex="-1"></a><span class="co"># ------------------------------------------------------------</span></span>
+<span id="cb1-66"><a href="#cb1-66" aria-hidden="true" tabindex="-1"></a>TICKERS <span class="op">=</span> <span class="bu">sorted</span>(<span class="bu">list</span>(<span class="bu">set</span>([</span>
+<span id="cb1-67"><a href="#cb1-67" aria-hidden="true" tabindex="-1"></a>    <span class="st">"FDL"</span>,<span class="st">"KO"</span>,<span class="st">"NOBL"</span>,<span class="st">"RDIV"</span>,<span class="st">"SDIV"</span>,<span class="st">"SPYD"</span>,<span class="st">"SRET"</span>,<span class="st">"VIG"</span>,<span class="st">"VYM"</span>,<span class="st">"VYMI"</span>,<span class="st">"BIZD"</span>,<span class="st">"DJD"</span>,<span class="st">"DVYE"</span>,<span class="st">"JEPQ"</span>,</span>
+<span id="cb1-68"><a href="#cb1-68" aria-hidden="true" tabindex="-1"></a>    <span class="st">"MLPA"</span>,<span class="st">"OEUR"</span>,<span class="st">"PFRL"</span>,<span class="st">"PRF"</span>,<span class="st">"SDOG"</span>,<span class="st">"TLTW"</span>,<span class="st">"BMY"</span>,<span class="st">"KBWD"</span>,<span class="st">"MO"</span>,<span class="st">"PEP"</span>,<span class="st">"PEY"</span>,<span class="st">"PM"</span>,<span class="st">"SCHD"</span>,<span class="st">"SPHD"</span>,</span>
+<span id="cb1-69"><a href="#cb1-69" aria-hidden="true" tabindex="-1"></a>    <span class="st">"TTAI"</span>,<span class="st">"VZ"</span>,<span class="st">"COST"</span>,<span class="st">"DUK"</span>,<span class="st">"GILD"</span>,<span class="st">"LMT"</span>,<span class="st">"MCD"</span>,<span class="st">"MDT"</span>,<span class="st">"MMM"</span>,<span class="st">"OMF"</span>,<span class="st">"STLA"</span>,<span class="st">"DOC"</span>,<span class="st">"ET"</span>,<span class="st">"KMI"</span>,</span>
+<span id="cb1-70"><a href="#cb1-70" aria-hidden="true" tabindex="-1"></a>    <span class="st">"PBR"</span>,<span class="st">"PFE"</span>,<span class="st">"RIO"</span>,<span class="st">"T"</span>,<span class="st">"UGI"</span>,<span class="st">"VALE"</span>,<span class="st">"BETZ"</span>,<span class="st">"BJK"</span>,<span class="st">"ESPO"</span>,<span class="st">"GAMR"</span>,<span class="st">"HERO"</span>,<span class="st">"MSFT"</span>,<span class="st">"NERD"</span>,<span class="st">"NVDA"</span>,</span>
+<span id="cb1-71"><a href="#cb1-71" aria-hidden="true" tabindex="-1"></a>    <span class="st">"ODDS"</span>,<span class="st">"TCEHY"</span>,<span class="st">"CMCM"</span>,<span class="st">"EA"</span>,<span class="st">"HUYA"</span>,<span class="st">"NTDOY"</span>,<span class="st">"NTES"</span>,<span class="st">"RBLX"</span>,<span class="st">"TTWO"</span>,<span class="st">"AOA"</span>,<span class="st">"AOK"</span>,<span class="st">"AOM"</span>,<span class="st">"AOR"</span>,<span class="st">"NTSX"</span>,</span>
+<span id="cb1-72"><a href="#cb1-72" aria-hidden="true" tabindex="-1"></a>    <span class="st">"ARKG"</span>,<span class="st">"AXSM"</span>,<span class="st">"BBH"</span>,<span class="st">"BIB"</span>,<span class="st">"BMRN"</span>,<span class="st">"CRSP"</span>,<span class="st">"EXEL"</span>,<span class="st">"FBT"</span>,<span class="st">"GNOM"</span>,<span class="st">"IBB"</span>,<span class="st">"IDNA"</span>,<span class="st">"INCY"</span>,<span class="st">"IONS"</span>,<span class="st">"JAZZ"</span>,</span>
+<span id="cb1-73"><a href="#cb1-73" aria-hidden="true" tabindex="-1"></a>    <span class="st">"MRNA"</span>,<span class="st">"NVAX"</span>,<span class="st">"NVO"</span>,<span class="st">"PBE"</span>,<span class="st">"REGN"</span>,<span class="st">"UTHR"</span>,<span class="st">"XBI"</span>,<span class="st">"ABT"</span>,<span class="st">"DHR"</span>,<span class="st">"ELV"</span>,<span class="st">"SYK"</span>,<span class="st">"TMO"</span>,<span class="st">"UNH"</span>,<span class="st">"VHT"</span>,</span>
+<span id="cb1-74"><a href="#cb1-74" aria-hidden="true" tabindex="-1"></a>    <span class="st">"XLV"</span>,<span class="st">"BSX"</span>,<span class="st">"HCA"</span>,<span class="st">"HUM"</span>,<span class="st">"IXJ"</span>,<span class="st">"PHG"</span>,<span class="st">"TECH"</span>,<span class="st">"AMAT"</span>,<span class="st">"AMD"</span>,<span class="st">"ARM"</span>,<span class="st">"ASML"</span>,<span class="st">"DELL"</span>,<span class="st">"INTC"</span>,<span class="st">"LRCX"</span>,</span>
+<span id="cb1-75"><a href="#cb1-75" aria-hidden="true" tabindex="-1"></a>    <span class="st">"SMCI"</span>,<span class="st">"TSM"</span>,<span class="st">"APH"</span>,<span class="st">"AVGO"</span>,<span class="st">"CDNS"</span>,<span class="st">"KLAC"</span>,<span class="st">"MRVL"</span>,<span class="st">"MU"</span>,<span class="st">"NXPI"</span>,<span class="st">"SNPS"</span>,<span class="st">"STX"</span>,<span class="st">"TXN"</span>,<span class="st">"GLW"</span>,<span class="st">"GRMN"</span>,</span>
+<span id="cb1-76"><a href="#cb1-76" aria-hidden="true" tabindex="-1"></a>    <span class="st">"IFNNY"</span>,<span class="st">"MCHP"</span>,<span class="st">"MPWR"</span>,<span class="st">"MRAAY"</span>,<span class="st">"ON"</span>,<span class="st">"RNECY"</span>,<span class="st">"STM"</span>,<span class="st">"TEL"</span>,<span class="st">"ATEYY"</span>,<span class="st">"FTV"</span>,<span class="st">"GFS"</span>,<span class="st">"AMZN"</span>,<span class="st">"GOOGL"</span>,<span class="st">"META"</span>,</span>
+<span id="cb1-77"><a href="#cb1-77" aria-hidden="true" tabindex="-1"></a>    <span class="st">"PLTR"</span>,<span class="st">"ACN"</span>,<span class="st">"AI"</span>,<span class="st">"ARKQ"</span>,<span class="st">"BIDU"</span>,<span class="st">"BOTZ"</span>,<span class="st">"DOCU"</span>,<span class="st">"IXN"</span>,<span class="st">"IYW"</span>,<span class="st">"KOMP"</span>,<span class="st">"VGT"</span>,<span class="st">"XLK"</span>,<span class="st">"XT"</span>,<span class="st">"CEG"</span>,</span>
+<span id="cb1-78"><a href="#cb1-78" aria-hidden="true" tabindex="-1"></a>    <span class="st">"NRG"</span>,<span class="st">"SPCX"</span>,<span class="st">"CLS"</span>,<span class="st">"LMB"</span>,<span class="st">"NVT"</span>,<span class="st">"VRT"</span>,<span class="st">"BITI"</span>,<span class="st">"LABD"</span>,<span class="st">"MSFD"</span>,<span class="st">"NVDD"</span>,<span class="st">"SOXS"</span>,<span class="st">"SPXS"</span>,<span class="st">"SQQQ"</span>,<span class="st">"TMV"</span>,</span>
+<span id="cb1-79"><a href="#cb1-79" aria-hidden="true" tabindex="-1"></a>    <span class="st">"TSLZ"</span>,<span class="st">"YANG"</span>,<span class="st">"AAPD"</span>,<span class="st">"AMZD"</span>,<span class="st">"SRTY"</span>,<span class="st">"TUSI"</span>,<span class="st">"YEAR"</span>,<span class="st">"YXI"</span>,<span class="st">"ZIVB"</span>,<span class="st">"SMDD"</span>,<span class="st">"SPXU"</span>,<span class="st">"SVIX"</span>,<span class="st">"TBF"</span>,<span class="st">"TBUX"</span>,</span>
+<span id="cb1-80"><a href="#cb1-80" aria-hidden="true" tabindex="-1"></a>    <span class="st">"TBX"</span>,<span class="st">"TSDD"</span>,<span class="st">"TSLI"</span>,<span class="st">"TTT"</span>,<span class="st">"REK"</span>,<span class="st">"RWM"</span>,<span class="st">"SARK"</span>,<span class="st">"SBB"</span>,<span class="st">"SDOW"</span>,<span class="st">"SEF"</span>,<span class="st">"SETH"</span>,<span class="st">"SH"</span>,<span class="st">"SHRT"</span>,<span class="st">"SHV"</span>,</span>
+<span id="cb1-81"><a href="#cb1-81" aria-hidden="true" tabindex="-1"></a>    <span class="st">"EUM"</span>,<span class="st">"FLUD"</span>,<span class="st">"FUMB"</span>,<span class="st">"JMST"</span>,<span class="st">"JPST"</span>,<span class="st">"MYY"</span>,<span class="st">"NVD"</span>,<span class="st">"OPER"</span>,<span class="st">"PSQ"</span>,<span class="st">"PULT"</span>,<span class="st">"AIBD"</span>,<span class="st">"BAMU"</span>,<span class="st">"BILZ"</span>,<span class="st">"CRSH"</span>,</span>
+<span id="cb1-82"><a href="#cb1-82" aria-hidden="true" tabindex="-1"></a>    <span class="st">"DGZ"</span>,<span class="st">"DOG"</span>,<span class="st">"DWSH"</span>,<span class="st">"DZZ"</span>,<span class="st">"EFZ"</span>,<span class="st">"TZA"</span>,<span class="st">"ERY"</span>,<span class="st">"FAZ"</span>,<span class="st">"GGLS"</span>,<span class="st">"HIBS"</span>,<span class="st">"JDST"</span>,<span class="st">"QQAD"</span>,<span class="st">"SPDN"</span>,<span class="st">"TSLQ"</span>,</span>
+<span id="cb1-83"><a href="#cb1-83" aria-hidden="true" tabindex="-1"></a>    <span class="st">"TSLS"</span>,<span class="st">"NVDU"</span>,<span class="st">"TSLL"</span>,<span class="st">"UVIX"</span>,<span class="st">"XXCH"</span>,<span class="st">"SPUU"</span>,<span class="st">"TARK"</span>,<span class="st">"TIPD"</span>,<span class="st">"TSL"</span>,<span class="st">"TSLT"</span>,<span class="st">"UBOT"</span>,<span class="st">"USML"</span>,<span class="st">"OOTO"</span>,<span class="st">"PFFL"</span>,</span>
+<span id="cb1-84"><a href="#cb1-84" aria-hidden="true" tabindex="-1"></a>    <span class="st">"QQQU"</span>,<span class="st">"QULL"</span>,<span class="st">"SCDL"</span>,<span class="st">"SKRE"</span>,<span class="st">"SMHB"</span>,<span class="st">"MSFL"</span>,<span class="st">"MSFX"</span>,<span class="st">"MSOX"</span>,<span class="st">"MTUL"</span>,<span class="st">"NUGT"</span>,<span class="st">"NVDL"</span>,<span class="st">"NVDX"</span>,<span class="st">"INDL"</span>,<span class="st">"IWDL"</span>,</span>
+<span id="cb1-85"><a href="#cb1-85" aria-hidden="true" tabindex="-1"></a>    <span class="st">"IWML"</span>,<span class="st">"JNUG"</span>,<span class="st">"MAGX"</span>,<span class="st">"ESUS"</span>,<span class="st">"EVAV"</span>,<span class="st">"FNGG"</span>,<span class="st">"FNGO"</span>,<span class="st">"GOOX"</span>,<span class="st">"GUSH"</span>,<span class="st">"HDLB"</span>,<span class="st">"BITX"</span>,<span class="st">"BRZU"</span>,<span class="st">"CHAU"</span>,<span class="st">"CLDL"</span>,</span>
+<span id="cb1-86"><a href="#cb1-86" aria-hidden="true" tabindex="-1"></a>    <span class="st">"CWEB"</span>,<span class="st">"DRIP"</span>,<span class="st">"DUST"</span>,<span class="st">"ERX"</span>,<span class="st">"AAPB"</span>,<span class="st">"AAPX"</span>,<span class="st">"AIBU"</span>,<span class="st">"AMDL"</span>,<span class="st">"AMZZ"</span>,<span class="st">"WTID"</span>,<span class="st">"WTIU"</span>,<span class="st">"YINN"</span>,<span class="st">"TNA"</span>,<span class="st">"TPOR"</span>,</span>
+<span id="cb1-87"><a href="#cb1-87" aria-hidden="true" tabindex="-1"></a>    <span class="st">"TYD"</span>,<span class="st">"TYO"</span>,<span class="st">"UTSL"</span>,<span class="st">"WANT"</span>,<span class="st">"WEBL"</span>,<span class="st">"WEBS"</span>,<span class="st">"PILL"</span>,<span class="st">"RETL"</span>,<span class="st">"TMF"</span>,<span class="st">"SHNY"</span>,<span class="st">"SOXL"</span>,<span class="st">"SPXL"</span>,<span class="st">"TECL"</span>,<span class="st">"TECS"</span>,</span>
+<span id="cb1-88"><a href="#cb1-88" aria-hidden="true" tabindex="-1"></a>    <span class="st">"KORU"</span>,<span class="st">"LABU"</span>,<span class="st">"MEXX"</span>,<span class="st">"MIDU"</span>,<span class="st">"NAIL"</span>,<span class="st">"NRGD"</span>,<span class="st">"NRGU"</span>,<span class="st">"OILD"</span>,<span class="st">"OILU"</span>,<span class="st">"FLYD"</span>,<span class="st">"FLYU"</span>,<span class="st">"FNGD"</span>,<span class="st">"FNGU"</span>,<span class="st">"GDXD"</span>,</span>
+<span id="cb1-89"><a href="#cb1-89" aria-hidden="true" tabindex="-1"></a>    <span class="st">"GDXU"</span>,<span class="st">"HIBL"</span>,<span class="st">"JETD"</span>,<span class="st">"JETU"</span>,<span class="st">"DPST"</span>,<span class="st">"DRN"</span>,<span class="st">"DRV"</span>,<span class="st">"DULL"</span>,<span class="st">"DUSL"</span>,<span class="st">"EDC"</span>,<span class="st">"EDZ"</span>,<span class="st">"EURL"</span>,<span class="st">"FAS"</span>,<span class="st">"BERZ"</span>,</span>
+<span id="cb1-90"><a href="#cb1-90" aria-hidden="true" tabindex="-1"></a>    <span class="st">"BNKD"</span>,<span class="st">"BNKU"</span>,<span class="st">"BULZ"</span>,<span class="st">"CARD"</span>,<span class="st">"CARU"</span>,<span class="st">"CURE"</span>,<span class="st">"DFEN"</span>,<span class="st">"SPYU"</span>,<span class="st">"AETH"</span>,<span class="st">"ARKZ"</span>,<span class="st">"CETH"</span>,<span class="st">"ETH"</span>,<span class="st">"ETHA"</span>,<span class="st">"ETHV"</span>,</span>
+<span id="cb1-91"><a href="#cb1-91" aria-hidden="true" tabindex="-1"></a>    <span class="st">"ETHW"</span>,<span class="st">"FETH"</span>,<span class="st">"QETH"</span>,<span class="st">"EFUT"</span>,<span class="st">"ETHE"</span>,<span class="st">"IVV"</span>,<span class="st">"RSP"</span>,<span class="st">"SPLG"</span>,<span class="st">"SPY"</span>,<span class="st">"SPYG"</span>,<span class="st">"VOO"</span>,<span class="st">"VOOV"</span>,<span class="st">"QDIV"</span>,<span class="st">"SSO"</span>,</span>
+<span id="cb1-92"><a href="#cb1-92" aria-hidden="true" tabindex="-1"></a>    <span class="st">"ACWI"</span>,<span class="st">"BIL"</span>,<span class="st">"QQQ"</span>,<span class="st">"VEA"</span>,<span class="st">"VTI"</span>,<span class="st">"VUG"</span>,<span class="st">"AGG"</span>,<span class="st">"EEM"</span>,<span class="st">"EWZ"</span>,<span class="st">"IEFA"</span>,<span class="st">"IWM"</span>,<span class="st">"MCHI"</span>,<span class="st">"SOXX"</span>,<span class="st">"TLT"</span>,</span>
+<span id="cb1-93"><a href="#cb1-93" aria-hidden="true" tabindex="-1"></a>    <span class="st">"BND"</span>,<span class="st">"URTH"</span>,<span class="st">"USMV"</span>,<span class="st">"USSG"</span>,<span class="st">"SIZE"</span>,<span class="st">"SMIN"</span>,<span class="st">"SMLF"</span>,<span class="st">"SMMV"</span>,<span class="st">"SUSA"</span>,<span class="st">"TCHI"</span>,<span class="st">"UBR"</span>,<span class="st">"VLUE"</span>,<span class="st">"BNO"</span>,<span class="st">"CPER"</span>,</span>
+<span id="cb1-94"><a href="#cb1-94" aria-hidden="true" tabindex="-1"></a>    <span class="st">"DBA"</span>,<span class="st">"DBB"</span>,<span class="st">"DBC"</span>,<span class="st">"GLD"</span>,<span class="st">"IAU"</span>,<span class="st">"SLV"</span>,<span class="st">"UGA"</span>,<span class="st">"UNG"</span>,<span class="st">"USCI"</span>,<span class="st">"USO"</span>,<span class="st">"WEAT"</span>,<span class="st">"ESGD"</span>,<span class="st">"ESGE"</span>,<span class="st">"ESGU"</span>,</span>
+<span id="cb1-95"><a href="#cb1-95" aria-hidden="true" tabindex="-1"></a>    <span class="st">"ESGV"</span>,<span class="st">"EUSB"</span>,<span class="st">"ICLN"</span>,<span class="st">"PHO"</span>,<span class="st">"QCLN"</span>,<span class="st">"SUSB"</span>,<span class="st">"TAN"</span>,<span class="st">"USXF"</span>,<span class="st">"VSGX"</span>,<span class="st">"ARGT"</span>,<span class="st">"ECH"</span>,<span class="st">"EDEN"</span>,<span class="st">"EFNL"</span>,<span class="st">"EWA"</span>,</span>
+<span id="cb1-96"><a href="#cb1-96" aria-hidden="true" tabindex="-1"></a>    <span class="st">"EWC"</span>,<span class="st">"EWK"</span>,<span class="st">"EWO"</span>,<span class="st">"EIDO"</span>,<span class="st">"EIRL"</span>,<span class="st">"EIS"</span>,<span class="st">"EWG"</span>,<span class="st">"EWI"</span>,<span class="st">"EWJ"</span>,<span class="st">"EWQ"</span>,<span class="st">"GREK"</span>,<span class="st">"KWT"</span>,<span class="st">"PIN"</span>,<span class="st">"ENZL"</span>,</span>
+<span id="cb1-97"><a href="#cb1-97" aria-hidden="true" tabindex="-1"></a>    <span class="st">"EPHE"</span>,<span class="st">"EPOL"</span>,<span class="st">"EPU"</span>,<span class="st">"EWM"</span>,<span class="st">"EWN"</span>,<span class="st">"EWS"</span>,<span class="st">"KSA"</span>,<span class="st">"NORW"</span>,<span class="st">"QAT"</span>,<span class="st">"EWD"</span>,<span class="st">"EWL"</span>,<span class="st">"EWP"</span>,<span class="st">"EWT"</span>,<span class="st">"EWU"</span>,</span>
+<span id="cb1-98"><a href="#cb1-98" aria-hidden="true" tabindex="-1"></a>    <span class="st">"EWY"</span>,<span class="st">"EZA"</span>,<span class="st">"THD"</span>,<span class="st">"TUR"</span>,<span class="st">"UAE"</span>,<span class="st">"FLTW"</span>,<span class="st">"UPV"</span>,<span class="st">"VGK"</span>,<span class="st">"VNM"</span>,<span class="st">"VPL"</span>,<span class="st">"XPP"</span>,<span class="st">"FLIN"</span>,<span class="st">"FLJH"</span>,<span class="st">"FLJP"</span>,</span>
+<span id="cb1-99"><a href="#cb1-99" aria-hidden="true" tabindex="-1"></a>    <span class="st">"FLKR"</span>,<span class="st">"FLLA"</span>,<span class="st">"FLMX"</span>,<span class="st">"FLSA"</span>,<span class="st">"FLSW"</span>,<span class="st">"FLBR"</span>,<span class="st">"FLCA"</span>,<span class="st">"FLCH"</span>,<span class="st">"FLEE"</span>,<span class="st">"FLEU"</span>,<span class="st">"FLGB"</span>,<span class="st">"FLGR"</span>,<span class="st">"FLHK"</span>,<span class="st">"AFTY"</span>,</span>
+<span id="cb1-100"><a href="#cb1-100" aria-hidden="true" tabindex="-1"></a>    <span class="st">"ASEA"</span>,<span class="st">"COLO"</span>,<span class="st">"EPV"</span>,<span class="st">"FLAU"</span>,<span class="st">"FLAX"</span>,<span class="st">"KALL"</span>,<span class="st">"KBA"</span>,<span class="st">"KURE"</span>,<span class="st">"SCJ"</span>,<span class="st">"EWJV"</span>,<span class="st">"EWUS"</span>,<span class="st">"EWV"</span>,<span class="st">"EWW"</span>,<span class="st">"EWZS"</span>,</span>
+<span id="cb1-101"><a href="#cb1-101" aria-hidden="true" tabindex="-1"></a>    <span class="st">"EZJ"</span>,</span>
+<span id="cb1-102"><a href="#cb1-102" aria-hidden="true" tabindex="-1"></a>])))</span>
+<span id="cb1-103"><a href="#cb1-103" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-104"><a href="#cb1-104" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-105"><a href="#cb1-105" aria-hidden="true" tabindex="-1"></a><span class="co"># ------------------------------------------------------------</span></span>
+<span id="cb1-106"><a href="#cb1-106" aria-hidden="true" tabindex="-1"></a><span class="co"># UTILIDADES</span></span>
+<span id="cb1-107"><a href="#cb1-107" aria-hidden="true" tabindex="-1"></a><span class="co"># ------------------------------------------------------------</span></span>
+<span id="cb1-108"><a href="#cb1-108" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<span id="cb1-109"><a href="#cb1-109" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ResultadoModelo:</span>
+<span id="cb1-110"><a href="#cb1-110" aria-hidden="true" tabindex="-1"></a>    ticker: <span class="bu">str</span></span>
+<span id="cb1-111"><a href="#cb1-111" aria-hidden="true" tabindex="-1"></a>    precio_actual: <span class="bu">float</span></span>
+<span id="cb1-112"><a href="#cb1-112" aria-hidden="true" tabindex="-1"></a>    tendencia: <span class="bu">str</span></span>
+<span id="cb1-113"><a href="#cb1-113" aria-hidden="true" tabindex="-1"></a>    rsi14: <span class="bu">float</span></span>
+<span id="cb1-114"><a href="#cb1-114" aria-hidden="true" tabindex="-1"></a>    mejor_arima: <span class="bu">str</span></span>
+<span id="cb1-115"><a href="#cb1-115" aria-hidden="true" tabindex="-1"></a>    aic: <span class="bu">float</span></span>
+<span id="cb1-116"><a href="#cb1-116" aria-hidden="true" tabindex="-1"></a>    bic: <span class="bu">float</span></span>
+<span id="cb1-117"><a href="#cb1-117" aria-hidden="true" tabindex="-1"></a>    vol_garch_d1: <span class="bu">float</span></span>
+<span id="cb1-118"><a href="#cb1-118" aria-hidden="true" tabindex="-1"></a>    mc: Dict[<span class="bu">str</span>, <span class="bu">float</span>]</span>
+<span id="cb1-119"><a href="#cb1-119" aria-hidden="true" tabindex="-1"></a>    score_final: <span class="bu">int</span></span>
+<span id="cb1-120"><a href="#cb1-120" aria-hidden="true" tabindex="-1"></a>    senal_final: <span class="bu">str</span></span>
+<span id="cb1-121"><a href="#cb1-121" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-122"><a href="#cb1-122" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-123"><a href="#cb1-123" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> descargar_datos(ticker: <span class="bu">str</span>, period: <span class="bu">str</span> <span class="op">=</span> PERIODO) <span class="op">-&gt;</span> Optional[pd.DataFrame]:</span>
+<span id="cb1-124"><a href="#cb1-124" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""</span></span>
+<span id="cb1-125"><a href="#cb1-125" aria-hidden="true" tabindex="-1"></a><span class="co">    Descarga datos ajustados.</span></span>
+<span id="cb1-126"><a href="#cb1-126" aria-hidden="true" tabindex="-1"></a><span class="co">    Devuelve None si el ticker falla o no tiene historia suficiente.</span></span>
+<span id="cb1-127"><a href="#cb1-127" aria-hidden="true" tabindex="-1"></a><span class="co">    """</span></span>
+<span id="cb1-128"><a href="#cb1-128" aria-hidden="true" tabindex="-1"></a>    <span class="cf">try</span>:</span>
+<span id="cb1-129"><a href="#cb1-129" aria-hidden="true" tabindex="-1"></a>        df <span class="op">=</span> yf.download(</span>
+<span id="cb1-130"><a href="#cb1-130" aria-hidden="true" tabindex="-1"></a>            ticker,</span>
+<span id="cb1-131"><a href="#cb1-131" aria-hidden="true" tabindex="-1"></a>            period<span class="op">=</span>period,</span>
+<span id="cb1-132"><a href="#cb1-132" aria-hidden="true" tabindex="-1"></a>            interval<span class="op">=</span><span class="st">"1d"</span>,</span>
+<span id="cb1-133"><a href="#cb1-133" aria-hidden="true" tabindex="-1"></a>            auto_adjust<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb1-134"><a href="#cb1-134" aria-hidden="true" tabindex="-1"></a>            progress<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb1-135"><a href="#cb1-135" aria-hidden="true" tabindex="-1"></a>            threads<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb1-136"><a href="#cb1-136" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb1-137"><a href="#cb1-137" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-138"><a href="#cb1-138" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> df <span class="kw">is</span> <span class="va">None</span> <span class="kw">or</span> df.empty:</span>
+<span id="cb1-139"><a href="#cb1-139" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="va">None</span></span>
+<span id="cb1-140"><a href="#cb1-140" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-141"><a href="#cb1-141" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">isinstance</span>(df.columns, pd.MultiIndex):</span>
+<span id="cb1-142"><a href="#cb1-142" aria-hidden="true" tabindex="-1"></a>            df.columns <span class="op">=</span> df.columns.get_level_values(<span class="dv">0</span>)</span>
+<span id="cb1-143"><a href="#cb1-143" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-144"><a href="#cb1-144" aria-hidden="true" tabindex="-1"></a>        cols_necesarias <span class="op">=</span> [c <span class="cf">for</span> c <span class="kw">in</span> [<span class="st">"Close"</span>, <span class="st">"Volume"</span>] <span class="cf">if</span> c <span class="kw">in</span> df.columns]</span>
+<span id="cb1-145"><a href="#cb1-145" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="st">"Close"</span> <span class="kw">not</span> <span class="kw">in</span> cols_necesarias:</span>
+<span id="cb1-146"><a href="#cb1-146" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="va">None</span></span>
+<span id="cb1-147"><a href="#cb1-147" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-148"><a href="#cb1-148" aria-hidden="true" tabindex="-1"></a>        df <span class="op">=</span> df[cols_necesarias].copy()</span>
+<span id="cb1-149"><a href="#cb1-149" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="st">"Volume"</span> <span class="kw">not</span> <span class="kw">in</span> df.columns:</span>
+<span id="cb1-150"><a href="#cb1-150" aria-hidden="true" tabindex="-1"></a>            df[<span class="st">"Volume"</span>] <span class="op">=</span> np.nan</span>
+<span id="cb1-151"><a href="#cb1-151" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-152"><a href="#cb1-152" aria-hidden="true" tabindex="-1"></a>        df <span class="op">=</span> df.dropna(subset<span class="op">=</span>[<span class="st">"Close"</span>]).sort_index()</span>
+<span id="cb1-153"><a href="#cb1-153" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-154"><a href="#cb1-154" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">len</span>(df) <span class="op">&lt;</span> MIN_DIAS:</span>
+<span id="cb1-155"><a href="#cb1-155" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="va">None</span></span>
+<span id="cb1-156"><a href="#cb1-156" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-157"><a href="#cb1-157" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> df</span>
+<span id="cb1-158"><a href="#cb1-158" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-159"><a href="#cb1-159" aria-hidden="true" tabindex="-1"></a>    <span class="cf">except</span> <span class="pp">Exception</span>:</span>
+<span id="cb1-160"><a href="#cb1-160" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">None</span></span>
+<span id="cb1-161"><a href="#cb1-161" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-162"><a href="#cb1-162" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-163"><a href="#cb1-163" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> calcular_rsi(serie: pd.Series, periodo: <span class="bu">int</span> <span class="op">=</span> <span class="dv">14</span>) <span class="op">-&gt;</span> pd.Series:</span>
+<span id="cb1-164"><a href="#cb1-164" aria-hidden="true" tabindex="-1"></a>    delta <span class="op">=</span> serie.diff()</span>
+<span id="cb1-165"><a href="#cb1-165" aria-hidden="true" tabindex="-1"></a>    gain <span class="op">=</span> delta.clip(lower<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb1-166"><a href="#cb1-166" aria-hidden="true" tabindex="-1"></a>    loss <span class="op">=</span> <span class="op">-</span>delta.clip(upper<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb1-167"><a href="#cb1-167" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-168"><a href="#cb1-168" aria-hidden="true" tabindex="-1"></a>    avg_gain <span class="op">=</span> gain.ewm(alpha<span class="op">=</span><span class="dv">1</span> <span class="op">/</span> periodo, adjust<span class="op">=</span><span class="va">False</span>, min_periods<span class="op">=</span>periodo).mean()</span>
+<span id="cb1-169"><a href="#cb1-169" aria-hidden="true" tabindex="-1"></a>    avg_loss <span class="op">=</span> loss.ewm(alpha<span class="op">=</span><span class="dv">1</span> <span class="op">/</span> periodo, adjust<span class="op">=</span><span class="va">False</span>, min_periods<span class="op">=</span>periodo).mean()</span>
+<span id="cb1-170"><a href="#cb1-170" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-171"><a href="#cb1-171" aria-hidden="true" tabindex="-1"></a>    rs <span class="op">=</span> avg_gain <span class="op">/</span> avg_loss.replace(<span class="dv">0</span>, np.nan)</span>
+<span id="cb1-172"><a href="#cb1-172" aria-hidden="true" tabindex="-1"></a>    rsi <span class="op">=</span> <span class="dv">100</span> <span class="op">-</span> (<span class="dv">100</span> <span class="op">/</span> (<span class="dv">1</span> <span class="op">+</span> rs))</span>
+<span id="cb1-173"><a href="#cb1-173" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> rsi.clip(<span class="dv">0</span>, <span class="dv">100</span>)</span>
+<span id="cb1-174"><a href="#cb1-174" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-175"><a href="#cb1-175" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-176"><a href="#cb1-176" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> preparar(df: pd.DataFrame) <span class="op">-&gt;</span> pd.DataFrame:</span>
+<span id="cb1-177"><a href="#cb1-177" aria-hidden="true" tabindex="-1"></a>    out <span class="op">=</span> df.copy()</span>
+<span id="cb1-178"><a href="#cb1-178" aria-hidden="true" tabindex="-1"></a>    out[<span class="st">"MA20"</span>] <span class="op">=</span> out[<span class="st">"Close"</span>].rolling(<span class="dv">20</span>).mean()</span>
+<span id="cb1-179"><a href="#cb1-179" aria-hidden="true" tabindex="-1"></a>    out[<span class="st">"MA50"</span>] <span class="op">=</span> out[<span class="st">"Close"</span>].rolling(<span class="dv">50</span>).mean()</span>
+<span id="cb1-180"><a href="#cb1-180" aria-hidden="true" tabindex="-1"></a>    out[<span class="st">"MA100"</span>] <span class="op">=</span> out[<span class="st">"Close"</span>].rolling(<span class="dv">100</span>).mean()</span>
+<span id="cb1-181"><a href="#cb1-181" aria-hidden="true" tabindex="-1"></a>    out[<span class="st">"MA200"</span>] <span class="op">=</span> out[<span class="st">"Close"</span>].rolling(<span class="dv">200</span>).mean()</span>
+<span id="cb1-182"><a href="#cb1-182" aria-hidden="true" tabindex="-1"></a>    out[<span class="st">"RSI14"</span>] <span class="op">=</span> calcular_rsi(out[<span class="st">"Close"</span>], <span class="dv">14</span>)</span>
+<span id="cb1-183"><a href="#cb1-183" aria-hidden="true" tabindex="-1"></a>    out[<span class="st">"RetLog"</span>] <span class="op">=</span> np.log(out[<span class="st">"Close"</span>] <span class="op">/</span> out[<span class="st">"Close"</span>].shift(<span class="dv">1</span>))</span>
+<span id="cb1-184"><a href="#cb1-184" aria-hidden="true" tabindex="-1"></a>    out[<span class="st">"Ret3M"</span>] <span class="op">=</span> out[<span class="st">"Close"</span>].pct_change(<span class="dv">63</span>)</span>
+<span id="cb1-185"><a href="#cb1-185" aria-hidden="true" tabindex="-1"></a>    out[<span class="st">"Ret6M"</span>] <span class="op">=</span> out[<span class="st">"Close"</span>].pct_change(<span class="dv">126</span>)</span>
+<span id="cb1-186"><a href="#cb1-186" aria-hidden="true" tabindex="-1"></a>    out[<span class="st">"Vol20"</span>] <span class="op">=</span> out[<span class="st">"RetLog"</span>].rolling(<span class="dv">20</span>).std() <span class="op">*</span> np.sqrt(<span class="dv">252</span>) <span class="op">*</span> <span class="dv">100</span></span>
+<span id="cb1-187"><a href="#cb1-187" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> out.dropna().copy()</span>
+<span id="cb1-188"><a href="#cb1-188" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-189"><a href="#cb1-189" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-190"><a href="#cb1-190" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> clasificar_tendencia(df: pd.DataFrame) <span class="op">-&gt;</span> <span class="bu">str</span>:</span>
+<span id="cb1-191"><a href="#cb1-191" aria-hidden="true" tabindex="-1"></a>    u <span class="op">=</span> df.iloc[<span class="op">-</span><span class="dv">1</span>]</span>
+<span id="cb1-192"><a href="#cb1-192" aria-hidden="true" tabindex="-1"></a>    p <span class="op">=</span> df.iloc[<span class="op">-</span><span class="dv">2</span>]</span>
+<span id="cb1-193"><a href="#cb1-193" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-194"><a href="#cb1-194" aria-hidden="true" tabindex="-1"></a>    precio <span class="op">=</span> <span class="bu">float</span>(u[<span class="st">"Close"</span>])</span>
+<span id="cb1-195"><a href="#cb1-195" aria-hidden="true" tabindex="-1"></a>    ma20 <span class="op">=</span> <span class="bu">float</span>(u[<span class="st">"MA20"</span>])</span>
+<span id="cb1-196"><a href="#cb1-196" aria-hidden="true" tabindex="-1"></a>    ma50 <span class="op">=</span> <span class="bu">float</span>(u[<span class="st">"MA50"</span>])</span>
+<span id="cb1-197"><a href="#cb1-197" aria-hidden="true" tabindex="-1"></a>    ma100 <span class="op">=</span> <span class="bu">float</span>(u[<span class="st">"MA100"</span>])</span>
+<span id="cb1-198"><a href="#cb1-198" aria-hidden="true" tabindex="-1"></a>    ma200 <span class="op">=</span> <span class="bu">float</span>(u[<span class="st">"MA200"</span>])</span>
+<span id="cb1-199"><a href="#cb1-199" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-200"><a href="#cb1-200" aria-hidden="true" tabindex="-1"></a>    s20 <span class="op">=</span> <span class="bu">float</span>(u[<span class="st">"MA20"</span>] <span class="op">-</span> p[<span class="st">"MA20"</span>])</span>
+<span id="cb1-201"><a href="#cb1-201" aria-hidden="true" tabindex="-1"></a>    s50 <span class="op">=</span> <span class="bu">float</span>(u[<span class="st">"MA50"</span>] <span class="op">-</span> p[<span class="st">"MA50"</span>])</span>
+<span id="cb1-202"><a href="#cb1-202" aria-hidden="true" tabindex="-1"></a>    s200 <span class="op">=</span> <span class="bu">float</span>(u[<span class="st">"MA200"</span>] <span class="op">-</span> p[<span class="st">"MA200"</span>])</span>
+<span id="cb1-203"><a href="#cb1-203" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-204"><a href="#cb1-204" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> precio <span class="op">&gt;</span> ma20 <span class="op">&gt;</span> ma50 <span class="op">&gt;</span> ma100 <span class="op">&gt;</span> ma200 <span class="kw">and</span> s20 <span class="op">&gt;</span> <span class="dv">0</span> <span class="kw">and</span> s50 <span class="op">&gt;</span> <span class="dv">0</span>:</span>
+<span id="cb1-205"><a href="#cb1-205" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="st">"ALCISTA"</span></span>
+<span id="cb1-206"><a href="#cb1-206" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> precio <span class="op">&lt;</span> ma20 <span class="op">&lt;</span> ma50 <span class="op">&lt;</span> ma100 <span class="op">&lt;</span> ma200 <span class="kw">and</span> s20 <span class="op">&lt;</span> <span class="dv">0</span> <span class="kw">and</span> s50 <span class="op">&lt;</span> <span class="dv">0</span>:</span>
+<span id="cb1-207"><a href="#cb1-207" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="st">"BAJISTA"</span></span>
+<span id="cb1-208"><a href="#cb1-208" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> precio <span class="op">&gt;</span> ma200 <span class="kw">and</span> s200 <span class="op">&gt;=</span> <span class="dv">0</span>:</span>
+<span id="cb1-209"><a href="#cb1-209" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="st">"NEUTRA_ALCISTA"</span></span>
+<span id="cb1-210"><a href="#cb1-210" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> precio <span class="op">&lt;</span> ma200 <span class="kw">and</span> s200 <span class="op">&lt;=</span> <span class="dv">0</span>:</span>
+<span id="cb1-211"><a href="#cb1-211" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="st">"NEUTRA_BAJISTA"</span></span>
+<span id="cb1-212"><a href="#cb1-212" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="st">"MIXTA"</span></span>
+<span id="cb1-213"><a href="#cb1-213" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-214"><a href="#cb1-214" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-215"><a href="#cb1-215" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> score_rapido(df: pd.DataFrame) <span class="op">-&gt;</span> Dict[<span class="bu">str</span>, <span class="bu">float</span>]:</span>
+<span id="cb1-216"><a href="#cb1-216" aria-hidden="true" tabindex="-1"></a>    u <span class="op">=</span> df.iloc[<span class="op">-</span><span class="dv">1</span>]</span>
+<span id="cb1-217"><a href="#cb1-217" aria-hidden="true" tabindex="-1"></a>    tendencia <span class="op">=</span> clasificar_tendencia(df)</span>
+<span id="cb1-218"><a href="#cb1-218" aria-hidden="true" tabindex="-1"></a>    rsi <span class="op">=</span> <span class="bu">float</span>(u[<span class="st">"RSI14"</span>])</span>
+<span id="cb1-219"><a href="#cb1-219" aria-hidden="true" tabindex="-1"></a>    ret3 <span class="op">=</span> <span class="bu">float</span>(u[<span class="st">"Ret3M"</span>] <span class="op">*</span> <span class="dv">100</span>)</span>
+<span id="cb1-220"><a href="#cb1-220" aria-hidden="true" tabindex="-1"></a>    ret6 <span class="op">=</span> <span class="bu">float</span>(u[<span class="st">"Ret6M"</span>] <span class="op">*</span> <span class="dv">100</span>)</span>
+<span id="cb1-221"><a href="#cb1-221" aria-hidden="true" tabindex="-1"></a>    vol <span class="op">=</span> <span class="bu">float</span>(u[<span class="st">"Vol20"</span>])</span>
+<span id="cb1-222"><a href="#cb1-222" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-223"><a href="#cb1-223" aria-hidden="true" tabindex="-1"></a>    score <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb1-224"><a href="#cb1-224" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-225"><a href="#cb1-225" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> tendencia <span class="op">==</span> <span class="st">"ALCISTA"</span>:</span>
+<span id="cb1-226"><a href="#cb1-226" aria-hidden="true" tabindex="-1"></a>        score <span class="op">+=</span> <span class="dv">3</span></span>
+<span id="cb1-227"><a href="#cb1-227" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> tendencia <span class="op">==</span> <span class="st">"NEUTRA_ALCISTA"</span>:</span>
+<span id="cb1-228"><a href="#cb1-228" aria-hidden="true" tabindex="-1"></a>        score <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb1-229"><a href="#cb1-229" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> tendencia <span class="op">==</span> <span class="st">"BAJISTA"</span>:</span>
+<span id="cb1-230"><a href="#cb1-230" aria-hidden="true" tabindex="-1"></a>        score <span class="op">-=</span> <span class="dv">3</span></span>
+<span id="cb1-231"><a href="#cb1-231" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> tendencia <span class="op">==</span> <span class="st">"NEUTRA_BAJISTA"</span>:</span>
+<span id="cb1-232"><a href="#cb1-232" aria-hidden="true" tabindex="-1"></a>        score <span class="op">-=</span> <span class="dv">1</span></span>
+<span id="cb1-233"><a href="#cb1-233" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-234"><a href="#cb1-234" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="dv">50</span> <span class="op">&lt;=</span> rsi <span class="op">&lt;=</span> <span class="dv">65</span>:</span>
+<span id="cb1-235"><a href="#cb1-235" aria-hidden="true" tabindex="-1"></a>        score <span class="op">+=</span> <span class="dv">2</span></span>
+<span id="cb1-236"><a href="#cb1-236" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> <span class="dv">65</span> <span class="op">&lt;</span> rsi <span class="op">&lt;=</span> <span class="dv">75</span>:</span>
+<span id="cb1-237"><a href="#cb1-237" aria-hidden="true" tabindex="-1"></a>        score <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb1-238"><a href="#cb1-238" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> rsi <span class="op">&lt;</span> <span class="dv">40</span>:</span>
+<span id="cb1-239"><a href="#cb1-239" aria-hidden="true" tabindex="-1"></a>        score <span class="op">-=</span> <span class="dv">2</span></span>
+<span id="cb1-240"><a href="#cb1-240" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> rsi <span class="op">&gt;</span> <span class="dv">80</span>:</span>
+<span id="cb1-241"><a href="#cb1-241" aria-hidden="true" tabindex="-1"></a>        score <span class="op">-=</span> <span class="dv">1</span></span>
+<span id="cb1-242"><a href="#cb1-242" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-243"><a href="#cb1-243" aria-hidden="true" tabindex="-1"></a>    score <span class="op">+=</span> <span class="dv">1</span> <span class="cf">if</span> ret3 <span class="op">&gt;</span> <span class="dv">0</span> <span class="cf">else</span> <span class="op">-</span><span class="dv">1</span></span>
+<span id="cb1-244"><a href="#cb1-244" aria-hidden="true" tabindex="-1"></a>    score <span class="op">+=</span> <span class="dv">1</span> <span class="cf">if</span> ret6 <span class="op">&gt;</span> <span class="dv">0</span> <span class="cf">else</span> <span class="op">-</span><span class="dv">1</span></span>
+<span id="cb1-245"><a href="#cb1-245" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-246"><a href="#cb1-246" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> vol <span class="op">&gt;</span> <span class="dv">55</span>:</span>
+<span id="cb1-247"><a href="#cb1-247" aria-hidden="true" tabindex="-1"></a>        score <span class="op">-=</span> <span class="dv">1</span></span>
+<span id="cb1-248"><a href="#cb1-248" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-249"><a href="#cb1-249" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> score <span class="op">&gt;=</span> <span class="dv">5</span>:</span>
+<span id="cb1-250"><a href="#cb1-250" aria-hidden="true" tabindex="-1"></a>        senal <span class="op">=</span> <span class="st">"FAVORABLE"</span></span>
+<span id="cb1-251"><a href="#cb1-251" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> score <span class="op">&lt;=</span> <span class="op">-</span><span class="dv">2</span>:</span>
+<span id="cb1-252"><a href="#cb1-252" aria-hidden="true" tabindex="-1"></a>        senal <span class="op">=</span> <span class="st">"DESFAVORABLE"</span></span>
+<span id="cb1-253"><a href="#cb1-253" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
+<span id="cb1-254"><a href="#cb1-254" aria-hidden="true" tabindex="-1"></a>        senal <span class="op">=</span> <span class="st">"ESPERAR"</span></span>
+<span id="cb1-255"><a href="#cb1-255" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-256"><a href="#cb1-256" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> {</span>
+<span id="cb1-257"><a href="#cb1-257" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Precio"</span>: <span class="bu">round</span>(<span class="bu">float</span>(u[<span class="st">"Close"</span>]), <span class="dv">2</span>),</span>
+<span id="cb1-258"><a href="#cb1-258" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Tendencia"</span>: tendencia,</span>
+<span id="cb1-259"><a href="#cb1-259" aria-hidden="true" tabindex="-1"></a>        <span class="st">"RSI14"</span>: <span class="bu">round</span>(rsi, <span class="dv">2</span>),</span>
+<span id="cb1-260"><a href="#cb1-260" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Ret3M %"</span>: <span class="bu">round</span>(ret3, <span class="dv">2</span>),</span>
+<span id="cb1-261"><a href="#cb1-261" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Ret6M %"</span>: <span class="bu">round</span>(ret6, <span class="dv">2</span>),</span>
+<span id="cb1-262"><a href="#cb1-262" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Vol20 anual %"</span>: <span class="bu">round</span>(vol, <span class="dv">2</span>),</span>
+<span id="cb1-263"><a href="#cb1-263" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Score rápido"</span>: score,</span>
+<span id="cb1-264"><a href="#cb1-264" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Señal rápida"</span>: senal,</span>
+<span id="cb1-265"><a href="#cb1-265" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb1-266"><a href="#cb1-266" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-267"><a href="#cb1-267" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-268"><a href="#cb1-268" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> seleccionar_arima(serie: pd.Series) <span class="op">-&gt;</span> Tuple[Optional[<span class="bu">object</span>], Optional[Tuple[<span class="bu">int</span>, <span class="bu">int</span>, <span class="bu">int</span>]], Optional[pd.DataFrame]]:</span>
+<span id="cb1-269"><a href="#cb1-269" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""</span></span>
+<span id="cb1-270"><a href="#cb1-270" aria-hidden="true" tabindex="-1"></a><span class="co">    Ajusta ARIMA sobre array numpy para evitar warnings de frecuencia.</span></span>
+<span id="cb1-271"><a href="#cb1-271" aria-hidden="true" tabindex="-1"></a><span class="co">    """</span></span>
+<span id="cb1-272"><a href="#cb1-272" aria-hidden="true" tabindex="-1"></a>    y <span class="op">=</span> np.asarray(serie.dropna(), dtype<span class="op">=</span><span class="bu">float</span>)</span>
+<span id="cb1-273"><a href="#cb1-273" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-274"><a href="#cb1-274" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="bu">len</span>(y) <span class="op">&lt;</span> <span class="dv">80</span>:</span>
+<span id="cb1-275"><a href="#cb1-275" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">None</span>, <span class="va">None</span>, <span class="va">None</span></span>
+<span id="cb1-276"><a href="#cb1-276" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-277"><a href="#cb1-277" aria-hidden="true" tabindex="-1"></a>    resultados <span class="op">=</span> []</span>
+<span id="cb1-278"><a href="#cb1-278" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> orden <span class="kw">in</span> ARIMA_CANDIDATOS:</span>
+<span id="cb1-279"><a href="#cb1-279" aria-hidden="true" tabindex="-1"></a>        <span class="cf">try</span>:</span>
+<span id="cb1-280"><a href="#cb1-280" aria-hidden="true" tabindex="-1"></a>            fit <span class="op">=</span> ARIMA(y, order<span class="op">=</span>orden).fit()</span>
+<span id="cb1-281"><a href="#cb1-281" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> np.isfinite(fit.aic) <span class="kw">and</span> np.isfinite(fit.bic):</span>
+<span id="cb1-282"><a href="#cb1-282" aria-hidden="true" tabindex="-1"></a>                resultados.append((orden, fit.aic, fit.bic, fit))</span>
+<span id="cb1-283"><a href="#cb1-283" aria-hidden="true" tabindex="-1"></a>        <span class="cf">except</span> <span class="pp">Exception</span>:</span>
+<span id="cb1-284"><a href="#cb1-284" aria-hidden="true" tabindex="-1"></a>            <span class="cf">continue</span></span>
+<span id="cb1-285"><a href="#cb1-285" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-286"><a href="#cb1-286" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">not</span> resultados:</span>
+<span id="cb1-287"><a href="#cb1-287" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">None</span>, <span class="va">None</span>, <span class="va">None</span></span>
+<span id="cb1-288"><a href="#cb1-288" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-289"><a href="#cb1-289" aria-hidden="true" tabindex="-1"></a>    resultados <span class="op">=</span> <span class="bu">sorted</span>(resultados, key<span class="op">=</span><span class="kw">lambda</span> x: (x[<span class="dv">1</span>], x[<span class="dv">2</span>]))</span>
+<span id="cb1-290"><a href="#cb1-290" aria-hidden="true" tabindex="-1"></a>    mejor <span class="op">=</span> resultados[<span class="dv">0</span>]</span>
+<span id="cb1-291"><a href="#cb1-291" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-292"><a href="#cb1-292" aria-hidden="true" tabindex="-1"></a>    tabla <span class="op">=</span> pd.DataFrame(</span>
+<span id="cb1-293"><a href="#cb1-293" aria-hidden="true" tabindex="-1"></a>        [</span>
+<span id="cb1-294"><a href="#cb1-294" aria-hidden="true" tabindex="-1"></a>            {<span class="st">"ARIMA"</span>: <span class="bu">str</span>(r[<span class="dv">0</span>]), <span class="st">"AIC"</span>: <span class="bu">float</span>(r[<span class="dv">1</span>]), <span class="st">"BIC"</span>: <span class="bu">float</span>(r[<span class="dv">2</span>])}</span>
+<span id="cb1-295"><a href="#cb1-295" aria-hidden="true" tabindex="-1"></a>            <span class="cf">for</span> r <span class="kw">in</span> resultados</span>
+<span id="cb1-296"><a href="#cb1-296" aria-hidden="true" tabindex="-1"></a>        ]</span>
+<span id="cb1-297"><a href="#cb1-297" aria-hidden="true" tabindex="-1"></a>    ).sort_values([<span class="st">"AIC"</span>, <span class="st">"BIC"</span>]).reset_index(drop<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb1-298"><a href="#cb1-298" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-299"><a href="#cb1-299" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> mejor[<span class="dv">3</span>], mejor[<span class="dv">0</span>], tabla</span>
+<span id="cb1-300"><a href="#cb1-300" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-301"><a href="#cb1-301" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-302"><a href="#cb1-302" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> ajustar_garch(retornos: pd.Series) <span class="op">-&gt;</span> Tuple[Optional[<span class="bu">object</span>], Optional[np.ndarray], Optional[np.ndarray]]:</span>
+<span id="cb1-303"><a href="#cb1-303" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""</span></span>
+<span id="cb1-304"><a href="#cb1-304" aria-hidden="true" tabindex="-1"></a><span class="co">    GARCH(1,1) con distribución t para robustez.</span></span>
+<span id="cb1-305"><a href="#cb1-305" aria-hidden="true" tabindex="-1"></a><span class="co">    Devuelve:</span></span>
+<span id="cb1-306"><a href="#cb1-306" aria-hidden="true" tabindex="-1"></a><span class="co">        fit,</span></span>
+<span id="cb1-307"><a href="#cb1-307" aria-hidden="true" tabindex="-1"></a><span class="co">        sigma_futura (array horizonte),</span></span>
+<span id="cb1-308"><a href="#cb1-308" aria-hidden="true" tabindex="-1"></a><span class="co">        residuos_estandarizados_hist</span></span>
+<span id="cb1-309"><a href="#cb1-309" aria-hidden="true" tabindex="-1"></a><span class="co">    """</span></span>
+<span id="cb1-310"><a href="#cb1-310" aria-hidden="true" tabindex="-1"></a>    y <span class="op">=</span> np.asarray(retornos.dropna() <span class="op">*</span> <span class="fl">100.0</span>, dtype<span class="op">=</span><span class="bu">float</span>)</span>
+<span id="cb1-311"><a href="#cb1-311" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-312"><a href="#cb1-312" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="bu">len</span>(y) <span class="op">&lt;</span> <span class="dv">120</span>:</span>
+<span id="cb1-313"><a href="#cb1-313" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">None</span>, <span class="va">None</span>, <span class="va">None</span></span>
+<span id="cb1-314"><a href="#cb1-314" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-315"><a href="#cb1-315" aria-hidden="true" tabindex="-1"></a>    <span class="cf">try</span>:</span>
+<span id="cb1-316"><a href="#cb1-316" aria-hidden="true" tabindex="-1"></a>        fit <span class="op">=</span> arch_model(</span>
+<span id="cb1-317"><a href="#cb1-317" aria-hidden="true" tabindex="-1"></a>            y,</span>
+<span id="cb1-318"><a href="#cb1-318" aria-hidden="true" tabindex="-1"></a>            mean<span class="op">=</span><span class="st">"Zero"</span>,</span>
+<span id="cb1-319"><a href="#cb1-319" aria-hidden="true" tabindex="-1"></a>            vol<span class="op">=</span><span class="st">"Garch"</span>,</span>
+<span id="cb1-320"><a href="#cb1-320" aria-hidden="true" tabindex="-1"></a>            p<span class="op">=</span><span class="dv">1</span>,</span>
+<span id="cb1-321"><a href="#cb1-321" aria-hidden="true" tabindex="-1"></a>            q<span class="op">=</span><span class="dv">1</span>,</span>
+<span id="cb1-322"><a href="#cb1-322" aria-hidden="true" tabindex="-1"></a>            dist<span class="op">=</span><span class="st">"t"</span>,</span>
+<span id="cb1-323"><a href="#cb1-323" aria-hidden="true" tabindex="-1"></a>            rescale<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb1-324"><a href="#cb1-324" aria-hidden="true" tabindex="-1"></a>        ).fit(disp<span class="op">=</span><span class="st">"off"</span>)</span>
+<span id="cb1-325"><a href="#cb1-325" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-326"><a href="#cb1-326" aria-hidden="true" tabindex="-1"></a>        fc <span class="op">=</span> fit.forecast(horizon<span class="op">=</span>DIAS_PROYECCION, reindex<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb1-327"><a href="#cb1-327" aria-hidden="true" tabindex="-1"></a>        var_futura <span class="op">=</span> np.asarray(fc.variance.values[<span class="op">-</span><span class="dv">1</span>], dtype<span class="op">=</span><span class="bu">float</span>)</span>
+<span id="cb1-328"><a href="#cb1-328" aria-hidden="true" tabindex="-1"></a>        sigma_futura <span class="op">=</span> np.sqrt(np.maximum(var_futura, <span class="fl">1e-12</span>)) <span class="op">/</span> <span class="fl">100.0</span></span>
+<span id="cb1-329"><a href="#cb1-329" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-330"><a href="#cb1-330" aria-hidden="true" tabindex="-1"></a>        resid_std <span class="op">=</span> pd.Series(np.asarray(fit.std_resid, dtype<span class="op">=</span><span class="bu">float</span>)).replace([np.inf, <span class="op">-</span>np.inf], np.nan).dropna()</span>
+<span id="cb1-331"><a href="#cb1-331" aria-hidden="true" tabindex="-1"></a>        resid_std <span class="op">=</span> resid_std.clip(lower<span class="op">=</span>resid_std.quantile(<span class="fl">0.01</span>), upper<span class="op">=</span>resid_std.quantile(<span class="fl">0.99</span>))</span>
+<span id="cb1-332"><a href="#cb1-332" aria-hidden="true" tabindex="-1"></a>        resid_std <span class="op">=</span> resid_std.to_numpy(dtype<span class="op">=</span><span class="bu">float</span>)</span>
+<span id="cb1-333"><a href="#cb1-333" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-334"><a href="#cb1-334" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">len</span>(resid_std) <span class="op">&lt;</span> <span class="dv">50</span>:</span>
+<span id="cb1-335"><a href="#cb1-335" aria-hidden="true" tabindex="-1"></a>            resid_std <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb1-336"><a href="#cb1-336" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-337"><a href="#cb1-337" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> fit, sigma_futura, resid_std</span>
+<span id="cb1-338"><a href="#cb1-338" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-339"><a href="#cb1-339" aria-hidden="true" tabindex="-1"></a>    <span class="cf">except</span> <span class="pp">Exception</span>:</span>
+<span id="cb1-340"><a href="#cb1-340" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">None</span>, <span class="va">None</span>, <span class="va">None</span></span>
+<span id="cb1-341"><a href="#cb1-341" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-342"><a href="#cb1-342" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-343"><a href="#cb1-343" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> simular_mc(precio_actual: <span class="bu">float</span>, drift: np.ndarray, sigma: np.ndarray, resid_std: Optional[np.ndarray]) <span class="op">-&gt;</span> np.ndarray:</span>
+<span id="cb1-344"><a href="#cb1-344" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""</span></span>
+<span id="cb1-345"><a href="#cb1-345" aria-hidden="true" tabindex="-1"></a><span class="co">    Monte Carlo vectorizado.</span></span>
+<span id="cb1-346"><a href="#cb1-346" aria-hidden="true" tabindex="-1"></a><span class="co">    Método robusto:</span></span>
+<span id="cb1-347"><a href="#cb1-347" aria-hidden="true" tabindex="-1"></a><span class="co">      shock_t = drift_t + sigma_t * z_t</span></span>
+<span id="cb1-348"><a href="#cb1-348" aria-hidden="true" tabindex="-1"></a><span class="co">    donde z_t viene de bootstrap histórico de residuos estandarizados.</span></span>
+<span id="cb1-349"><a href="#cb1-349" aria-hidden="true" tabindex="-1"></a><span class="co">    """</span></span>
+<span id="cb1-350"><a href="#cb1-350" aria-hidden="true" tabindex="-1"></a>    drift <span class="op">=</span> np.asarray(drift, dtype<span class="op">=</span><span class="bu">float</span>).reshape(<span class="op">-</span><span class="dv">1</span>)</span>
+<span id="cb1-351"><a href="#cb1-351" aria-hidden="true" tabindex="-1"></a>    sigma <span class="op">=</span> np.asarray(sigma, dtype<span class="op">=</span><span class="bu">float</span>).reshape(<span class="op">-</span><span class="dv">1</span>)</span>
+<span id="cb1-352"><a href="#cb1-352" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-353"><a href="#cb1-353" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="bu">len</span>(drift) <span class="op">!=</span> DIAS_PROYECCION <span class="kw">or</span> <span class="bu">len</span>(sigma) <span class="op">!=</span> DIAS_PROYECCION:</span>
+<span id="cb1-354"><a href="#cb1-354" aria-hidden="true" tabindex="-1"></a>        <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="st">"drift y sigma deben tener longitud DIAS_PROYECCION"</span>)</span>
+<span id="cb1-355"><a href="#cb1-355" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-356"><a href="#cb1-356" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> MC_METODO <span class="op">==</span> <span class="st">"bootstrap"</span> <span class="kw">and</span> resid_std <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span> <span class="kw">and</span> <span class="bu">len</span>(resid_std) <span class="op">&gt;=</span> <span class="dv">50</span>:</span>
+<span id="cb1-357"><a href="#cb1-357" aria-hidden="true" tabindex="-1"></a>        z <span class="op">=</span> RNG.choice(resid_std, size<span class="op">=</span>(DIAS_PROYECCION, N_SIM), replace<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb1-358"><a href="#cb1-358" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
+<span id="cb1-359"><a href="#cb1-359" aria-hidden="true" tabindex="-1"></a>        z <span class="op">=</span> RNG.standard_normal(size<span class="op">=</span>(DIAS_PROYECCION, N_SIM))</span>
+<span id="cb1-360"><a href="#cb1-360" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-361"><a href="#cb1-361" aria-hidden="true" tabindex="-1"></a>    shocks <span class="op">=</span> drift[:, <span class="va">None</span>] <span class="op">+</span> sigma[:, <span class="va">None</span>] <span class="op">*</span> z</span>
+<span id="cb1-362"><a href="#cb1-362" aria-hidden="true" tabindex="-1"></a>    log_paths <span class="op">=</span> np.cumsum(shocks, axis<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb1-363"><a href="#cb1-363" aria-hidden="true" tabindex="-1"></a>    sims <span class="op">=</span> precio_actual <span class="op">*</span> np.exp(log_paths)</span>
+<span id="cb1-364"><a href="#cb1-364" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-365"><a href="#cb1-365" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> sims</span>
+<span id="cb1-366"><a href="#cb1-366" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-367"><a href="#cb1-367" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-368"><a href="#cb1-368" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> resumir_mc(precio_actual: <span class="bu">float</span>, sims: np.ndarray) <span class="op">-&gt;</span> Dict[<span class="bu">str</span>, <span class="bu">float</span>]:</span>
+<span id="cb1-369"><a href="#cb1-369" aria-hidden="true" tabindex="-1"></a>    finales <span class="op">=</span> sims[<span class="op">-</span><span class="dv">1</span>, :]</span>
+<span id="cb1-370"><a href="#cb1-370" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-371"><a href="#cb1-371" aria-hidden="true" tabindex="-1"></a>    p5 <span class="op">=</span> np.percentile(finales, <span class="dv">5</span>)</span>
+<span id="cb1-372"><a href="#cb1-372" aria-hidden="true" tabindex="-1"></a>    p25 <span class="op">=</span> np.percentile(finales, <span class="dv">25</span>)</span>
+<span id="cb1-373"><a href="#cb1-373" aria-hidden="true" tabindex="-1"></a>    p50 <span class="op">=</span> np.percentile(finales, <span class="dv">50</span>)</span>
+<span id="cb1-374"><a href="#cb1-374" aria-hidden="true" tabindex="-1"></a>    p75 <span class="op">=</span> np.percentile(finales, <span class="dv">75</span>)</span>
+<span id="cb1-375"><a href="#cb1-375" aria-hidden="true" tabindex="-1"></a>    p95 <span class="op">=</span> np.percentile(finales, <span class="dv">95</span>)</span>
+<span id="cb1-376"><a href="#cb1-376" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-377"><a href="#cb1-377" aria-hidden="true" tabindex="-1"></a>    media <span class="op">=</span> np.mean(finales)</span>
+<span id="cb1-378"><a href="#cb1-378" aria-hidden="true" tabindex="-1"></a>    prob_subir <span class="op">=</span> np.mean(finales <span class="op">&gt;</span> precio_actual) <span class="op">*</span> <span class="fl">100.0</span></span>
+<span id="cb1-379"><a href="#cb1-379" aria-hidden="true" tabindex="-1"></a>    ret_esp <span class="op">=</span> (media <span class="op">/</span> precio_actual <span class="op">-</span> <span class="fl">1.0</span>) <span class="op">*</span> <span class="fl">100.0</span></span>
+<span id="cb1-380"><a href="#cb1-380" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-381"><a href="#cb1-381" aria-hidden="true" tabindex="-1"></a>    var_5 <span class="op">=</span> (p5 <span class="op">/</span> precio_actual <span class="op">-</span> <span class="fl">1.0</span>) <span class="op">*</span> <span class="fl">100.0</span></span>
+<span id="cb1-382"><a href="#cb1-382" aria-hidden="true" tabindex="-1"></a>    cvar_5 <span class="op">=</span> (np.mean(finales[finales <span class="op">&lt;=</span> p5]) <span class="op">/</span> precio_actual <span class="op">-</span> <span class="fl">1.0</span>) <span class="op">*</span> <span class="fl">100.0</span> <span class="cf">if</span> np.<span class="bu">any</span>(finales <span class="op">&lt;=</span> p5) <span class="cf">else</span> var_5</span>
+<span id="cb1-383"><a href="#cb1-383" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-384"><a href="#cb1-384" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> {</span>
+<span id="cb1-385"><a href="#cb1-385" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Precio esperado 30d"</span>: <span class="bu">round</span>(media, <span class="dv">2</span>),</span>
+<span id="cb1-386"><a href="#cb1-386" aria-hidden="true" tabindex="-1"></a>        <span class="st">"P5"</span>: <span class="bu">round</span>(p5, <span class="dv">2</span>),</span>
+<span id="cb1-387"><a href="#cb1-387" aria-hidden="true" tabindex="-1"></a>        <span class="st">"P25"</span>: <span class="bu">round</span>(p25, <span class="dv">2</span>),</span>
+<span id="cb1-388"><a href="#cb1-388" aria-hidden="true" tabindex="-1"></a>        <span class="st">"P50"</span>: <span class="bu">round</span>(p50, <span class="dv">2</span>),</span>
+<span id="cb1-389"><a href="#cb1-389" aria-hidden="true" tabindex="-1"></a>        <span class="st">"P75"</span>: <span class="bu">round</span>(p75, <span class="dv">2</span>),</span>
+<span id="cb1-390"><a href="#cb1-390" aria-hidden="true" tabindex="-1"></a>        <span class="st">"P95"</span>: <span class="bu">round</span>(p95, <span class="dv">2</span>),</span>
+<span id="cb1-391"><a href="#cb1-391" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Prob subir %"</span>: <span class="bu">round</span>(prob_subir, <span class="dv">2</span>),</span>
+<span id="cb1-392"><a href="#cb1-392" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Ret esp %"</span>: <span class="bu">round</span>(ret_esp, <span class="dv">2</span>),</span>
+<span id="cb1-393"><a href="#cb1-393" aria-hidden="true" tabindex="-1"></a>        <span class="st">"VaR 5</span><span class="sc">% 30d</span><span class="st">"</span>: <span class="bu">round</span>(var_5, <span class="dv">2</span>),</span>
+<span id="cb1-394"><a href="#cb1-394" aria-hidden="true" tabindex="-1"></a>        <span class="st">"CVaR 5</span><span class="sc">% 30d</span><span class="st">"</span>: <span class="bu">round</span>(cvar_5, <span class="dv">2</span>),</span>
+<span id="cb1-395"><a href="#cb1-395" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Ancho P25-P75"</span>: <span class="bu">round</span>(p75 <span class="op">-</span> p25, <span class="dv">2</span>),</span>
+<span id="cb1-396"><a href="#cb1-396" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Ancho P5-P95"</span>: <span class="bu">round</span>(p95 <span class="op">-</span> p5, <span class="dv">2</span>),</span>
+<span id="cb1-397"><a href="#cb1-397" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb1-398"><a href="#cb1-398" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-399"><a href="#cb1-399" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-400"><a href="#cb1-400" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> senal_final(df: pd.DataFrame, mc: Dict[<span class="bu">str</span>, <span class="bu">float</span>], sigma: np.ndarray) <span class="op">-&gt;</span> Tuple[<span class="bu">int</span>, <span class="bu">str</span>, <span class="bu">float</span>]:</span>
+<span id="cb1-401"><a href="#cb1-401" aria-hidden="true" tabindex="-1"></a>    tendencia <span class="op">=</span> clasificar_tendencia(df)</span>
+<span id="cb1-402"><a href="#cb1-402" aria-hidden="true" tabindex="-1"></a>    rsi <span class="op">=</span> <span class="bu">float</span>(df[<span class="st">"RSI14"</span>].iloc[<span class="op">-</span><span class="dv">1</span>])</span>
+<span id="cb1-403"><a href="#cb1-403" aria-hidden="true" tabindex="-1"></a>    vol_d1 <span class="op">=</span> <span class="bu">float</span>(sigma[<span class="dv">0</span>] <span class="op">*</span> <span class="fl">100.0</span>)</span>
+<span id="cb1-404"><a href="#cb1-404" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-405"><a href="#cb1-405" aria-hidden="true" tabindex="-1"></a>    score <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb1-406"><a href="#cb1-406" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-407"><a href="#cb1-407" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> tendencia <span class="op">==</span> <span class="st">"ALCISTA"</span>:</span>
+<span id="cb1-408"><a href="#cb1-408" aria-hidden="true" tabindex="-1"></a>        score <span class="op">+=</span> <span class="dv">2</span></span>
+<span id="cb1-409"><a href="#cb1-409" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> tendencia <span class="op">==</span> <span class="st">"NEUTRA_ALCISTA"</span>:</span>
+<span id="cb1-410"><a href="#cb1-410" aria-hidden="true" tabindex="-1"></a>        score <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb1-411"><a href="#cb1-411" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> tendencia <span class="op">==</span> <span class="st">"BAJISTA"</span>:</span>
+<span id="cb1-412"><a href="#cb1-412" aria-hidden="true" tabindex="-1"></a>        score <span class="op">-=</span> <span class="dv">2</span></span>
+<span id="cb1-413"><a href="#cb1-413" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> tendencia <span class="op">==</span> <span class="st">"NEUTRA_BAJISTA"</span>:</span>
+<span id="cb1-414"><a href="#cb1-414" aria-hidden="true" tabindex="-1"></a>        score <span class="op">-=</span> <span class="dv">1</span></span>
+<span id="cb1-415"><a href="#cb1-415" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-416"><a href="#cb1-416" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="dv">50</span> <span class="op">&lt;=</span> rsi <span class="op">&lt;=</span> <span class="dv">65</span>:</span>
+<span id="cb1-417"><a href="#cb1-417" aria-hidden="true" tabindex="-1"></a>        score <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb1-418"><a href="#cb1-418" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> rsi <span class="op">&lt;</span> <span class="dv">40</span>:</span>
+<span id="cb1-419"><a href="#cb1-419" aria-hidden="true" tabindex="-1"></a>        score <span class="op">-=</span> <span class="dv">1</span></span>
+<span id="cb1-420"><a href="#cb1-420" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> rsi <span class="op">&gt;</span> <span class="dv">75</span>:</span>
+<span id="cb1-421"><a href="#cb1-421" aria-hidden="true" tabindex="-1"></a>        score <span class="op">-=</span> <span class="dv">1</span></span>
+<span id="cb1-422"><a href="#cb1-422" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-423"><a href="#cb1-423" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> mc[<span class="st">"Prob subir %"</span>] <span class="op">&gt;=</span> <span class="dv">58</span>:</span>
+<span id="cb1-424"><a href="#cb1-424" aria-hidden="true" tabindex="-1"></a>        score <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb1-425"><a href="#cb1-425" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> mc[<span class="st">"Prob subir %"</span>] <span class="op">&lt;=</span> <span class="dv">45</span>:</span>
+<span id="cb1-426"><a href="#cb1-426" aria-hidden="true" tabindex="-1"></a>        score <span class="op">-=</span> <span class="dv">1</span></span>
+<span id="cb1-427"><a href="#cb1-427" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-428"><a href="#cb1-428" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> mc[<span class="st">"Ret esp %"</span>] <span class="op">&gt;</span> <span class="dv">2</span>:</span>
+<span id="cb1-429"><a href="#cb1-429" aria-hidden="true" tabindex="-1"></a>        score <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb1-430"><a href="#cb1-430" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> mc[<span class="st">"Ret esp %"</span>] <span class="op">&lt;</span> <span class="dv">0</span>:</span>
+<span id="cb1-431"><a href="#cb1-431" aria-hidden="true" tabindex="-1"></a>        score <span class="op">-=</span> <span class="dv">1</span></span>
+<span id="cb1-432"><a href="#cb1-432" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-433"><a href="#cb1-433" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> vol_d1 <span class="op">&gt;</span> <span class="fl">2.5</span>:</span>
+<span id="cb1-434"><a href="#cb1-434" aria-hidden="true" tabindex="-1"></a>        score <span class="op">-=</span> <span class="dv">1</span></span>
+<span id="cb1-435"><a href="#cb1-435" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-436"><a href="#cb1-436" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> score <span class="op">&gt;=</span> <span class="dv">3</span>:</span>
+<span id="cb1-437"><a href="#cb1-437" aria-hidden="true" tabindex="-1"></a>        senal <span class="op">=</span> <span class="st">"FAVORABLE"</span></span>
+<span id="cb1-438"><a href="#cb1-438" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> score <span class="op">&lt;=</span> <span class="op">-</span><span class="dv">2</span>:</span>
+<span id="cb1-439"><a href="#cb1-439" aria-hidden="true" tabindex="-1"></a>        senal <span class="op">=</span> <span class="st">"DESFAVORABLE"</span></span>
+<span id="cb1-440"><a href="#cb1-440" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
+<span id="cb1-441"><a href="#cb1-441" aria-hidden="true" tabindex="-1"></a>        senal <span class="op">=</span> <span class="st">"ESPERAR"</span></span>
+<span id="cb1-442"><a href="#cb1-442" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-443"><a href="#cb1-443" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> score, senal, <span class="bu">round</span>(vol_d1, <span class="dv">4</span>)</span>
+<span id="cb1-444"><a href="#cb1-444" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-445"><a href="#cb1-445" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-446"><a href="#cb1-446" aria-hidden="true" tabindex="-1"></a><span class="co"># ------------------------------------------------------------</span></span>
+<span id="cb1-447"><a href="#cb1-447" aria-hidden="true" tabindex="-1"></a><span class="co"># GRAFICOS MONTE CARLO - VERSION LIMPIA</span></span>
+<span id="cb1-448"><a href="#cb1-448" aria-hidden="true" tabindex="-1"></a><span class="co"># ------------------------------------------------------------</span></span>
+<span id="cb1-449"><a href="#cb1-449" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> plot_fan_chart(</span>
+<span id="cb1-450"><a href="#cb1-450" aria-hidden="true" tabindex="-1"></a>    ticker: <span class="bu">str</span>,</span>
+<span id="cb1-451"><a href="#cb1-451" aria-hidden="true" tabindex="-1"></a>    hist: pd.Series,</span>
+<span id="cb1-452"><a href="#cb1-452" aria-hidden="true" tabindex="-1"></a>    precio_actual: <span class="bu">float</span>,</span>
+<span id="cb1-453"><a href="#cb1-453" aria-hidden="true" tabindex="-1"></a>    sims: np.ndarray,</span>
+<span id="cb1-454"><a href="#cb1-454" aria-hidden="true" tabindex="-1"></a>    dias_proyeccion: <span class="bu">int</span> <span class="op">=</span> DIAS_PROYECCION,</span>
+<span id="cb1-455"><a href="#cb1-455" aria-hidden="true" tabindex="-1"></a>    mostrar_paths: <span class="bu">int</span> <span class="op">=</span> <span class="dv">0</span>,</span>
+<span id="cb1-456"><a href="#cb1-456" aria-hidden="true" tabindex="-1"></a>) <span class="op">-&gt;</span> <span class="va">None</span>:</span>
+<span id="cb1-457"><a href="#cb1-457" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""</span></span>
+<span id="cb1-458"><a href="#cb1-458" aria-hidden="true" tabindex="-1"></a><span class="co">    Reemplaza el spaghetti plot por fan chart.</span></span>
+<span id="cb1-459"><a href="#cb1-459" aria-hidden="true" tabindex="-1"></a><span class="co">    """</span></span>
+<span id="cb1-460"><a href="#cb1-460" aria-hidden="true" tabindex="-1"></a>    fechas_futuras <span class="op">=</span> pd.bdate_range(start<span class="op">=</span>hist.index[<span class="op">-</span><span class="dv">1</span>], periods<span class="op">=</span>dias_proyeccion <span class="op">+</span> <span class="dv">1</span>)[<span class="dv">1</span>:]</span>
+<span id="cb1-461"><a href="#cb1-461" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-462"><a href="#cb1-462" aria-hidden="true" tabindex="-1"></a>    media <span class="op">=</span> np.mean(sims, axis<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb1-463"><a href="#cb1-463" aria-hidden="true" tabindex="-1"></a>    mediana <span class="op">=</span> np.median(sims, axis<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb1-464"><a href="#cb1-464" aria-hidden="true" tabindex="-1"></a>    p5 <span class="op">=</span> np.percentile(sims, <span class="dv">5</span>, axis<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb1-465"><a href="#cb1-465" aria-hidden="true" tabindex="-1"></a>    p25 <span class="op">=</span> np.percentile(sims, <span class="dv">25</span>, axis<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb1-466"><a href="#cb1-466" aria-hidden="true" tabindex="-1"></a>    p75 <span class="op">=</span> np.percentile(sims, <span class="dv">75</span>, axis<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb1-467"><a href="#cb1-467" aria-hidden="true" tabindex="-1"></a>    p95 <span class="op">=</span> np.percentile(sims, <span class="dv">95</span>, axis<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb1-468"><a href="#cb1-468" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-469"><a href="#cb1-469" aria-hidden="true" tabindex="-1"></a>    plt.figure(figsize<span class="op">=</span>(<span class="dv">13</span>, <span class="dv">6</span>))</span>
+<span id="cb1-470"><a href="#cb1-470" aria-hidden="true" tabindex="-1"></a>    plt.plot(hist.index, hist.values, linewidth<span class="op">=</span><span class="fl">1.8</span>, label<span class="op">=</span><span class="st">"Histórico (120 días)"</span>)</span>
+<span id="cb1-471"><a href="#cb1-471" aria-hidden="true" tabindex="-1"></a>    plt.axhline(precio_actual, linestyle<span class="op">=</span><span class="st">"--"</span>, linewidth<span class="op">=</span><span class="dv">1</span>, label<span class="op">=</span><span class="st">"Precio actual"</span>)</span>
+<span id="cb1-472"><a href="#cb1-472" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-473"><a href="#cb1-473" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> mostrar_paths <span class="op">&gt;</span> <span class="dv">0</span>:</span>
+<span id="cb1-474"><a href="#cb1-474" aria-hidden="true" tabindex="-1"></a>        n_paths <span class="op">=</span> <span class="bu">min</span>(mostrar_paths, sims.shape[<span class="dv">1</span>])</span>
+<span id="cb1-475"><a href="#cb1-475" aria-hidden="true" tabindex="-1"></a>        idx <span class="op">=</span> RNG.choice(sims.shape[<span class="dv">1</span>], size<span class="op">=</span>n_paths, replace<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb1-476"><a href="#cb1-476" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> j <span class="kw">in</span> idx:</span>
+<span id="cb1-477"><a href="#cb1-477" aria-hidden="true" tabindex="-1"></a>            plt.plot(fechas_futuras, sims[:, j], alpha<span class="op">=</span><span class="fl">0.08</span>, linewidth<span class="op">=</span><span class="fl">0.8</span>)</span>
+<span id="cb1-478"><a href="#cb1-478" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-479"><a href="#cb1-479" aria-hidden="true" tabindex="-1"></a>    plt.fill_between(fechas_futuras, p5, p95, alpha<span class="op">=</span><span class="fl">0.12</span>, label<span class="op">=</span><span class="st">"Banda P5-P95"</span>)</span>
+<span id="cb1-480"><a href="#cb1-480" aria-hidden="true" tabindex="-1"></a>    plt.fill_between(fechas_futuras, p25, p75, alpha<span class="op">=</span><span class="fl">0.22</span>, label<span class="op">=</span><span class="st">"Banda P25-P75"</span>)</span>
+<span id="cb1-481"><a href="#cb1-481" aria-hidden="true" tabindex="-1"></a>    plt.plot(fechas_futuras, mediana, linewidth<span class="op">=</span><span class="fl">2.0</span>, label<span class="op">=</span><span class="st">"Mediana proyectada"</span>)</span>
+<span id="cb1-482"><a href="#cb1-482" aria-hidden="true" tabindex="-1"></a>    plt.plot(fechas_futuras, media, linewidth<span class="op">=</span><span class="fl">1.5</span>, linestyle<span class="op">=</span><span class="st">":"</span>, label<span class="op">=</span><span class="st">"Media proyectada"</span>)</span>
+<span id="cb1-483"><a href="#cb1-483" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-484"><a href="#cb1-484" aria-hidden="true" tabindex="-1"></a>    plt.title(<span class="ss">f"</span><span class="sc">{</span>ticker<span class="sc">}</span><span class="ss"> - Proyección robusta 30d (fan chart)"</span>)</span>
+<span id="cb1-485"><a href="#cb1-485" aria-hidden="true" tabindex="-1"></a>    plt.legend()</span>
+<span id="cb1-486"><a href="#cb1-486" aria-hidden="true" tabindex="-1"></a>    plt.grid(<span class="va">True</span>, alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb1-487"><a href="#cb1-487" aria-hidden="true" tabindex="-1"></a>    plt.tight_layout()</span>
+<span id="cb1-488"><a href="#cb1-488" aria-hidden="true" tabindex="-1"></a>    plt.show()</span>
+<span id="cb1-489"><a href="#cb1-489" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-490"><a href="#cb1-490" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-491"><a href="#cb1-491" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> plot_terminal_distribution(ticker: <span class="bu">str</span>, precio_actual: <span class="bu">float</span>, sims: np.ndarray) <span class="op">-&gt;</span> <span class="va">None</span>:</span>
+<span id="cb1-492"><a href="#cb1-492" aria-hidden="true" tabindex="-1"></a>    finales <span class="op">=</span> sims[<span class="op">-</span><span class="dv">1</span>, :]</span>
+<span id="cb1-493"><a href="#cb1-493" aria-hidden="true" tabindex="-1"></a>    media <span class="op">=</span> np.mean(finales)</span>
+<span id="cb1-494"><a href="#cb1-494" aria-hidden="true" tabindex="-1"></a>    mediana <span class="op">=</span> np.median(finales)</span>
+<span id="cb1-495"><a href="#cb1-495" aria-hidden="true" tabindex="-1"></a>    p5 <span class="op">=</span> np.percentile(finales, <span class="dv">5</span>)</span>
+<span id="cb1-496"><a href="#cb1-496" aria-hidden="true" tabindex="-1"></a>    p95 <span class="op">=</span> np.percentile(finales, <span class="dv">95</span>)</span>
+<span id="cb1-497"><a href="#cb1-497" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-498"><a href="#cb1-498" aria-hidden="true" tabindex="-1"></a>    plt.figure(figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">5</span>))</span>
+<span id="cb1-499"><a href="#cb1-499" aria-hidden="true" tabindex="-1"></a>    plt.hist(finales, bins<span class="op">=</span><span class="dv">40</span>, alpha<span class="op">=</span><span class="fl">0.75</span>)</span>
+<span id="cb1-500"><a href="#cb1-500" aria-hidden="true" tabindex="-1"></a>    plt.axvline(precio_actual, linestyle<span class="op">=</span><span class="st">"--"</span>, linewidth<span class="op">=</span><span class="fl">1.5</span>, label<span class="op">=</span><span class="st">"Precio actual"</span>)</span>
+<span id="cb1-501"><a href="#cb1-501" aria-hidden="true" tabindex="-1"></a>    plt.axvline(media, linewidth<span class="op">=</span><span class="fl">1.5</span>, label<span class="op">=</span><span class="st">"Media final"</span>)</span>
+<span id="cb1-502"><a href="#cb1-502" aria-hidden="true" tabindex="-1"></a>    plt.axvline(mediana, linewidth<span class="op">=</span><span class="fl">1.5</span>, linestyle<span class="op">=</span><span class="st">":"</span>, label<span class="op">=</span><span class="st">"Mediana final"</span>)</span>
+<span id="cb1-503"><a href="#cb1-503" aria-hidden="true" tabindex="-1"></a>    plt.axvline(p5, linewidth<span class="op">=</span><span class="dv">1</span>, linestyle<span class="op">=</span><span class="st">"--"</span>, label<span class="op">=</span><span class="st">"P5"</span>)</span>
+<span id="cb1-504"><a href="#cb1-504" aria-hidden="true" tabindex="-1"></a>    plt.axvline(p95, linewidth<span class="op">=</span><span class="dv">1</span>, linestyle<span class="op">=</span><span class="st">"--"</span>, label<span class="op">=</span><span class="st">"P95"</span>)</span>
+<span id="cb1-505"><a href="#cb1-505" aria-hidden="true" tabindex="-1"></a>    plt.title(<span class="ss">f"</span><span class="sc">{</span>ticker<span class="sc">}</span><span class="ss"> - Distribución terminal Monte Carlo (30d)"</span>)</span>
+<span id="cb1-506"><a href="#cb1-506" aria-hidden="true" tabindex="-1"></a>    plt.legend()</span>
+<span id="cb1-507"><a href="#cb1-507" aria-hidden="true" tabindex="-1"></a>    plt.grid(<span class="va">True</span>, alpha<span class="op">=</span><span class="fl">0.25</span>)</span>
+<span id="cb1-508"><a href="#cb1-508" aria-hidden="true" tabindex="-1"></a>    plt.tight_layout()</span>
+<span id="cb1-509"><a href="#cb1-509" aria-hidden="true" tabindex="-1"></a>    plt.show()</span>
+<span id="cb1-510"><a href="#cb1-510" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-511"><a href="#cb1-511" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-512"><a href="#cb1-512" aria-hidden="true" tabindex="-1"></a><span class="co"># ------------------------------------------------------------</span></span>
+<span id="cb1-513"><a href="#cb1-513" aria-hidden="true" tabindex="-1"></a><span class="co"># ETAPA 1: FILTRO RAPIDO</span></span>
+<span id="cb1-514"><a href="#cb1-514" aria-hidden="true" tabindex="-1"></a><span class="co"># ------------------------------------------------------------</span></span>
+<span id="cb1-515"><a href="#cb1-515" aria-hidden="true" tabindex="-1"></a>rapido: List[Dict[<span class="bu">str</span>, <span class="bu">float</span>]] <span class="op">=</span> []</span>
+<span id="cb1-516"><a href="#cb1-516" aria-hidden="true" tabindex="-1"></a>fallidos: List[Tuple[<span class="bu">str</span>, <span class="bu">str</span>]] <span class="op">=</span> []</span>
+<span id="cb1-517"><a href="#cb1-517" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-518"><a href="#cb1-518" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Total de tickers cargados en el código: </span><span class="sc">{</span><span class="bu">len</span>(TICKERS)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb1-519"><a href="#cb1-519" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-520"><a href="#cb1-520" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> ticker <span class="kw">in</span> TICKERS:</span>
+<span id="cb1-521"><a href="#cb1-521" aria-hidden="true" tabindex="-1"></a>    df <span class="op">=</span> descargar_datos(ticker, PERIODO)</span>
+<span id="cb1-522"><a href="#cb1-522" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> df <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb1-523"><a href="#cb1-523" aria-hidden="true" tabindex="-1"></a>        fallidos.append((ticker, <span class="st">"sin datos o historia insuficiente"</span>))</span>
+<span id="cb1-524"><a href="#cb1-524" aria-hidden="true" tabindex="-1"></a>        <span class="cf">continue</span></span>
+<span id="cb1-525"><a href="#cb1-525" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-526"><a href="#cb1-526" aria-hidden="true" tabindex="-1"></a>    <span class="cf">try</span>:</span>
+<span id="cb1-527"><a href="#cb1-527" aria-hidden="true" tabindex="-1"></a>        df_prep <span class="op">=</span> preparar(df)</span>
+<span id="cb1-528"><a href="#cb1-528" aria-hidden="true" tabindex="-1"></a>        r <span class="op">=</span> score_rapido(df_prep)</span>
+<span id="cb1-529"><a href="#cb1-529" aria-hidden="true" tabindex="-1"></a>        r[<span class="st">"Ticker"</span>] <span class="op">=</span> ticker</span>
+<span id="cb1-530"><a href="#cb1-530" aria-hidden="true" tabindex="-1"></a>        rapido.append(r)</span>
+<span id="cb1-531"><a href="#cb1-531" aria-hidden="true" tabindex="-1"></a>    <span class="cf">except</span> <span class="pp">Exception</span> <span class="im">as</span> e:</span>
+<span id="cb1-532"><a href="#cb1-532" aria-hidden="true" tabindex="-1"></a>        fallidos.append((ticker, <span class="ss">f"error preparación: </span><span class="sc">{</span><span class="bu">type</span>(e)<span class="sc">.</span><span class="va">__name__</span><span class="sc">}</span><span class="ss">"</span>))</span>
+<span id="cb1-533"><a href="#cb1-533" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-534"><a href="#cb1-534" aria-hidden="true" tabindex="-1"></a>df_rapido <span class="op">=</span> pd.DataFrame(rapido)</span>
+<span id="cb1-535"><a href="#cb1-535" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-536"><a href="#cb1-536" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="kw">not</span> df_rapido.empty:</span>
+<span id="cb1-537"><a href="#cb1-537" aria-hidden="true" tabindex="-1"></a>    df_rapido <span class="op">=</span> (</span>
+<span id="cb1-538"><a href="#cb1-538" aria-hidden="true" tabindex="-1"></a>        df_rapido[</span>
+<span id="cb1-539"><a href="#cb1-539" aria-hidden="true" tabindex="-1"></a>            [</span>
+<span id="cb1-540"><a href="#cb1-540" aria-hidden="true" tabindex="-1"></a>                <span class="st">"Ticker"</span>,</span>
+<span id="cb1-541"><a href="#cb1-541" aria-hidden="true" tabindex="-1"></a>                <span class="st">"Precio"</span>,</span>
+<span id="cb1-542"><a href="#cb1-542" aria-hidden="true" tabindex="-1"></a>                <span class="st">"Tendencia"</span>,</span>
+<span id="cb1-543"><a href="#cb1-543" aria-hidden="true" tabindex="-1"></a>                <span class="st">"RSI14"</span>,</span>
+<span id="cb1-544"><a href="#cb1-544" aria-hidden="true" tabindex="-1"></a>                <span class="st">"Ret3M %"</span>,</span>
+<span id="cb1-545"><a href="#cb1-545" aria-hidden="true" tabindex="-1"></a>                <span class="st">"Ret6M %"</span>,</span>
+<span id="cb1-546"><a href="#cb1-546" aria-hidden="true" tabindex="-1"></a>                <span class="st">"Vol20 anual %"</span>,</span>
+<span id="cb1-547"><a href="#cb1-547" aria-hidden="true" tabindex="-1"></a>                <span class="st">"Score rápido"</span>,</span>
+<span id="cb1-548"><a href="#cb1-548" aria-hidden="true" tabindex="-1"></a>                <span class="st">"Señal rápida"</span>,</span>
+<span id="cb1-549"><a href="#cb1-549" aria-hidden="true" tabindex="-1"></a>            ]</span>
+<span id="cb1-550"><a href="#cb1-550" aria-hidden="true" tabindex="-1"></a>        ]</span>
+<span id="cb1-551"><a href="#cb1-551" aria-hidden="true" tabindex="-1"></a>        .sort_values([<span class="st">"Score rápido"</span>, <span class="st">"Ret6M %"</span>, <span class="st">"Ret3M %"</span>], ascending<span class="op">=</span>[<span class="va">False</span>, <span class="va">False</span>, <span class="va">False</span>])</span>
+<span id="cb1-552"><a href="#cb1-552" aria-hidden="true" tabindex="-1"></a>        .reset_index(drop<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb1-553"><a href="#cb1-553" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb1-554"><a href="#cb1-554" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-555"><a href="#cb1-555" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">================ FILTRO RAPIDO - TODOS ================</span><span class="ch">\n</span><span class="st">"</span>)</span>
+<span id="cb1-556"><a href="#cb1-556" aria-hidden="true" tabindex="-1"></a>display(df_rapido)</span>
+<span id="cb1-557"><a href="#cb1-557" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-558"><a href="#cb1-558" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Tickers analizados con éxito: </span><span class="sc">{</span><span class="bu">len</span>(df_rapido)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb1-559"><a href="#cb1-559" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Tickers fallidos/sin datos suficientes: </span><span class="sc">{</span><span class="bu">len</span>(fallidos)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb1-560"><a href="#cb1-560" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-561"><a href="#cb1-561" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> fallidos:</span>
+<span id="cb1-562"><a href="#cb1-562" aria-hidden="true" tabindex="-1"></a>    df_fallidos <span class="op">=</span> pd.DataFrame(fallidos, columns<span class="op">=</span>[<span class="st">"Ticker"</span>, <span class="st">"Motivo"</span>])</span>
+<span id="cb1-563"><a href="#cb1-563" aria-hidden="true" tabindex="-1"></a>    display(df_fallidos.head(<span class="dv">20</span>))</span>
+<span id="cb1-564"><a href="#cb1-564" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-565"><a href="#cb1-565" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-566"><a href="#cb1-566" aria-hidden="true" tabindex="-1"></a><span class="co"># ------------------------------------------------------------</span></span>
+<span id="cb1-567"><a href="#cb1-567" aria-hidden="true" tabindex="-1"></a><span class="co"># ETAPA 2: ANALISIS PROFUNDO SOLO TOP_N</span></span>
+<span id="cb1-568"><a href="#cb1-568" aria-hidden="true" tabindex="-1"></a><span class="co"># ------------------------------------------------------------</span></span>
+<span id="cb1-569"><a href="#cb1-569" aria-hidden="true" tabindex="-1"></a>top_tickers <span class="op">=</span> df_rapido.head(TOP_N)[<span class="st">"Ticker"</span>].tolist()</span>
+<span id="cb1-570"><a href="#cb1-570" aria-hidden="true" tabindex="-1"></a>profundo: List[Dict[<span class="bu">str</span>, <span class="bu">float</span>]] <span class="op">=</span> []</span>
+<span id="cb1-571"><a href="#cb1-571" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-572"><a href="#cb1-572" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> ticker <span class="kw">in</span> top_tickers:</span>
+<span id="cb1-573"><a href="#cb1-573" aria-hidden="true" tabindex="-1"></a>    df <span class="op">=</span> descargar_datos(ticker, PERIODO)</span>
+<span id="cb1-574"><a href="#cb1-574" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> df <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb1-575"><a href="#cb1-575" aria-hidden="true" tabindex="-1"></a>        <span class="cf">continue</span></span>
+<span id="cb1-576"><a href="#cb1-576" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-577"><a href="#cb1-577" aria-hidden="true" tabindex="-1"></a>    <span class="cf">try</span>:</span>
+<span id="cb1-578"><a href="#cb1-578" aria-hidden="true" tabindex="-1"></a>        df <span class="op">=</span> preparar(df)</span>
+<span id="cb1-579"><a href="#cb1-579" aria-hidden="true" tabindex="-1"></a>        precio_actual <span class="op">=</span> <span class="bu">float</span>(df[<span class="st">"Close"</span>].iloc[<span class="op">-</span><span class="dv">1</span>])</span>
+<span id="cb1-580"><a href="#cb1-580" aria-hidden="true" tabindex="-1"></a>        retornos <span class="op">=</span> df[<span class="st">"RetLog"</span>].dropna()</span>
+<span id="cb1-581"><a href="#cb1-581" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-582"><a href="#cb1-582" aria-hidden="true" tabindex="-1"></a>        arima_fit, mejor_orden, _ <span class="op">=</span> seleccionar_arima(retornos)</span>
+<span id="cb1-583"><a href="#cb1-583" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> arima_fit <span class="kw">is</span> <span class="va">None</span> <span class="kw">or</span> mejor_orden <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb1-584"><a href="#cb1-584" aria-hidden="true" tabindex="-1"></a>            <span class="cf">continue</span></span>
+<span id="cb1-585"><a href="#cb1-585" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-586"><a href="#cb1-586" aria-hidden="true" tabindex="-1"></a>        drift <span class="op">=</span> np.asarray(arima_fit.forecast(steps<span class="op">=</span>DIAS_PROYECCION), dtype<span class="op">=</span><span class="bu">float</span>)</span>
+<span id="cb1-587"><a href="#cb1-587" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-588"><a href="#cb1-588" aria-hidden="true" tabindex="-1"></a>        garch_fit, sigma_30, resid_std <span class="op">=</span> ajustar_garch(retornos)</span>
+<span id="cb1-589"><a href="#cb1-589" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> sigma_30 <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb1-590"><a href="#cb1-590" aria-hidden="true" tabindex="-1"></a>            <span class="cf">continue</span></span>
+<span id="cb1-591"><a href="#cb1-591" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-592"><a href="#cb1-592" aria-hidden="true" tabindex="-1"></a>        sims <span class="op">=</span> simular_mc(precio_actual, drift, sigma_30, resid_std)</span>
+<span id="cb1-593"><a href="#cb1-593" aria-hidden="true" tabindex="-1"></a>        mc <span class="op">=</span> resumir_mc(precio_actual, sims)</span>
+<span id="cb1-594"><a href="#cb1-594" aria-hidden="true" tabindex="-1"></a>        score_final, senal_final_txt, vol_garch_d1 <span class="op">=</span> senal_final(df, mc, sigma_30)</span>
+<span id="cb1-595"><a href="#cb1-595" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-596"><a href="#cb1-596" aria-hidden="true" tabindex="-1"></a>        profundo.append(</span>
+<span id="cb1-597"><a href="#cb1-597" aria-hidden="true" tabindex="-1"></a>            {</span>
+<span id="cb1-598"><a href="#cb1-598" aria-hidden="true" tabindex="-1"></a>                <span class="st">"Ticker"</span>: ticker,</span>
+<span id="cb1-599"><a href="#cb1-599" aria-hidden="true" tabindex="-1"></a>                <span class="st">"Precio"</span>: <span class="bu">round</span>(precio_actual, <span class="dv">2</span>),</span>
+<span id="cb1-600"><a href="#cb1-600" aria-hidden="true" tabindex="-1"></a>                <span class="st">"Tendencia"</span>: clasificar_tendencia(df),</span>
+<span id="cb1-601"><a href="#cb1-601" aria-hidden="true" tabindex="-1"></a>                <span class="st">"RSI14"</span>: <span class="bu">round</span>(<span class="bu">float</span>(df[<span class="st">"RSI14"</span>].iloc[<span class="op">-</span><span class="dv">1</span>]), <span class="dv">2</span>),</span>
+<span id="cb1-602"><a href="#cb1-602" aria-hidden="true" tabindex="-1"></a>                <span class="st">"Mejor ARIMA"</span>: <span class="bu">str</span>(mejor_orden),</span>
+<span id="cb1-603"><a href="#cb1-603" aria-hidden="true" tabindex="-1"></a>                <span class="st">"AIC"</span>: <span class="bu">round</span>(<span class="bu">float</span>(arima_fit.aic), <span class="dv">2</span>),</span>
+<span id="cb1-604"><a href="#cb1-604" aria-hidden="true" tabindex="-1"></a>                <span class="st">"BIC"</span>: <span class="bu">round</span>(<span class="bu">float</span>(arima_fit.bic), <span class="dv">2</span>),</span>
+<span id="cb1-605"><a href="#cb1-605" aria-hidden="true" tabindex="-1"></a>                <span class="st">"Vol GARCH d1 %"</span>: vol_garch_d1,</span>
+<span id="cb1-606"><a href="#cb1-606" aria-hidden="true" tabindex="-1"></a>                <span class="op">**</span>mc,</span>
+<span id="cb1-607"><a href="#cb1-607" aria-hidden="true" tabindex="-1"></a>                <span class="st">"Score final"</span>: score_final,</span>
+<span id="cb1-608"><a href="#cb1-608" aria-hidden="true" tabindex="-1"></a>                <span class="st">"Señal final"</span>: senal_final_txt,</span>
+<span id="cb1-609"><a href="#cb1-609" aria-hidden="true" tabindex="-1"></a>            }</span>
+<span id="cb1-610"><a href="#cb1-610" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb1-611"><a href="#cb1-611" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-612"><a href="#cb1-612" aria-hidden="true" tabindex="-1"></a>    <span class="cf">except</span> <span class="pp">Exception</span>:</span>
+<span id="cb1-613"><a href="#cb1-613" aria-hidden="true" tabindex="-1"></a>        <span class="cf">continue</span></span>
+<span id="cb1-614"><a href="#cb1-614" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-615"><a href="#cb1-615" aria-hidden="true" tabindex="-1"></a>df_profundo <span class="op">=</span> pd.DataFrame(profundo)</span>
+<span id="cb1-616"><a href="#cb1-616" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-617"><a href="#cb1-617" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="kw">not</span> df_profundo.empty:</span>
+<span id="cb1-618"><a href="#cb1-618" aria-hidden="true" tabindex="-1"></a>    df_profundo <span class="op">=</span> (</span>
+<span id="cb1-619"><a href="#cb1-619" aria-hidden="true" tabindex="-1"></a>        df_profundo[</span>
+<span id="cb1-620"><a href="#cb1-620" aria-hidden="true" tabindex="-1"></a>            [</span>
+<span id="cb1-621"><a href="#cb1-621" aria-hidden="true" tabindex="-1"></a>                <span class="st">"Ticker"</span>,</span>
+<span id="cb1-622"><a href="#cb1-622" aria-hidden="true" tabindex="-1"></a>                <span class="st">"Precio"</span>,</span>
+<span id="cb1-623"><a href="#cb1-623" aria-hidden="true" tabindex="-1"></a>                <span class="st">"Tendencia"</span>,</span>
+<span id="cb1-624"><a href="#cb1-624" aria-hidden="true" tabindex="-1"></a>                <span class="st">"RSI14"</span>,</span>
+<span id="cb1-625"><a href="#cb1-625" aria-hidden="true" tabindex="-1"></a>                <span class="st">"Mejor ARIMA"</span>,</span>
+<span id="cb1-626"><a href="#cb1-626" aria-hidden="true" tabindex="-1"></a>                <span class="st">"AIC"</span>,</span>
+<span id="cb1-627"><a href="#cb1-627" aria-hidden="true" tabindex="-1"></a>                <span class="st">"BIC"</span>,</span>
+<span id="cb1-628"><a href="#cb1-628" aria-hidden="true" tabindex="-1"></a>                <span class="st">"Vol GARCH d1 %"</span>,</span>
+<span id="cb1-629"><a href="#cb1-629" aria-hidden="true" tabindex="-1"></a>                <span class="st">"Precio esperado 30d"</span>,</span>
+<span id="cb1-630"><a href="#cb1-630" aria-hidden="true" tabindex="-1"></a>                <span class="st">"P5"</span>,</span>
+<span id="cb1-631"><a href="#cb1-631" aria-hidden="true" tabindex="-1"></a>                <span class="st">"P25"</span>,</span>
+<span id="cb1-632"><a href="#cb1-632" aria-hidden="true" tabindex="-1"></a>                <span class="st">"P50"</span>,</span>
+<span id="cb1-633"><a href="#cb1-633" aria-hidden="true" tabindex="-1"></a>                <span class="st">"P75"</span>,</span>
+<span id="cb1-634"><a href="#cb1-634" aria-hidden="true" tabindex="-1"></a>                <span class="st">"P95"</span>,</span>
+<span id="cb1-635"><a href="#cb1-635" aria-hidden="true" tabindex="-1"></a>                <span class="st">"Prob subir %"</span>,</span>
+<span id="cb1-636"><a href="#cb1-636" aria-hidden="true" tabindex="-1"></a>                <span class="st">"Ret esp %"</span>,</span>
+<span id="cb1-637"><a href="#cb1-637" aria-hidden="true" tabindex="-1"></a>                <span class="st">"VaR 5</span><span class="sc">% 30d</span><span class="st">"</span>,</span>
+<span id="cb1-638"><a href="#cb1-638" aria-hidden="true" tabindex="-1"></a>                <span class="st">"CVaR 5</span><span class="sc">% 30d</span><span class="st">"</span>,</span>
+<span id="cb1-639"><a href="#cb1-639" aria-hidden="true" tabindex="-1"></a>                <span class="st">"Ancho P25-P75"</span>,</span>
+<span id="cb1-640"><a href="#cb1-640" aria-hidden="true" tabindex="-1"></a>                <span class="st">"Ancho P5-P95"</span>,</span>
+<span id="cb1-641"><a href="#cb1-641" aria-hidden="true" tabindex="-1"></a>                <span class="st">"Score final"</span>,</span>
+<span id="cb1-642"><a href="#cb1-642" aria-hidden="true" tabindex="-1"></a>                <span class="st">"Señal final"</span>,</span>
+<span id="cb1-643"><a href="#cb1-643" aria-hidden="true" tabindex="-1"></a>            ]</span>
+<span id="cb1-644"><a href="#cb1-644" aria-hidden="true" tabindex="-1"></a>        ]</span>
+<span id="cb1-645"><a href="#cb1-645" aria-hidden="true" tabindex="-1"></a>        .sort_values([<span class="st">"Score final"</span>, <span class="st">"Prob subir %"</span>, <span class="st">"Ret esp %"</span>], ascending<span class="op">=</span>[<span class="va">False</span>, <span class="va">False</span>, <span class="va">False</span>])</span>
+<span id="cb1-646"><a href="#cb1-646" aria-hidden="true" tabindex="-1"></a>        .reset_index(drop<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb1-647"><a href="#cb1-647" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb1-648"><a href="#cb1-648" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-649"><a href="#cb1-649" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">================ ANALISIS PROFUNDO - TOP </span><span class="sc">{</span>TOP_N<span class="sc">}</span><span class="ss"> ================</span><span class="ch">\n</span><span class="ss">"</span>)</span>
+<span id="cb1-650"><a href="#cb1-650" aria-hidden="true" tabindex="-1"></a>    display(df_profundo)</span>
+<span id="cb1-651"><a href="#cb1-651" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-652"><a href="#cb1-652" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">================ RESUMEN DE SEÑALES FINALES ================</span><span class="ch">\n</span><span class="st">"</span>)</span>
+<span id="cb1-653"><a href="#cb1-653" aria-hidden="true" tabindex="-1"></a>    display(</span>
+<span id="cb1-654"><a href="#cb1-654" aria-hidden="true" tabindex="-1"></a>        df_profundo[</span>
+<span id="cb1-655"><a href="#cb1-655" aria-hidden="true" tabindex="-1"></a>            [</span>
+<span id="cb1-656"><a href="#cb1-656" aria-hidden="true" tabindex="-1"></a>                <span class="st">"Ticker"</span>,</span>
+<span id="cb1-657"><a href="#cb1-657" aria-hidden="true" tabindex="-1"></a>                <span class="st">"Score final"</span>,</span>
+<span id="cb1-658"><a href="#cb1-658" aria-hidden="true" tabindex="-1"></a>                <span class="st">"Señal final"</span>,</span>
+<span id="cb1-659"><a href="#cb1-659" aria-hidden="true" tabindex="-1"></a>                <span class="st">"Prob subir %"</span>,</span>
+<span id="cb1-660"><a href="#cb1-660" aria-hidden="true" tabindex="-1"></a>                <span class="st">"Ret esp %"</span>,</span>
+<span id="cb1-661"><a href="#cb1-661" aria-hidden="true" tabindex="-1"></a>                <span class="st">"VaR 5</span><span class="sc">% 30d</span><span class="st">"</span>,</span>
+<span id="cb1-662"><a href="#cb1-662" aria-hidden="true" tabindex="-1"></a>                <span class="st">"CVaR 5</span><span class="sc">% 30d</span><span class="st">"</span>,</span>
+<span id="cb1-663"><a href="#cb1-663" aria-hidden="true" tabindex="-1"></a>                <span class="st">"Vol GARCH d1 %"</span>,</span>
+<span id="cb1-664"><a href="#cb1-664" aria-hidden="true" tabindex="-1"></a>            ]</span>
+<span id="cb1-665"><a href="#cb1-665" aria-hidden="true" tabindex="-1"></a>        ]</span>
+<span id="cb1-666"><a href="#cb1-666" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb1-667"><a href="#cb1-667" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-668"><a href="#cb1-668" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-669"><a href="#cb1-669" aria-hidden="true" tabindex="-1"></a><span class="co"># ------------------------------------------------------------</span></span>
+<span id="cb1-670"><a href="#cb1-670" aria-hidden="true" tabindex="-1"></a><span class="co"># GRAFICOS OPCIONALES DE LOS 5 MEJORES</span></span>
+<span id="cb1-671"><a href="#cb1-671" aria-hidden="true" tabindex="-1"></a><span class="co"># ------------------------------------------------------------</span></span>
+<span id="cb1-672"><a href="#cb1-672" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="kw">not</span> df_profundo.empty:</span>
+<span id="cb1-673"><a href="#cb1-673" aria-hidden="true" tabindex="-1"></a>    mejores <span class="op">=</span> df_profundo.head(TOP_GRAFICOS)[<span class="st">"Ticker"</span>].tolist()</span>
+<span id="cb1-674"><a href="#cb1-674" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-675"><a href="#cb1-675" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> ticker <span class="kw">in</span> mejores:</span>
+<span id="cb1-676"><a href="#cb1-676" aria-hidden="true" tabindex="-1"></a>        df <span class="op">=</span> descargar_datos(ticker, PERIODO)</span>
+<span id="cb1-677"><a href="#cb1-677" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> df <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb1-678"><a href="#cb1-678" aria-hidden="true" tabindex="-1"></a>            <span class="cf">continue</span></span>
+<span id="cb1-679"><a href="#cb1-679" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-680"><a href="#cb1-680" aria-hidden="true" tabindex="-1"></a>        <span class="cf">try</span>:</span>
+<span id="cb1-681"><a href="#cb1-681" aria-hidden="true" tabindex="-1"></a>            df <span class="op">=</span> preparar(df)</span>
+<span id="cb1-682"><a href="#cb1-682" aria-hidden="true" tabindex="-1"></a>            precio_actual <span class="op">=</span> <span class="bu">float</span>(df[<span class="st">"Close"</span>].iloc[<span class="op">-</span><span class="dv">1</span>])</span>
+<span id="cb1-683"><a href="#cb1-683" aria-hidden="true" tabindex="-1"></a>            retornos <span class="op">=</span> df[<span class="st">"RetLog"</span>].dropna()</span>
+<span id="cb1-684"><a href="#cb1-684" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-685"><a href="#cb1-685" aria-hidden="true" tabindex="-1"></a>            arima_fit, _, _ <span class="op">=</span> seleccionar_arima(retornos)</span>
+<span id="cb1-686"><a href="#cb1-686" aria-hidden="true" tabindex="-1"></a>            garch_fit, sigma_30, resid_std <span class="op">=</span> ajustar_garch(retornos)</span>
+<span id="cb1-687"><a href="#cb1-687" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-688"><a href="#cb1-688" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> arima_fit <span class="kw">is</span> <span class="va">None</span> <span class="kw">or</span> sigma_30 <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb1-689"><a href="#cb1-689" aria-hidden="true" tabindex="-1"></a>                <span class="cf">continue</span></span>
+<span id="cb1-690"><a href="#cb1-690" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-691"><a href="#cb1-691" aria-hidden="true" tabindex="-1"></a>            drift <span class="op">=</span> np.asarray(arima_fit.forecast(steps<span class="op">=</span>DIAS_PROYECCION), dtype<span class="op">=</span><span class="bu">float</span>)</span>
+<span id="cb1-692"><a href="#cb1-692" aria-hidden="true" tabindex="-1"></a>            sims <span class="op">=</span> simular_mc(precio_actual, drift, sigma_30, resid_std)</span>
+<span id="cb1-693"><a href="#cb1-693" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-694"><a href="#cb1-694" aria-hidden="true" tabindex="-1"></a>            hist <span class="op">=</span> df[<span class="st">"Close"</span>].tail(HIST_DIAS_GRAFICO)</span>
+<span id="cb1-695"><a href="#cb1-695" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-696"><a href="#cb1-696" aria-hidden="true" tabindex="-1"></a>            plot_fan_chart(</span>
+<span id="cb1-697"><a href="#cb1-697" aria-hidden="true" tabindex="-1"></a>                ticker<span class="op">=</span>ticker,</span>
+<span id="cb1-698"><a href="#cb1-698" aria-hidden="true" tabindex="-1"></a>                hist<span class="op">=</span>hist,</span>
+<span id="cb1-699"><a href="#cb1-699" aria-hidden="true" tabindex="-1"></a>                precio_actual<span class="op">=</span>precio_actual,</span>
+<span id="cb1-700"><a href="#cb1-700" aria-hidden="true" tabindex="-1"></a>                sims<span class="op">=</span>sims,</span>
+<span id="cb1-701"><a href="#cb1-701" aria-hidden="true" tabindex="-1"></a>                mostrar_paths<span class="op">=</span><span class="dv">0</span>,   <span class="co"># súbelo a 15 si quieres ver algunas trayectorias</span></span>
+<span id="cb1-702"><a href="#cb1-702" aria-hidden="true" tabindex="-1"></a>            )</span>
+<span id="cb1-703"><a href="#cb1-703" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-704"><a href="#cb1-704" aria-hidden="true" tabindex="-1"></a>            plot_terminal_distribution(</span>
+<span id="cb1-705"><a href="#cb1-705" aria-hidden="true" tabindex="-1"></a>                ticker<span class="op">=</span>ticker,</span>
+<span id="cb1-706"><a href="#cb1-706" aria-hidden="true" tabindex="-1"></a>                precio_actual<span class="op">=</span>precio_actual,</span>
+<span id="cb1-707"><a href="#cb1-707" aria-hidden="true" tabindex="-1"></a>                sims<span class="op">=</span>sims,</span>
+<span id="cb1-708"><a href="#cb1-708" aria-hidden="true" tabindex="-1"></a>            )</span>
+<span id="cb1-709"><a href="#cb1-709" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-710"><a href="#cb1-710" aria-hidden="true" tabindex="-1"></a>        <span class="cf">except</span> <span class="pp">Exception</span>:</span>
+<span id="cb1-711"><a href="#cb1-711" aria-hidden="true" tabindex="-1"></a>            <span class="cf">continue</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Total de tickers cargados en el código: 477</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+1 Failed download:
+['ABT']: TypeError("'Response' object is not subscriptable")
+
+1 Failed download:
+['AGG']: TypeError("'Response' object is not subscriptable")
+
+1 Failed download:
+['AMDL']: TypeError("'Response' object is not subscriptable")
+HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: QQAD"}}}
+$QQAD: possibly delisted; no price data found  (period=5y) (Yahoo error = "No data found, symbol may be delisted")
+
+1 Failed download:
+['QQAD']: possibly delisted; no price data found  (period=5y) (Yahoo error = "No data found, symbol may be delisted")</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+================ FILTRO RAPIDO - TODOS ================
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">Ticker</th>
+<th data-quarto-table-cell-role="th">Precio</th>
+<th data-quarto-table-cell-role="th">Tendencia</th>
+<th data-quarto-table-cell-role="th">RSI14</th>
+<th data-quarto-table-cell-role="th">Ret3M %</th>
+<th data-quarto-table-cell-role="th">Ret6M %</th>
+<th data-quarto-table-cell-role="th">Vol20 anual %</th>
+<th data-quarto-table-cell-role="th">Score rápido</th>
+<th data-quarto-table-cell-role="th">Señal rápida</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">0</th>
+<td>ERX</td>
+<td>97.73</td>
+<td>ALCISTA</td>
+<td>56.90</td>
+<td>68.87</td>
+<td>79.01</td>
+<td>45.79</td>
+<td>7</td>
+<td>FAVORABLE</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">1</th>
+<td>AMAT</td>
+<td>352.62</td>
+<td>ALCISTA</td>
+<td>51.79</td>
+<td>31.31</td>
+<td>58.21</td>
+<td>52.15</td>
+<td>7</td>
+<td>FAVORABLE</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">2</th>
+<td>XXCH</td>
+<td>32.70</td>
+<td>ALCISTA</td>
+<td>62.82</td>
+<td>22.21</td>
+<td>53.84</td>
+<td>40.10</td>
+<td>7</td>
+<td>FAVORABLE</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">3</th>
+<td>MSFD</td>
+<td>14.65</td>
+<td>ALCISTA</td>
+<td>59.97</td>
+<td>25.18</td>
+<td>37.01</td>
+<td>22.09</td>
+<td>7</td>
+<td>FAVORABLE</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">4</th>
+<td>JAZZ</td>
+<td>186.85</td>
+<td>ALCISTA</td>
+<td>56.24</td>
+<td>7.91</td>
+<td>36.18</td>
+<td>25.15</td>
+<td>7</td>
+<td>FAVORABLE</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">...</th>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">465</th>
+<td>CWEB</td>
+<td>26.17</td>
+<td>BAJISTA</td>
+<td>35.64</td>
+<td>-39.73</td>
+<td>-54.91</td>
+<td>59.68</td>
+<td>-8</td>
+<td>DESFAVORABLE</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">466</th>
+<td>SMCI</td>
+<td>22.05</td>
+<td>BAJISTA</td>
+<td>36.79</td>
+<td>-28.78</td>
+<td>-58.00</td>
+<td>158.79</td>
+<td>-8</td>
+<td>DESFAVORABLE</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">467</th>
+<td>WTID</td>
+<td>4.38</td>
+<td>BAJISTA</td>
+<td>35.64</td>
+<td>-60.23</td>
+<td>-63.94</td>
+<td>75.12</td>
+<td>-8</td>
+<td>DESFAVORABLE</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">468</th>
+<td>OILD</td>
+<td>39.62</td>
+<td>BAJISTA</td>
+<td>36.30</td>
+<td>-58.47</td>
+<td>-64.59</td>
+<td>66.79</td>
+<td>-8</td>
+<td>DESFAVORABLE</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">469</th>
+<td>NRGD</td>
+<td>26.33</td>
+<td>BAJISTA</td>
+<td>33.11</td>
+<td>-65.30</td>
+<td>-68.39</td>
+<td>79.49</td>
+<td>-8</td>
+<td>DESFAVORABLE</td>
+</tr>
+</tbody>
+</table>
+
+<p>470 rows × 9 columns</p>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Tickers analizados con éxito: 470
+Tickers fallidos/sin datos suficientes: 7</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">Ticker</th>
+<th data-quarto-table-cell-role="th">Motivo</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">0</th>
+<td>ABT</td>
+<td>sin datos o historia insuficiente</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">1</th>
+<td>AGG</td>
+<td>sin datos o historia insuficiente</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">2</th>
+<td>AMDL</td>
+<td>sin datos o historia insuficiente</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">3</th>
+<td>EFUT</td>
+<td>sin datos o historia insuficiente</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">4</th>
+<td>QQAD</td>
+<td>sin datos o historia insuficiente</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">5</th>
+<td>TIPD</td>
+<td>sin datos o historia insuficiente</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">6</th>
+<td>TSLI</td>
+<td>sin datos o historia insuficiente</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+================ ANALISIS PROFUNDO - TOP 30 ================
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">Ticker</th>
+<th data-quarto-table-cell-role="th">Precio</th>
+<th data-quarto-table-cell-role="th">Tendencia</th>
+<th data-quarto-table-cell-role="th">RSI14</th>
+<th data-quarto-table-cell-role="th">Mejor ARIMA</th>
+<th data-quarto-table-cell-role="th">AIC</th>
+<th data-quarto-table-cell-role="th">BIC</th>
+<th data-quarto-table-cell-role="th">Vol GARCH d1 %</th>
+<th data-quarto-table-cell-role="th">Precio esperado 30d</th>
+<th data-quarto-table-cell-role="th">P5</th>
+<th data-quarto-table-cell-role="th">...</th>
+<th data-quarto-table-cell-role="th">P75</th>
+<th data-quarto-table-cell-role="th">P95</th>
+<th data-quarto-table-cell-role="th">Prob subir %</th>
+<th data-quarto-table-cell-role="th">Ret esp %</th>
+<th data-quarto-table-cell-role="th">VaR 5% 30d</th>
+<th data-quarto-table-cell-role="th">CVaR 5% 30d</th>
+<th data-quarto-table-cell-role="th">Ancho P25-P75</th>
+<th data-quarto-table-cell-role="th">Ancho P5-P95</th>
+<th data-quarto-table-cell-role="th">Score final</th>
+<th data-quarto-table-cell-role="th">Señal final</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">0</th>
+<td>TBF</td>
+<td>24.20</td>
+<td>ALCISTA</td>
+<td>53.46</td>
+<td>(2, 0, 0)</td>
+<td>-6696.94</td>
+<td>-6677.09</td>
+<td>0.6814</td>
+<td>24.83</td>
+<td>23.41</td>
+<td>...</td>
+<td>25.42</td>
+<td>26.33</td>
+<td>74.93</td>
+<td>2.59</td>
+<td>-3.25</td>
+<td>-4.65</td>
+<td>1.22</td>
+<td>2.92</td>
+<td>5</td>
+<td>FAVORABLE</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">1</th>
+<td>FDL</td>
+<td>50.46</td>
+<td>ALCISTA</td>
+<td>59.56</td>
+<td>(1, 0, 0)</td>
+<td>-6862.79</td>
+<td>-6847.90</td>
+<td>0.7552</td>
+<td>51.98</td>
+<td>48.05</td>
+<td>...</td>
+<td>53.53</td>
+<td>55.89</td>
+<td>73.93</td>
+<td>3.02</td>
+<td>-4.78</td>
+<td>-6.51</td>
+<td>3.15</td>
+<td>7.85</td>
+<td>5</td>
+<td>FAVORABLE</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">2</th>
+<td>MO</td>
+<td>66.55</td>
+<td>ALCISTA</td>
+<td>57.09</td>
+<td>(1, 0, 1)</td>
+<td>-6180.95</td>
+<td>-6161.10</td>
+<td>1.2617</td>
+<td>69.28</td>
+<td>62.21</td>
+<td>...</td>
+<td>72.11</td>
+<td>76.65</td>
+<td>73.73</td>
+<td>4.10</td>
+<td>-6.52</td>
+<td>-9.17</td>
+<td>5.72</td>
+<td>14.44</td>
+<td>5</td>
+<td>FAVORABLE</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">3</th>
+<td>XXCH</td>
+<td>32.70</td>
+<td>ALCISTA</td>
+<td>62.82</td>
+<td>(2, 0, 1)</td>
+<td>-1146.73</td>
+<td>-1129.43</td>
+<td>2.3619</td>
+<td>37.50</td>
+<td>26.39</td>
+<td>...</td>
+<td>42.04</td>
+<td>51.31</td>
+<td>72.07</td>
+<td>14.66</td>
+<td>-19.28</td>
+<td>-27.32</td>
+<td>9.88</td>
+<td>24.92</td>
+<td>5</td>
+<td>FAVORABLE</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">4</th>
+<td>UTHR</td>
+<td>559.65</td>
+<td>ALCISTA</td>
+<td>58.05</td>
+<td>(1, 0, 0)</td>
+<td>-5052.77</td>
+<td>-5037.89</td>
+<td>2.2397</td>
+<td>586.92</td>
+<td>497.40</td>
+<td>...</td>
+<td>621.61</td>
+<td>684.17</td>
+<td>67.67</td>
+<td>4.87</td>
+<td>-11.12</td>
+<td>-14.74</td>
+<td>73.88</td>
+<td>186.78</td>
+<td>5</td>
+<td>FAVORABLE</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">5</th>
+<td>TYO</td>
+<td>13.67</td>
+<td>ALCISTA</td>
+<td>56.13</td>
+<td>(2, 0, 0)</td>
+<td>-5830.21</td>
+<td>-5810.36</td>
+<td>1.1036</td>
+<td>14.02</td>
+<td>12.68</td>
+<td>...</td>
+<td>14.56</td>
+<td>15.43</td>
+<td>65.03</td>
+<td>2.60</td>
+<td>-7.20</td>
+<td>-9.33</td>
+<td>1.11</td>
+<td>2.75</td>
+<td>5</td>
+<td>FAVORABLE</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">6</th>
+<td>PULT</td>
+<td>50.28</td>
+<td>ALCISTA</td>
+<td>55.45</td>
+<td>(2, 0, 0)</td>
+<td>-7880.64</td>
+<td>-7863.03</td>
+<td>0.0403</td>
+<td>50.91</td>
+<td>50.76</td>
+<td>...</td>
+<td>50.97</td>
+<td>51.07</td>
+<td>100.00</td>
+<td>1.25</td>
+<td>0.95</td>
+<td>0.87</td>
+<td>0.12</td>
+<td>0.31</td>
+<td>4</td>
+<td>FAVORABLE</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">7</th>
+<td>JPST</td>
+<td>50.45</td>
+<td>ALCISTA</td>
+<td>63.72</td>
+<td>(1, 0, 0)</td>
+<td>-13672.09</td>
+<td>-13657.21</td>
+<td>0.0433</td>
+<td>50.96</td>
+<td>50.79</td>
+<td>...</td>
+<td>51.02</td>
+<td>51.13</td>
+<td>100.00</td>
+<td>1.00</td>
+<td>0.67</td>
+<td>0.59</td>
+<td>0.14</td>
+<td>0.35</td>
+<td>4</td>
+<td>FAVORABLE</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">8</th>
+<td>BAMU</td>
+<td>25.24</td>
+<td>ALCISTA</td>
+<td>62.47</td>
+<td>(1, 0, 1)</td>
+<td>-5391.59</td>
+<td>-5375.31</td>
+<td>0.0445</td>
+<td>25.43</td>
+<td>25.33</td>
+<td>...</td>
+<td>25.47</td>
+<td>25.53</td>
+<td>99.97</td>
+<td>0.77</td>
+<td>0.37</td>
+<td>0.28</td>
+<td>0.08</td>
+<td>0.20</td>
+<td>4</td>
+<td>FAVORABLE</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">9</th>
+<td>JMST</td>
+<td>50.93</td>
+<td>ALCISTA</td>
+<td>61.02</td>
+<td>(1, 0, 0)</td>
+<td>-12912.83</td>
+<td>-12897.94</td>
+<td>0.0477</td>
+<td>51.27</td>
+<td>51.04</td>
+<td>...</td>
+<td>51.37</td>
+<td>51.50</td>
+<td>99.37</td>
+<td>0.68</td>
+<td>0.22</td>
+<td>0.10</td>
+<td>0.19</td>
+<td>0.46</td>
+<td>4</td>
+<td>FAVORABLE</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">10</th>
+<td>FLUD</td>
+<td>24.93</td>
+<td>ALCISTA</td>
+<td>55.53</td>
+<td>(1, 0, 1)</td>
+<td>-12025.70</td>
+<td>-12005.85</td>
+<td>0.0988</td>
+<td>25.22</td>
+<td>25.01</td>
+<td>...</td>
+<td>25.30</td>
+<td>25.44</td>
+<td>98.70</td>
+<td>1.14</td>
+<td>0.32</td>
+<td>0.10</td>
+<td>0.17</td>
+<td>0.42</td>
+<td>4</td>
+<td>FAVORABLE</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">11</th>
+<td>USCI</td>
+<td>96.63</td>
+<td>ALCISTA</td>
+<td>66.29</td>
+<td>(2, 0, 0)</td>
+<td>-6383.61</td>
+<td>-6363.76</td>
+<td>1.1357</td>
+<td>101.20</td>
+<td>91.64</td>
+<td>...</td>
+<td>105.12</td>
+<td>111.01</td>
+<td>77.87</td>
+<td>4.73</td>
+<td>-5.16</td>
+<td>-7.60</td>
+<td>7.88</td>
+<td>19.38</td>
+<td>4</td>
+<td>FAVORABLE</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">12</th>
+<td>PBR</td>
+<td>20.86</td>
+<td>ALCISTA</td>
+<td>69.83</td>
+<td>(1, 0, 0)</td>
+<td>-4928.69</td>
+<td>-4913.80</td>
+<td>2.2618</td>
+<td>22.84</td>
+<td>18.55</td>
+<td>...</td>
+<td>24.53</td>
+<td>27.47</td>
+<td>76.87</td>
+<td>9.48</td>
+<td>-11.05</td>
+<td>-15.23</td>
+<td>3.55</td>
+<td>8.91</td>
+<td>4</td>
+<td>FAVORABLE</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">13</th>
+<td>NVT</td>
+<td>117.41</td>
+<td>ALCISTA</td>
+<td>50.72</td>
+<td>(2, 0, 0)</td>
+<td>-4966.02</td>
+<td>-4946.17</td>
+<td>2.6993</td>
+<td>127.50</td>
+<td>103.35</td>
+<td>...</td>
+<td>137.54</td>
+<td>154.32</td>
+<td>73.73</td>
+<td>8.60</td>
+<td>-11.98</td>
+<td>-16.51</td>
+<td>20.87</td>
+<td>50.97</td>
+<td>4</td>
+<td>FAVORABLE</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">14</th>
+<td>TBX</td>
+<td>28.11</td>
+<td>ALCISTA</td>
+<td>56.87</td>
+<td>(2, 0, 0)</td>
+<td>-7963.47</td>
+<td>-7943.62</td>
+<td>0.4288</td>
+<td>28.54</td>
+<td>27.45</td>
+<td>...</td>
+<td>28.99</td>
+<td>29.69</td>
+<td>73.67</td>
+<td>1.54</td>
+<td>-2.35</td>
+<td>-3.23</td>
+<td>0.92</td>
+<td>2.24</td>
+<td>4</td>
+<td>FAVORABLE</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">15</th>
+<td>GLW</td>
+<td>146.50</td>
+<td>ALCISTA</td>
+<td>57.91</td>
+<td>(1, 0, 0)</td>
+<td>-5135.93</td>
+<td>-5121.04</td>
+<td>4.2031</td>
+<td>169.12</td>
+<td>117.54</td>
+<td>...</td>
+<td>191.00</td>
+<td>232.02</td>
+<td>72.80</td>
+<td>15.44</td>
+<td>-19.77</td>
+<td>-25.96</td>
+<td>46.55</td>
+<td>114.48</td>
+<td>4</td>
+<td>FAVORABLE</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">16</th>
+<td>KLAC</td>
+<td>1540.06</td>
+<td>ALCISTA</td>
+<td>56.46</td>
+<td>(1, 0, 0)</td>
+<td>-4579.31</td>
+<td>-4564.42</td>
+<td>2.9093</td>
+<td>1702.53</td>
+<td>1310.27</td>
+<td>...</td>
+<td>1863.75</td>
+<td>2148.54</td>
+<td>72.70</td>
+<td>10.55</td>
+<td>-14.92</td>
+<td>-20.12</td>
+<td>338.03</td>
+<td>838.27</td>
+<td>4</td>
+<td>FAVORABLE</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">17</th>
+<td>ERX</td>
+<td>97.73</td>
+<td>ALCISTA</td>
+<td>56.90</td>
+<td>(1, 0, 0)</td>
+<td>-4227.03</td>
+<td>-4212.15</td>
+<td>2.9573</td>
+<td>105.33</td>
+<td>79.58</td>
+<td>...</td>
+<td>115.69</td>
+<td>133.29</td>
+<td>66.70</td>
+<td>7.77</td>
+<td>-18.57</td>
+<td>-23.84</td>
+<td>21.69</td>
+<td>53.71</td>
+<td>4</td>
+<td>FAVORABLE</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">18</th>
+<td>DBC</td>
+<td>29.48</td>
+<td>ALCISTA</td>
+<td>66.29</td>
+<td>(1, 0, 0)</td>
+<td>-6342.21</td>
+<td>-6327.33</td>
+<td>1.5423</td>
+<td>30.49</td>
+<td>26.90</td>
+<td>...</td>
+<td>31.99</td>
+<td>34.49</td>
+<td>65.90</td>
+<td>3.43</td>
+<td>-8.77</td>
+<td>-11.57</td>
+<td>3.11</td>
+<td>7.59</td>
+<td>4</td>
+<td>FAVORABLE</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">19</th>
+<td>AMAT</td>
+<td>352.62</td>
+<td>ALCISTA</td>
+<td>51.79</td>
+<td>(1, 0, 0)</td>
+<td>-4563.75</td>
+<td>-4548.86</td>
+<td>3.2260</td>
+<td>380.32</td>
+<td>288.17</td>
+<td>...</td>
+<td>418.67</td>
+<td>488.78</td>
+<td>65.80</td>
+<td>7.86</td>
+<td>-18.28</td>
+<td>-23.82</td>
+<td>82.18</td>
+<td>200.61</td>
+<td>4</td>
+<td>FAVORABLE</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">20</th>
+<td>NORW</td>
+<td>38.33</td>
+<td>ALCISTA</td>
+<td>66.75</td>
+<td>(1, 0, 0)</td>
+<td>-5982.95</td>
+<td>-5968.06</td>
+<td>1.5298</td>
+<td>39.32</td>
+<td>34.57</td>
+<td>...</td>
+<td>41.33</td>
+<td>44.44</td>
+<td>62.13</td>
+<td>2.59</td>
+<td>-9.82</td>
+<td>-12.87</td>
+<td>4.07</td>
+<td>9.87</td>
+<td>4</td>
+<td>FAVORABLE</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">21</th>
+<td>WTIU</td>
+<td>20.95</td>
+<td>ALCISTA</td>
+<td>55.79</td>
+<td>(2, 0, 0)</td>
+<td>-1979.84</td>
+<td>-1962.34</td>
+<td>4.5353</td>
+<td>22.43</td>
+<td>15.47</td>
+<td>...</td>
+<td>25.46</td>
+<td>30.90</td>
+<td>58.03</td>
+<td>7.06</td>
+<td>-26.18</td>
+<td>-32.61</td>
+<td>6.45</td>
+<td>15.43</td>
+<td>4</td>
+<td>FAVORABLE</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">22</th>
+<td>GUSH</td>
+<td>42.77</td>
+<td>ALCISTA</td>
+<td>60.41</td>
+<td>(1, 0, 0)</td>
+<td>-3696.90</td>
+<td>-3682.01</td>
+<td>3.7546</td>
+<td>45.07</td>
+<td>32.22</td>
+<td>...</td>
+<td>50.28</td>
+<td>60.46</td>
+<td>57.37</td>
+<td>5.37</td>
+<td>-24.68</td>
+<td>-30.34</td>
+<td>11.48</td>
+<td>28.25</td>
+<td>3</td>
+<td>FAVORABLE</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">23</th>
+<td>JAZZ</td>
+<td>186.85</td>
+<td>ALCISTA</td>
+<td>56.24</td>
+<td>(1, 0, 0)</td>
+<td>-5283.62</td>
+<td>-5268.73</td>
+<td>1.7468</td>
+<td>189.84</td>
+<td>160.30</td>
+<td>...</td>
+<td>201.87</td>
+<td>220.42</td>
+<td>54.10</td>
+<td>1.60</td>
+<td>-14.21</td>
+<td>-17.48</td>
+<td>24.56</td>
+<td>60.12</td>
+<td>3</td>
+<td>FAVORABLE</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">24</th>
+<td>OILU</td>
+<td>50.87</td>
+<td>ALCISTA</td>
+<td>56.82</td>
+<td>(1, 0, 0)</td>
+<td>-2993.88</td>
+<td>-2979.46</td>
+<td>4.2753</td>
+<td>52.61</td>
+<td>35.64</td>
+<td>...</td>
+<td>59.90</td>
+<td>74.15</td>
+<td>52.57</td>
+<td>3.42</td>
+<td>-29.94</td>
+<td>-36.69</td>
+<td>15.48</td>
+<td>38.51</td>
+<td>3</td>
+<td>FAVORABLE</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">25</th>
+<td>MRAAY</td>
+<td>12.05</td>
+<td>ALCISTA</td>
+<td>56.44</td>
+<td>(1, 0, 0)</td>
+<td>-5224.56</td>
+<td>-5209.68</td>
+<td>2.8459</td>
+<td>12.07</td>
+<td>9.65</td>
+<td>...</td>
+<td>13.08</td>
+<td>14.86</td>
+<td>47.47</td>
+<td>0.14</td>
+<td>-19.90</td>
+<td>-24.18</td>
+<td>2.10</td>
+<td>5.20</td>
+<td>2</td>
+<td>ESPERAR</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">26</th>
+<td>YXI</td>
+<td>21.86</td>
+<td>ALCISTA</td>
+<td>55.22</td>
+<td>(1, 0, 0)</td>
+<td>-5186.30</td>
+<td>-5171.41</td>
+<td>1.7574</td>
+<td>21.81</td>
+<td>18.61</td>
+<td>...</td>
+<td>23.14</td>
+<td>25.52</td>
+<td>47.10</td>
+<td>-0.20</td>
+<td>-14.89</td>
+<td>-18.59</td>
+<td>2.76</td>
+<td>6.92</td>
+<td>2</td>
+<td>ESPERAR</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">27</th>
+<td>MSFD</td>
+<td>14.65</td>
+<td>ALCISTA</td>
+<td>59.97</td>
+<td>(1, 0, 0)</td>
+<td>-3900.01</td>
+<td>-3886.37</td>
+<td>1.4642</td>
+<td>14.58</td>
+<td>12.90</td>
+<td>...</td>
+<td>15.28</td>
+<td>16.34</td>
+<td>46.20</td>
+<td>-0.46</td>
+<td>-11.94</td>
+<td>-14.33</td>
+<td>1.44</td>
+<td>3.44</td>
+<td>2</td>
+<td>ESPERAR</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">28</th>
+<td>PFE</td>
+<td>27.83</td>
+<td>ALCISTA</td>
+<td>55.52</td>
+<td>(1, 0, 0)</td>
+<td>-5793.77</td>
+<td>-5778.88</td>
+<td>1.5666</td>
+<td>27.19</td>
+<td>23.71</td>
+<td>...</td>
+<td>28.63</td>
+<td>31.03</td>
+<td>37.23</td>
+<td>-2.30</td>
+<td>-14.80</td>
+<td>-17.82</td>
+<td>3.00</td>
+<td>7.32</td>
+<td>1</td>
+<td>ESPERAR</td>
+</tr>
+</tbody>
+</table>
+
+<p>29 rows × 22 columns</p>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+================ RESUMEN DE SEÑALES FINALES ================
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">Ticker</th>
+<th data-quarto-table-cell-role="th">Score final</th>
+<th data-quarto-table-cell-role="th">Señal final</th>
+<th data-quarto-table-cell-role="th">Prob subir %</th>
+<th data-quarto-table-cell-role="th">Ret esp %</th>
+<th data-quarto-table-cell-role="th">VaR 5% 30d</th>
+<th data-quarto-table-cell-role="th">CVaR 5% 30d</th>
+<th data-quarto-table-cell-role="th">Vol GARCH d1 %</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">0</th>
+<td>TBF</td>
+<td>5</td>
+<td>FAVORABLE</td>
+<td>74.93</td>
+<td>2.59</td>
+<td>-3.25</td>
+<td>-4.65</td>
+<td>0.6814</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">1</th>
+<td>FDL</td>
+<td>5</td>
+<td>FAVORABLE</td>
+<td>73.93</td>
+<td>3.02</td>
+<td>-4.78</td>
+<td>-6.51</td>
+<td>0.7552</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">2</th>
+<td>MO</td>
+<td>5</td>
+<td>FAVORABLE</td>
+<td>73.73</td>
+<td>4.10</td>
+<td>-6.52</td>
+<td>-9.17</td>
+<td>1.2617</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">3</th>
+<td>XXCH</td>
+<td>5</td>
+<td>FAVORABLE</td>
+<td>72.07</td>
+<td>14.66</td>
+<td>-19.28</td>
+<td>-27.32</td>
+<td>2.3619</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">4</th>
+<td>UTHR</td>
+<td>5</td>
+<td>FAVORABLE</td>
+<td>67.67</td>
+<td>4.87</td>
+<td>-11.12</td>
+<td>-14.74</td>
+<td>2.2397</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">5</th>
+<td>TYO</td>
+<td>5</td>
+<td>FAVORABLE</td>
+<td>65.03</td>
+<td>2.60</td>
+<td>-7.20</td>
+<td>-9.33</td>
+<td>1.1036</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">6</th>
+<td>PULT</td>
+<td>4</td>
+<td>FAVORABLE</td>
+<td>100.00</td>
+<td>1.25</td>
+<td>0.95</td>
+<td>0.87</td>
+<td>0.0403</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">7</th>
+<td>JPST</td>
+<td>4</td>
+<td>FAVORABLE</td>
+<td>100.00</td>
+<td>1.00</td>
+<td>0.67</td>
+<td>0.59</td>
+<td>0.0433</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">8</th>
+<td>BAMU</td>
+<td>4</td>
+<td>FAVORABLE</td>
+<td>99.97</td>
+<td>0.77</td>
+<td>0.37</td>
+<td>0.28</td>
+<td>0.0445</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">9</th>
+<td>JMST</td>
+<td>4</td>
+<td>FAVORABLE</td>
+<td>99.37</td>
+<td>0.68</td>
+<td>0.22</td>
+<td>0.10</td>
+<td>0.0477</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">10</th>
+<td>FLUD</td>
+<td>4</td>
+<td>FAVORABLE</td>
+<td>98.70</td>
+<td>1.14</td>
+<td>0.32</td>
+<td>0.10</td>
+<td>0.0988</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">11</th>
+<td>USCI</td>
+<td>4</td>
+<td>FAVORABLE</td>
+<td>77.87</td>
+<td>4.73</td>
+<td>-5.16</td>
+<td>-7.60</td>
+<td>1.1357</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">12</th>
+<td>PBR</td>
+<td>4</td>
+<td>FAVORABLE</td>
+<td>76.87</td>
+<td>9.48</td>
+<td>-11.05</td>
+<td>-15.23</td>
+<td>2.2618</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">13</th>
+<td>NVT</td>
+<td>4</td>
+<td>FAVORABLE</td>
+<td>73.73</td>
+<td>8.60</td>
+<td>-11.98</td>
+<td>-16.51</td>
+<td>2.6993</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">14</th>
+<td>TBX</td>
+<td>4</td>
+<td>FAVORABLE</td>
+<td>73.67</td>
+<td>1.54</td>
+<td>-2.35</td>
+<td>-3.23</td>
+<td>0.4288</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">15</th>
+<td>GLW</td>
+<td>4</td>
+<td>FAVORABLE</td>
+<td>72.80</td>
+<td>15.44</td>
+<td>-19.77</td>
+<td>-25.96</td>
+<td>4.2031</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">16</th>
+<td>KLAC</td>
+<td>4</td>
+<td>FAVORABLE</td>
+<td>72.70</td>
+<td>10.55</td>
+<td>-14.92</td>
+<td>-20.12</td>
+<td>2.9093</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">17</th>
+<td>ERX</td>
+<td>4</td>
+<td>FAVORABLE</td>
+<td>66.70</td>
+<td>7.77</td>
+<td>-18.57</td>
+<td>-23.84</td>
+<td>2.9573</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">18</th>
+<td>DBC</td>
+<td>4</td>
+<td>FAVORABLE</td>
+<td>65.90</td>
+<td>3.43</td>
+<td>-8.77</td>
+<td>-11.57</td>
+<td>1.5423</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">19</th>
+<td>AMAT</td>
+<td>4</td>
+<td>FAVORABLE</td>
+<td>65.80</td>
+<td>7.86</td>
+<td>-18.28</td>
+<td>-23.82</td>
+<td>3.2260</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">20</th>
+<td>NORW</td>
+<td>4</td>
+<td>FAVORABLE</td>
+<td>62.13</td>
+<td>2.59</td>
+<td>-9.82</td>
+<td>-12.87</td>
+<td>1.5298</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">21</th>
+<td>WTIU</td>
+<td>4</td>
+<td>FAVORABLE</td>
+<td>58.03</td>
+<td>7.06</td>
+<td>-26.18</td>
+<td>-32.61</td>
+<td>4.5353</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">22</th>
+<td>GUSH</td>
+<td>3</td>
+<td>FAVORABLE</td>
+<td>57.37</td>
+<td>5.37</td>
+<td>-24.68</td>
+<td>-30.34</td>
+<td>3.7546</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">23</th>
+<td>JAZZ</td>
+<td>3</td>
+<td>FAVORABLE</td>
+<td>54.10</td>
+<td>1.60</td>
+<td>-14.21</td>
+<td>-17.48</td>
+<td>1.7468</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">24</th>
+<td>OILU</td>
+<td>3</td>
+<td>FAVORABLE</td>
+<td>52.57</td>
+<td>3.42</td>
+<td>-29.94</td>
+<td>-36.69</td>
+<td>4.2753</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">25</th>
+<td>MRAAY</td>
+<td>2</td>
+<td>ESPERAR</td>
+<td>47.47</td>
+<td>0.14</td>
+<td>-19.90</td>
+<td>-24.18</td>
+<td>2.8459</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">26</th>
+<td>YXI</td>
+<td>2</td>
+<td>ESPERAR</td>
+<td>47.10</td>
+<td>-0.20</td>
+<td>-14.89</td>
+<td>-18.59</td>
+<td>1.7574</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">27</th>
+<td>MSFD</td>
+<td>2</td>
+<td>ESPERAR</td>
+<td>46.20</td>
+<td>-0.46</td>
+<td>-11.94</td>
+<td>-14.33</td>
+<td>1.4642</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">28</th>
+<td>PFE</td>
+<td>1</td>
+<td>ESPERAR</td>
+<td>37.23</td>
+<td>-2.30</td>
+<td>-14.80</td>
+<td>-17.82</td>
+<td>1.5666</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="invertir_gpt_files/figure-html/cell-2-output-11.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="invertir_gpt_files/figure-html/cell-2-output-12.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="invertir_gpt_files/figure-html/cell-2-output-13.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="invertir_gpt_files/figure-html/cell-2-output-14.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="invertir_gpt_files/figure-html/cell-2-output-15.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="invertir_gpt_files/figure-html/cell-2-output-16.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="invertir_gpt_files/figure-html/cell-2-output-17.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="invertir_gpt_files/figure-html/cell-2-output-18.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="invertir_gpt_files/figure-html/cell-2-output-19.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="invertir_gpt_files/figure-html/cell-2-output-20.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
