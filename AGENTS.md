@@ -1,3 +1,11 @@
+
+<!-- BEGIN:github-repository-rules -->
+# GitHub Repository Rules
+
+- Repositorio GitHub oficial: `cataldo89/trademind`.
+- Solo subir cambios a `https://github.com/cataldo89/trademind.git`.
+- No usar, recrear, pushear ni referenciar `cataldo89/trademind-push`; es un duplicado que debe eliminarse.
+<!-- END:github-repository-rules -->
 <!-- BEGIN:nextjs-agent-rules -->
 # PUERTA DE ENTRADA UNIVERSAL PARA CUALQUIER IA (Antigravity, Claude, Gemini, etc.)
 
