@@ -32,14 +32,13 @@ export function VisionSection() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.2 }}
+            className="text-gray-400 max-w-2xl mx-auto text-lg leading-relaxed"
           >
-            <p className="text-gray-400 max-w-2xl mx-auto text-lg leading-relaxed">
-              No prometemos rendimientos mágicos. Ofrecemos herramientas institucionales democratizadas para que tomes decisiones basadas en datos, no en emociones. El verdadero &quot;Alpha&quot; es la gestión de riesgo.
-            </p>
+            No prometemos rendimientos mágicos. Ofrecemos herramientas institucionales democratizadas para que tomes decisiones basadas en datos, no en emociones. El verdadero &quot;Alpha" es la gestión de riesgo.
           </motion.p>
         </div>
       </div>
     </section>
   );
 }
-
+

@@ -20,8 +20,10 @@ SECRET_KEY = os.getenv("QUANT_ENGINE_SECRET")
 
 @app.middleware("http")
 async def security_middleware(request: Request, call_next: Callable):
-    if not AUTH_DISABLED:
-        if not SECRET_KEY:
+    if not AUTH_DISABLED and not request.url.path.startswith(("/health", "/docs", "/openapi.json")):
+        if request.url.path == "/": 
+            pass # allow root
+        elif not SECRET_KEY:
             return JSONResponse(status_code=500, content={"detail": "QUANT_ENGINE_SECRET is not configured."})
         
         client_secret = request.headers.get("X-TradeMind-Quant-Secret")

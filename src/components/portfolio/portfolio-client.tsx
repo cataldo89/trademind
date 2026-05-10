@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useMemo, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -306,7 +306,7 @@ export function PortfolioClient() {
                 <input
                   type="number"
                   min="0"
-                  step="100"
+                  step="any"
                   value={balanceAmount}
                   onChange={(event) => setBalanceAmount(event.target.value)}
                   placeholder="10000"
@@ -367,7 +367,7 @@ export function PortfolioClient() {
           
           {signals.length > 0 && (
             <div className="mb-6 p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-lg">
-              <label className="block text-[10px] font-bold text-emerald-400 uppercase tracking-wider mb-2">Sincronizar con señal guardada</label>
+              <label className="block text-[10px] font-bold text-emerald-400 uppercase tracking-wider mb-2">Sincronizar con seÃ±al guardada</label>
               <div className="flex flex-wrap gap-2">
                 {signals.map((sig: any) => (
                   <button
@@ -399,7 +399,7 @@ export function PortfolioClient() {
               </datalist>
             </FormField>
             <FormField label="Nombre">
-              <input {...register('name')} placeholder="Se completa automáticamente" className={inputClass} />
+              <input {...register('name')} placeholder="Se completa automÃ¡ticamente" className={inputClass} />
             </FormField>
             <FormField label="Mercado">
               <select {...register('market')} className={inputClass}>
@@ -556,4 +556,4 @@ function SummaryCard({ label, value, sub, color }: {
     </div>
   )
 }
-
+

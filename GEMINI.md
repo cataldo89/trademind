@@ -1,43 +1,115 @@
-# TradeMind SaaS 2026 - Guía de Desarrollo "Agent-First"
+# TradeMind SaaS 2026 - Guia de Desarrollo Agent-First
 
-> **ADVERTENCIA PARA AGENTES IA:** Este documento es una guía de **VISIÓN FUTURA Y ROADMAP ASPIRACIONAL**. 
-> NO asumas que las tecnologías aquí descritas (LangGraph completo, MCP real, Edge AI generalizado, Autoencoders, SHAP/LIME, Algoritmos Genéticos) están implementadas en producción o de forma estable.
-> Para conocer la realidad técnica actual y el código real, dirígete a `ANTIGRAVITY_CONTEXT.md` y `AGENTS.md`.
+> ADVERTENCIA PARA AGENTES IA: este documento es vision futura y roadmap aspiracional. No asumir que LangGraph completo, MCP real, Edge AI generalizado, autoencoders, SHAP/LIME o algoritmos geneticos estan implementados de forma estable.
 
-Esta guía define la arquitectura aspiracional, convenciones de código y estándares de seguridad para la evolución de TradeMind hacia una plataforma SaaS "AI-Native", basada en principios de finanzas cuantitativas y la psicología de inversión de Benjamin Graham.
+Para realidad tecnica actual leer:
 
-## 1. Arquitectura AI-Native e Interoperabilidad
+1. `AGENTS.md`
+2. `ANTIGRAVITY_CONTEXT.md`
+3. `ESTADO_ACTUAL_PROYECTO.md`
+4. `docs/runbooks/problemas-escalamiento-errores-frontend-backend.md`
+5. `soluciones_tecnicas.md`
+6. `SEGURIDAD.md`
 
-- **Single Pane of AI**: La interfaz de usuario debe priorizar el lenguaje natural y el uso de "Artifacts" dinámicos en lugar de dashboards estáticos. El objetivo es lograr una orquestación de inteligencia fluida.
-- **MCP (Model Context Protocol)**: Todos los recursos clave (estado de la cartera, señales de Candle Range Theory - CRT) deben exponerse como herramientas a través de un servidor MCP nativo.
-- **Infraestructura de Agentes**: Utilizar LangGraph (o LangGraph.js) para establecer un clúster multi-agente con memoria persistente y estados de ejecución. Roles sugeridos: `Research Manager`, `Technical Analyst`, `Risk Manager`.
-- **Edge AI**: Se aspira a que las APIs de señales en tiempo real se configuren para ejecutarse en el borde (Edge Runtime) para garantizar la mínima latencia. (Nota: actualmente `/api/signals` en Edge presenta riesgos, ver `ESTADO_ACTUAL_PROYECTO.md`).
+## 1. Rol de este documento
 
-## 2. Núcleo Cuantitativo y Algorítmico (Pipeline DS/ML)
+`GEMINI.md` define direccion aspiracional para evolucionar TradeMind hacia una plataforma SaaS AI-native. No es auditoria del codigo actual.
 
-Todo nuevo módulo cuantitativo debe implementarse o integrarse respetando los siguientes estándares:
-- **Reducción de Ruido**: Uso estricto de PCA (Análisis de Componentes Principales) o Autoencoders antes de pasar la data a los modelos predictivos, para filtrar señales espurias.
-- **Selección de Factores**: Aplicar regularización Lasso (L1) y Ridge (L2) para descartar indicadores técnicos redundantes.
-- **Predicción y Riesgo**:
-  - Modelos ARIMA/SARIMA para la predicción de dirección del mercado.
-  - Modelos GARCH(1,1) para la estimación dinámica de volatilidad y el cálculo de VaR (Value at Risk).
-- **Detección de Regímenes**: Utilizar Hidden Markov Models (HMM) para clasificar el régimen de mercado (Bull, Bear, Sideways) y ajustar la agresividad operativa en consecuencia.
+Si este archivo contradice codigo, tests o `ESTADO_ACTUAL_PROYECTO.md`, manda la evidencia tecnica actual.
 
-## 3. Capa de Simulación y Validación (QuantConnect)
+## 2. Arquitectura AI-native aspiracional
 
-- **Sincronización con LEAN**: Se debe mantener una abstracción clara (puente de datos) para exportar las señales generadas en el SaaS hacia QuantConnect, posibilitando simulaciones de papel y backtesting.
-- **Calibración Dinámica**: Implementar Algoritmos Genéticos (GA) para optimizar en segundo plano los hiperparámetros de las señales CRT específicos por activo.
+Objetivos futuros:
 
-## 4. Psicología de Graham y UX Predictiva
+- Single Pane of AI para interactuar con cartera, senales y explicaciones en lenguaje natural.
+- MCP como interfaz comun para herramientas internas.
+- Agentes especializados con memoria persistente cuando la base de datos, seguridad y contratos API esten estabilizados.
+- Artefactos dinamicos para analisis, backtests y decisiones.
 
-- **Margin of Safety**: Codificar filtros duros obligatorios (ej. Debt-to-Asset < 1.10, P/E moderado) basados en Benjamin Graham. Ninguna señal de compra debe generarse si no se aprueba este filtro.
-- **Nudges de Disciplina**: La UI debe intervenir proactivamente para mitigar sesgos (anti-FOMO, anti-revenge trading).
-- **Modo "Mr. Market"**: Implementar un modo de visualización que oculte las fluctuaciones de precio a corto plazo y resalte únicamente métricas de valor intrínseco.
-- **Explainable AI (XAI)**: Toda recomendación del sistema debe ir acompañada de una justificación transparente (usando SHAP o LIME subyacente), por ejemplo: "Señal de compra: 40% atribuido a liquidez histórica".
+No implementar mas capas de agentes antes de cerrar los P0 documentados en el runbook de escalamiento.
 
-## 5. Reglas de Código y Seguridad
+## 3. Interoperabilidad y MCP
 
-- **Tipado Estricto**: TypeScript debe utilizarse de forma estricta. Todo modelo de datos debe ser validado con Zod en la capa de API.
-- **Variables de Entorno**: Segregar las claves (OpenAI, Gemini, Supabase, QuantConnect) y nunca exponer secretos del servidor al cliente.
-- **Latencia**: Cualquier cálculo pesado que exceda 1 segundo debe encolarse de manera asíncrona o procesarse en Python, devolviendo un estado o utilizando WebSockets/Server-Sent Events para actualizar el cliente.
-
+Meta:
+
+```text
+Frontend -> Next.js API Node -> Quant-engine -> Supabase/audit logs -> UI
+```
+
+Reglas:
+
+- No llamar FastAPI directo desde el navegador.
+- Usar `QUANT_ENGINE_URL` y `QUANT_ENGINE_SECRET` en servidor.
+- Agregar health checks y timeouts.
+- Cachear resultados por simbolo/timeframe.
+- Encolar calculos pesados que superen el segundo de latencia.
+
+## 4. Nucleo cuantitativo y algoritmico
+
+Estandares futuros:
+
+- PCA o reduccion de ruido solo si hay dataset suficiente y validacion.
+- Lasso/Ridge con target financiero claro.
+- ARIMA/SARIMA con validacion historica, no confianza fija.
+- GARCH(1,1) para volatilidad y VaR con manejo de datos insuficientes.
+- HMM para regimenes con validacion de estabilidad.
+- Backtesting LEAN antes de declarar una senal como validada.
+
+Nota:
+
+```text
+run_pca_autoencoder no debe llamarse autoencoder si solo ejecuta PCA.
+```
+
+## 5. Graham y disciplina de inversion
+
+La vision mantiene filtros de prudencia inspirados en Benjamin Graham:
+
+- P/E moderado.
+- Deuda controlada.
+- Margen de seguridad.
+- Rechazo explicable si faltan datos fundamentales.
+
+El umbral de deuda debe ser canonico en codigo, tests y documentacion. Antes de modificarlo, verificar `quant-engine/graham_filters.py`, `ESTADO_ACTUAL_PROYECTO.md` y tests.
+
+## 6. UX anti-FOMO
+
+La UI debe ayudar a evitar decisiones impulsivas:
+
+- Explicar por que una senal existe.
+- Mostrar riesgos, no solo upside.
+- Diferenciar analisis narrativo de senal cuantitativa validada.
+- Indicar si una senal no fue persistida o no fue backtesteada.
+- No mostrar `success` si el backend no confirmo persistencia.
+
+## 7. XAI futura
+
+SHAP/LIME solo deben implementarse cuando exista modelo entrenado/validado y dataset claro.
+
+Mientras tanto, usar explicaciones deterministicas honestas basadas en reglas y datos disponibles.
+
+## 8. Seguridad y costos
+
+- No exponer secretos al cliente.
+- No usar service role en rutas de usuario salvo justificacion tecnica y tests de aislamiento.
+- Proteger rutas AI con rate limits o cuotas.
+- Proteger cron y jobs internos con secretos.
+- Consultar `SEGURIDAD.md` antes de tocar scripts, env vars o deploy.
+
+## 9. Escalamiento obligatorio antes de nuevas features aspiracionales
+
+Antes de avanzar con LangGraph, autoencoders, geneticos o XAI avanzado, cerrar o planificar explicitamente:
+
+- `/api/trading` persistiendo con `market` valido.
+- Migraciones Supabase aplicables de cero a produccion.
+- Operaciones financieras virtuales atomicas.
+- Alertas con cron seguro y batch quotes.
+- Market data con rate limit, cache y consumidores batch.
+- Quant-engine con URL real, secreto, cache y health check.
+- `npm run verify` verde o deuda documentada.
+
+Referencia principal:
+
+```text
+docs/runbooks/problemas-escalamiento-errores-frontend-backend.md
+```

@@ -1,424 +1,241 @@
-# ESTRUCTURA DEL PROYECTO — TradeMind CV
+# ESTRUCTURA DEL PROYECTO - TradeMind CV
 
-> **AVISO IMPORTANTE:** Este es un mapa de archivos e inventario. **INVENTARIO NO EQUIVALE A FUNCIONALIDAD**. La existencia de un archivo (ej. `lean_integration.py` o `mcp-client.ts`) no implica que el sistema esté interconectado o validado. Lea `ESTADO_ACTUAL_PROYECTO.md` para el estado real.
-> **Fecha de generacion:** 2026-05-03
-> **Descripcion:** Mapa completo de carpetas y archivos del proyecto TradeMind.
+Fecha de actualizacion: 2026-05-10  
+Rol: mapa del repositorio para agentes IA  
+Regla: inventario no equivale a funcionalidad. Para estado real leer `ESTADO_ACTUAL_PROYECTO.md` y para incidentes frontend/backend leer `docs/runbooks/problemas-escalamiento-errores-frontend-backend.md`.
 
----
+## 1. Documentacion maestra
 
-## RAIZ DEL PROYECTO (trademind/)
+| Archivo | Rol |
+|---|---|
+| `AGENTS.md` | Reglas operativas, GitHub oficial, Vercel, orden de lectura obligatorio |
+| `ANTIGRAVITY_CONTEXT.md` | Fuente operativa para agentes IA y separacion entre vision, realidad y gaps |
+| `ESTADO_ACTUAL_PROYECTO.md` | Auditoria tecnica actual del codigo, validaciones y brechas |
+| `ESTRUCTURA_PROYECTO.md` | Mapa de archivos y carpetas del repositorio |
+| `soluciones_tecnicas.md` | Problemas resueltos y patrones tecnicos obligatorios |
+| `docs/runbooks/problemas-escalamiento-errores-frontend-backend.md` | Runbook de fallas frontend/backend y riesgos de escalamiento SaaS |
+| `SEGURIDAD.md` | Reglas de secretos, service role, scripts y checklist pre-push |
+| `MEMORY.md` | Memoria historica y filosofia del producto |
+| `GEMINI.md` | Vision futura y roadmap aspiracional AI-native |
+| `CLAUDE.md` | Wrapper de lectura para Claude |
+| `README.md` | Entrada publica, stack y ejecucion local |
 
-`
-trademind/
-`
-
-| Archivo | Descripcion |
-|---------|-------------|
-| .env.example | Plantilla de variables de entorno (Supabase, Gemini, QuantConnect, AlphaVantage, OpenAI) |
-| .env.local | Variables de entorno locales (no se sube a git) |
-| .gitignore | Archivos y directorios ignorados por git (node_modules, .env, .next, etc.) |
-| AGENTS.md | Instrucciones para agentes de IA (reglas de deploy Vercel, variables obligatorias) |
-| CLAUDE.md | Configuracion de reglas para Claude Code CLI |
-| GEMINI.md | Configuracion de reglas para Gemini CLI |
-| LICENSE | Licencia del proyecto |
-| MEMORY.md | Memoria de contexto del proyecto (estado historico de decisiones) |
-| README.md | Documentacion principal del proyecto |
-| soluciones_tecnicas.md | Notas tecnicas de soluciones implementadas |
-| 
-ext.config.ts | Configuracion de Next.js (headers, redirects, webpack) |
-| 
-ext-env.d.ts | Tipos generados automaticamente de Next.js |
-| package.json | Dependencias del proyecto (Next.js, Supabase, tailwind, yahoo-finance2, etc.) |
-| package-lock.json | Lockfile de dependencias npm |
-| 	sconfig.json | Configuracion de TypeScript (paths, compiler options) |
-| 	sconfig.tsbuildinfo | Info de compilacion TypeScript |
-| eslint.config.mjs | Reglas de ESLint para linting |
-| postcss.config.mjs | Configuracion de PostCSS + Tailwind |
-| 	ailwind.config.js | Configuracion de Tailwind CSS (colores, plugins, theme) |
-| ercel.json | Configuracion de deploy en Vercel (framework, builds, env) |
-| supabase.exe | CLI de Supabase para Windows |
-| supabase_cli.tar.gz | CLI de Supabase comprimido |
-| pply-schema.ps1 | Script PowerShell para aplicar schema SQL a Supabase |
-| check-tables.ps1 | Script PowerShell para verificar tablas en Supabase |
-| create-user.mjs | Script para crear usuario admin en Supabase |
-| patch-trigger.js | Script para agregar trigger en tabla signals |
-| patch-trigger.sql | SQL para trigger de auto-trigger en tabla signals |
-| update-zesty.js | Script de actualizacion de datos de symbols |
-| upload_results.mjs | Script de carga de resultados al backend |
-| 1.txt | Archivo de version/registro v1 |
-| 2.txt | Archivo de version/registro v2 |
-
----
-
-## CARPETA public/
-
-`
-trademind/public/
-`
-
-| Archivo | Descripcion |
-|---------|-------------|
-| ile.svg | Icono de archivo (landing page) |
-| globe.svg | Icono de globo (landing page) |
-| 
-ext.svg | Logo de Next.js |
-| ercel.svg | Logo de Vercel |
-| window.svg | Icono de ventana (landing page) |
-
----
-
-## CARPETA supabase/
-
-`
-trademind/supabase/
-`
-
-| Archivo | Descripcion |
-|---------|-------------|
-| config.toml | Configuracion de Supabase CLI (proyecto, db, studio, edge functions) |
-| schema.sql | Schema completo de la base de datos (profiles, signals, alerts, positions, transactions, watchlist, audit_logs) con RLS policies |
-| create_audit_logs.sql | SQL especifico para crear tabla audit_logs |
-| .temp/ | Archivos temporales del CLI de Supabase (version, project-ref, etc.) |
-
----
-
-## CARPETA src/ (Next.js Frontend + Backend)
-
-`
-trademind/src/
-`
-
-| Archivo | Descripcion |
-|---------|-------------|
-| middleware.ts | Middleware de autenticacion Supabase SSR. Protege rutas, maneja redirecciones a login/dashboard |
-
----
-
-### src/app/ (Rutas de Next.js App Router)
-
-`
-trademind/src/app/
-`
-
-| Archivo/Carpetas | Descripcion |
-|-----------------|-------------|
-| avicon.ico | Icono del navegador |
-| globals.css | Estilos globales (Tailwind directives, custom properties) |
-| layout.tsx | Layout raiz de la aplicacion (providers, fonts, meta tags) |
-| page.tsx | Pagina de inicio (landing page) |
-| live/page.tsx | Pagina de trading en tiempo real |
-
-#### src/app/(auth)/ — Paginas de autenticacion
+## 2. Raiz del repo `trademind/`
 
 | Ruta | Descripcion |
-|------|-------------|
-| layout.tsx | Layout de autenticacion (fondo, centrado) |
-| login/page.tsx | Formulario de login con Supabase Auth |
-| 
-egister/page.tsx | Formulario de registro con Supabase Auth |
-| orgot-password/page.tsx | Formulario de recuperacion de password |
+|---|---|
+| `.env.example` | Plantilla de variables de entorno. No debe contener secretos reales |
+| `.env.local` | Variables locales. No se sube a GitHub |
+| `.gitignore` | Exclusiones de secretos, builds, dependencias y binarios locales |
+| `next.config.ts` | Configuracion Next.js |
+| `next-env.d.ts` | Tipos generados por Next.js |
+| `package.json` | Scripts y dependencias npm |
+| `package-lock.json` | Lockfile npm |
+| `tsconfig.json` | Configuracion TypeScript |
+| `tsconfig.tsbuildinfo` | Cache incremental TypeScript |
+| `eslint.config.mjs` | Configuracion ESLint |
+| `postcss.config.mjs` | Configuracion PostCSS/Tailwind |
+| `tailwind.config.js` | Configuracion Tailwind |
+| `public/` | Assets publicos |
+| `src/` | App Next.js, APIs, componentes y librerias |
+| `supabase/` | Schema, migraciones y config Supabase |
+| `quant-engine/` | Servicio Python/FastAPI cuantitativo |
+| `qc-workspace/` | Workspace QuantConnect LEAN |
+| `lean-workspace/` | Workspace adicional relacionado a LEAN |
+| `reports/` | Reportes generados, por ejemplo auditorias Zesty |
+| `scripts/` | Scripts de mantenimiento/auditoria |
+| `docs/` | Runbooks y documentacion operativa adicional |
+| `apply-schema.ps1` | Script para aplicar schema usando variables de entorno |
+| `check-tables.ps1` | Script para verificar tablas Supabase usando variables de entorno |
+| `create-user.mjs` | Script para crear usuario usando variables de entorno |
+| `patch-trigger.js` | Script de mantenimiento DB usando `DATABASE_URL` |
+| `patch-trigger.sql` | SQL asociado a trigger de señales |
+| `update-zesty.js` | Script de actualizacion Zesty |
+| `upload_results.mjs` | Script de carga de resultados |
 
-#### src/app/(dashboard)/ — Paginas del dashboard
+## 3. `docs/`
 
 | Ruta | Descripcion |
-|------|-------------|
-| layout.tsx | Layout del dashboard (sidebar + header) |
-| dashboard/page.tsx | Pagina principal del dashboard (widgets de mercado, signals, portfolio) |
-| dmin/page.tsx | Panel de administracion |
-| nalysis/page.tsx | Pagina de analisis tecnico de symbols |
-| lerts/page.tsx | Pagina de gestion de alertas |
-| portfolio/page.tsx | Pagina de portafolio (posiciones, transactions) |
-| screener/page.tsx | Pagina de screener de acciones |
-| signals/page.tsx | Pagina de señales generadas por el sistema |
-| settings/page.tsx | Pagina de configuracion de cuenta |
+|---|---|
+| `docs/runbooks/problemas-escalamiento-errores-frontend-backend.md` | Registro de errores actuales, sintomas de frontend causados por backend, riesgos futuros de escalamiento y contratos recomendados |
 
-#### src/app/api/ — API Routes (Backend)
+Regla para agentes:
+
+```text
+Si el error se manifiesta en UI, revisar este runbook antes de editar componentes.
+```
+
+## 4. `src/` - Next.js frontend y backend
 
 | Ruta | Descripcion |
-|------|-------------|
-| i/analyze/route.ts | Endpoint de analisis IA. Consulta Yahoo Finance + llama a Gemini/OpenAI para sugerencia de inversion. Fallback a reglas deterministas |
-| lerts/check/route.ts | Endpoint para verificar alertas activas contra precios actuales. Marca alerts como triggered |
-| market/candles/route.ts | Endpoint OHLCV. Obtiene velas de Yahoo Finance con mapeo de timeframe a interval |
-| market/movers/route.ts | Endpoint de market movers (gainers, losers, most active) via Yahoo Finance screener |
-| market/quote/route.ts | Endpoint de cotizacion en tiempo real de Yahoo Finance (precio, volumen, P/E, market cap) |
-| signals/route.ts | CRUD de señales. GET lista señales del usuario, POST crea nueva senal en Supabase |
-| 	rading/route.ts | Endpoint de trading. **(MOCK: genera señales aleatorias, no usar en prod)** |
-
-#### src/app/auth/callback/route.ts
-
-| Archivo | Descripcion |
-|---------|-------------|
-| 
-oute.ts | Maneja el callback de autenticacion de Supabase ( OAuth, email confirmation) |
-
----
-
-## CARPETA src/components/
-
-`
-trademind/src/components/
-`
-
-| Archivo | Descripcion |
-|---------|-------------|
-| providers.tsx | Provider wrapper (Supabase, theme, etc.) para toda la aplicacion |
-
-### src/components/alerts/
-
-| Archivo | Descripcion |
-|---------|-------------|
-| lerts-client.tsx | Componente cliente de alertas (CRUD, formulario, lista) |
-
-### src/components/analysis/
-
-| Archivo | Descripcion |
-|---------|-------------|
-| i-advisor.tsx | Componente de asesor IA (muestra sugerencia del endpoint /api/ai/analyze) |
-| nalysis-client.tsx | Pagina cliente de analisis (buscador de symbols, chart, resultados) |
-| candlestick-chart.tsx | Componente de grafico de velas japonesas (recharts) |
-| quote-header.tsx | Cabecera de cotizacion (precio, cambio, rango del dia) |
-| symbol-search.tsx | Componente de busqueda de symbols (autocomplete) |
-| 	echnical-summary.tsx | Resumen de indicadores tecnicos (RSI, MA, MACD) |
-| zesty-workspace.tsx | Componente de workspace Zesty (analisis avanzado) |
-
-### src/components/auth/
-
-| Archivo | Descripcion |
-|---------|-------------|
-| orgot-password-form.tsx | Formulario de recuperacion de password |
-| login-form.tsx | Formulario de login |
-| 
-egister-form.tsx | Formulario de registro |
-
-### src/components/dashboard/
-
-| Archivo | Descripcion |
-|---------|-------------|
-| RealtimeChart.tsx | Grafico en tiempo real (integracion con datos de mercado) |
-| SignalsPanel.tsx | Panel de señales activas en el dashboard |
-| ctive-signals-widget.tsx | Widget de señales activas |
-| market-calendar-widget.tsx | Widget de calendario de mercado (horarios, holidays) |
-| market-movers-widget.tsx | Widget de market movers (gainers/losers) |
-| portfolio-summary-widget.tsx | Widget de resumen de portafolio |
-| watchlist-widget.tsx | Widget de watchlist |
-
-### src/components/landing/
-
-| Archivo | Descripcion |
-|---------|-------------|
-| FeatureGrid.tsx | Grid de funcionalidades de la landing page |
-| HeroSection.tsx | Seccion hero de la landing page (titulo, CTA) |
-| VisionSection.tsx | Seccion de vision del producto |
-
-### src/components/layout/
-
-| Archivo | Descripcion |
-|---------|-------------|
-| header.tsx | Header superior (logo, nav, user menu) |
-| sidebar.tsx | Sidebar de navegacion lateral (menu de secciones) |
-
-### src/components/market/
-
-| Archivo | Descripcion |
-|---------|-------------|
-| market-status-badge.tsx | Badge de estado del mercado (abierto/cerrado) |
-| market-ticker.tsx | Ticker de mercado (cinta de precios) |
-
-### src/components/portfolio/
-
-| Archivo | Descripcion |
-|---------|-------------|
-| portfolio-client.tsx | Pagina cliente de portafolio (posiciones, historial, P&L) |
-
-### src/components/screener/
-
-| Archivo | Descripcion |
-|---------|-------------|
-| screener-client.tsx | Pagina cliente de screener (filtros, tabla de resultados) |
-
-### src/components/signals/
-
-| Archivo | Descripcion |
-|---------|-------------|
-| signals-client.tsx | Pagina cliente de señales (lista, filtros, detalle) |
-
-### src/components/ui/
-
-| Archivo | Descripcion |
-|---------|-------------|
-| skeleton-card.tsx | Componente de skeleton loading (placeholder animado) |
-
----
-
-## CARPETA src/lib/ (Utilidades y clientes)
-
-`
-trademind/src/lib/
-`
-
-| Archivo | Descripcion |
-|---------|-------------|
-| chart-ranges.ts | Mapeo de rangos de tiempo a configuraciones de Yahoo Finance |
-| indicators.ts | Calculo de indicadores tecnicos (RSI, SMA, EMA, MACD, Bollinger) |
-| market-data.ts | Utilidades de datos de mercado |
-| market-schedule.ts | Horarios de mercado (apertura, cierre, holidays) |
-| supabase-test.ts | Script de prueba de conectividad con Supabase (INSERT/SELECT/DELETE) |
-| utils.ts | Utilidades generales (formatters, helpers) |
-| yahoo-finance.ts | Wrapper de yahoo-finance2 para datos de mercado |
-
-### src/lib/ai/
-
-| Archivo | Descripcion |
-|---------|-------------|
-| mcp-client.ts | Cliente MCP (Model Context Protocol). **(PARCIAL/SIN USAR)** |
-
-### src/lib/supabase/
-
-| Archivo | Descripcion |
-|---------|-------------|
-| client.ts | Cliente Supabase para lado del cliente (browser) |
-| server.ts | Clientes Supabase para server-side (createClient + createAdminClient con cookies) |
-
----
-
-## CARPETA src/store/
-
-| Archivo | Descripcion |
-|---------|-------------|
-| marketStore.ts | Store global de datos de mercado (Zustand o similar). Estado de precios, symbols, charts |
-
----
-
-## CARPETA src/types/
-
-| Archivo | Descripcion |
-|---------|-------------|
-| index.ts | Tipos exportados (re-exports) |
-| market.ts | Interfaces de tipos de mercado (Candle, Quote, Signal, Alert, Position, etc.) |
-
----
-
-## CARPETA quant-engine/ (Microservicio Python)
-
-`
-trademind/quant-engine/
-`
-
-| Archivo | Descripcion |
-|---------|-------------|
-| .env | Variables de entorno locales del quant-engine |
-| .env.example | Plantilla de variables (QC_USER_ID, QC_API_TOKEN, SUPABASE_URL, etc.) |
-| main.py | Servidor FastAPI. Endpoints: MCP tools (get_market_regime, calculate_var, check_graham_filters), ML (extract_features, predict_direction), workflow/analyze |
-| 
-isk_models.py | Modelos de riesgo: HMM regime detection, GARCH VaR 95%, ARIMA prediction |
-| ml_pipeline.py | Pipeline ML: PCA de dimensionalidad, Lasso/Ridge feature selection |
-| graham_filters.py | Filtros de Graham: P/E < 15, Debt/Asset < 0.50, Margin of Safety |
-| lean_integration.py | Integracion con QuantConnect LEAN. **(PENDIENTE: no ejecuta backtest real)** |
-| 
-equirements.txt | Dependencias Python (numpy, pandas, yfinance, sklearn, hmmlearn, arch, statsmodels, fastapi, uvicorn, python-dotenv) |
-| start.bat | Script de inicio del servidor FastAPI en Windows |
-| 	est_hmm.py | Script de prueba para modelos HMM, ARIMA, GARCH |
-| 	est_graham.py | Script de prueba para filtros de Graham |
-
-### quant-engine/agents/
-
-| Archivo | Descripcion |
-|---------|-------------|
-| __init__.py | Init del modulo agents |
-| graph.py | Workflow secuencial de analisis: Research Manager (Graham) -> Technical Analyst (HMM+ARIMA) -> Risk Manager (GARCH) -> Decision Node |
-
----
-
-## CARPETA qc-workspace/ (QuantConnect)
-
-`
-trademind/qc-workspace/
-`
-
-| Archivo/Carpetas | Descripcion |
-|-----------------|-------------|
-| lean.json | Configuracion de QuantConnect LEAN |
-| TradeMindCRT/ | Algoritmo personalizado TradeMind CRT |
-| TradeMindCRT/main.py | Algoritmo QCAlgorithm (SMA 200 + volatilidad como filtro) |
-| TradeMindCRT/config.json | Configuracion del algoritmo |
-| TradeMindCRT/research.ipynb | Notebook de investigacion del algoritmo |
-| data/ | Datos historicos descargados de QuantConnect |
-| data/alternative/ | Datos alternativos (interest rates, SEC filings, earnings) |
-| data/cfd/ | Datos CFD (XAUUSD, DE30EUR de OANDA) |
-| data/crypto/ | Datos de criptomonedas (BTC, ETH, LTC de Coinbase, Binance, etc.) |
-| data/cryptofuture/ | Datos de futuros de crypto (Binance, Bybit, dYdX) |
-| data/equity/ | Datos de acciones (USA, India) |
-| data/forex/ | Datos de forex (EUR/USD, GBP/USD de FXCM, OANDA) |
-| data/future/ | Datos de futuros (CME, CBOT, ICE, NYMEX, Eurex) |
-| data/futureoption/ | Datos de opciones sobre futuros |
-| data/index/ | Datos de indices (S&P 500, N225, NIFTY50) |
-| data/indexoption/ | Datos de opciones sobre indices |
-| data/market-hours/ | Base de datos de horarios de mercados |
-| data/option/ | Datos de opciones de acciones |
-| data/symbol-properties/ | Propiedades de symbols (tipos, multipliers) |
-
----
-
-## CARPETA reports/
-
-| Archivo | Descripcion |
-|---------|-------------|
-| zesty-symbol-health-smoke.json | Resultados de pruebas de salud de symbols |
-
----
-
-## CARPETA scripts/
-
-| Archivo | Descripcion |
-|---------|-------------|
-| udit-zesty-symbols.mjs | Script de auditoria de symbols Zesty |
-
----
-
-## RESUMEN DE TECNOLOGIAS
-
-| Area | Tecnologia |
-|------|-----------|
-| **Frontend** | Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS, recharts |
-| **Backend** | Next.js API Routes, FastAPI (Python quant-engine) |
-| **Base de datos** | Supabase (PostgreSQL) |
-| **Autenticacion** | Supabase Auth (Email, OAuth) |
-| **Datos de mercado** | yahoo-finance2 (Yahoo Finance), Alpha Vantage (configurada), Finnhub (configurada) |
-| **IA/ML** | Google Gemini, OpenAI GPT, sklearn (PCA, Lasso, Ridge), hmmlearn, arch (GARCH), statsmodels (ARIMA) |
-| **Trading algoritmico** | QuantConnect LEAN (algoritmo TradeMindCRT) |
-| **Deploy** | Vercel |
-| **Indicadores tecnicos** | Implementacion propia (RSI, SMA, EMA, MACD, Bollinger) |
-| **Estado global** | marketStore (Zustand o similar) |
-
----
-
-## FLUJO DE DATOS PRINCIPAL
-
-`
-Usuario (Frontend)
-    |
-    v
-[Next.js Pages/Components]
-    |
-    +---> /api/market/*  ---> yahoo-finance2 (datos de mercado)
-    |
-    +---> /api/ai/analyze ---> Gemini/OpenAI (analisis IA)
-    |                         + yahoo-finance2 (contexto)
-    |
-    +---> /api/signals   ---> Supabase (CRUD de senales)
-    |
-    +---> /api/alerts/check ---> Supabase + /api/market/quote
-    |
-    +---> /api/trading   ---> MOCK (datos aleatorios)
-    |
-    +---> /api/market/*  ---> Supabase (datos persistentes)
-
-[quant-engine Python]
-    |-- HMM regime detection
-    |-- ARIMA prediction
-    |-- GARCH VaR calculation
-    |-- Graham filters
-    |-- PCA/Lasso ML pipeline
-    |-- QuantConnect LEAN export
-`
-
+|---|---|
+| `src/app/` | App Router de Next.js |
+| `src/components/` | Componentes React cliente/servidor |
+| `src/lib/` | Utilidades, clientes Supabase/Yahoo/AI y logica compartida |
+| `src/store/` | Estado global cliente |
+| `src/types/` | Tipos TypeScript |
+| `src/middleware.ts` | Middleware Supabase SSR y proteccion de rutas |
+
+## 5. `src/app/`
+
+| Ruta | Descripcion |
+|---|---|
+| `src/app/layout.tsx` | Layout raiz |
+| `src/app/page.tsx` | Landing page |
+| `src/app/live/page.tsx` | Pagina live/trading |
+| `src/app/(auth)/login/page.tsx` | Login |
+| `src/app/(auth)/register/page.tsx` | Registro |
+| `src/app/(auth)/forgot-password/page.tsx` | Recuperacion de password |
+| `src/app/auth/callback/route.ts` | Callback Supabase Auth |
+| `src/app/(dashboard)/layout.tsx` | Layout dashboard autenticado |
+| `src/app/(dashboard)/dashboard/page.tsx` | Dashboard principal |
+| `src/app/(dashboard)/analysis/page.tsx` | Analisis tecnico |
+| `src/app/(dashboard)/alerts/page.tsx` | Alertas |
+| `src/app/(dashboard)/signals/page.tsx` | Señales |
+| `src/app/(dashboard)/portfolio/page.tsx` | Portafolio |
+| `src/app/(dashboard)/screener/page.tsx` | Screener |
+| `src/app/(dashboard)/settings/page.tsx` | Configuracion |
+| `src/app/(dashboard)/admin/page.tsx` | Admin |
+
+## 6. API routes
+
+| Ruta | Estado / descripcion |
+|---|---|
+| `src/app/api/ai/analyze/route.ts` | Analisis narrativo con Yahoo + Gemini/OpenAI si hay claves; fallback deterministico |
+| `src/app/api/alerts/check/route.ts` | Verifica alertas activas. Requiere hardening de cron, auth y batching |
+| `src/app/api/market/quote/route.ts` | Proxy Yahoo Finance para una o multiples cotizaciones |
+| `src/app/api/market/candles/route.ts` | OHLCV desde Yahoo Finance |
+| `src/app/api/market/movers/route.ts` | Market movers desde Yahoo Finance |
+| `src/app/api/signals/route.ts` | CRUD de senales con JWT fallback y Supabase |
+| `src/app/api/trading/route.ts` | Orquestador hacia quant-engine. Tiene P0 de persistencia por `market: 'EQUITY'` |
+| `src/app/api/profile/virtual-balance/route.ts` | Actualizacion server-side de balance virtual |
+
+## 7. Componentes principales
+
+| Ruta | Descripcion / riesgo relevante |
+|---|---|
+| `src/components/analysis/zesty-workspace.tsx` | Workspace Zesty. Lint falla por `setState` sincronico en effects |
+| `src/components/analysis/candlestick-chart.tsx` | Grafico OHLCV |
+| `src/components/analysis/technical-summary.tsx` | Resumen tecnico y compra simulada desde cliente; requiere transaccion server-side |
+| `src/components/analysis/ai-advisor.tsx` | UI de analisis IA narrativo |
+| `src/components/analysis/quote-header.tsx` | Header de cotizacion |
+| `src/components/analysis/symbol-search.tsx` | Busqueda de simbolos |
+| `src/components/signals/signals-client.tsx` | Lista/ejecucion de senales; hace fan-out de quotes y writes no atomicos |
+| `src/components/portfolio/portfolio-client.tsx` | Portafolio; hace fan-out de quotes y operaciones cliente |
+| `src/components/alerts/alerts-client.tsx` | CRUD de alertas |
+| `src/components/dashboard/portfolio-summary-widget.tsx` | Resumen de portafolio; revisar batching de quotes |
+| `src/components/dashboard/active-signals-widget.tsx` | Senales activas |
+| `src/components/dashboard/market-calendar-widget.tsx` | Calendario de mercado |
+| `src/components/dashboard/market-movers-widget.tsx` | Movers de mercado |
+| `src/components/dashboard/watchlist-widget.tsx` | Watchlist |
+| `src/components/layout/header.tsx` | Header |
+| `src/components/layout/sidebar.tsx` | Sidebar desktop |
+| `src/components/layout/mobile-nav.tsx` | Navegacion mobile |
+| `src/components/landing/HeroSection.tsx` | Landing hero |
+| `src/components/landing/FeatureGrid.tsx` | Grid de features |
+| `src/components/landing/VisionSection.tsx` | Vision landing; lint por entidad JSX no escapada |
+| `src/components/auth/*.tsx` | Formularios auth |
+| `src/components/ui/skeleton-card.tsx` | UI skeleton |
+
+## 8. `src/lib/`
+
+| Ruta | Descripcion |
+|---|---|
+| `src/lib/ai/mcp-client.ts` | Cliente hacia quant-engine. Usa `QUANT_ENGINE_URL` o localhost por defecto |
+| `src/lib/supabase/client.ts` | Cliente Supabase browser |
+| `src/lib/supabase/server.ts` | Cliente Supabase server y admin client |
+| `src/lib/yahoo-finance.ts` | Wrapper yahoo-finance2 |
+| `src/lib/market-data.ts` | Datos/categorias Zesty y utilidades de mercado |
+| `src/lib/market-schedule.ts` | Horarios de mercado |
+| `src/lib/chart-ranges.ts` | Rangos de chart |
+| `src/lib/indicators.ts` | Indicadores tecnicos |
+| `src/lib/utils.ts` | Utilidades comunes |
+| `src/lib/supabase-test.ts` | Prueba manual de Supabase |
+
+## 9. Supabase
+
+| Ruta | Descripcion / riesgo |
+|---|---|
+| `supabase/schema.sql` | Snapshot de schema. Contiene comentario `# bumped` invalido para PostgreSQL y debe migrarse correctamente |
+| `supabase/migrations/001_add_virtual_balance.sql` | Migracion parcial para `profiles.virtual_balance` |
+| `supabase/config.toml` | Configuracion Supabase CLI |
+
+Tablas principales descritas por el schema:
+
+| Tabla | Uso |
+|---|---|
+| `profiles` | Perfil y `virtual_balance` |
+| `watchlist_items` | Watchlist por usuario |
+| `positions` | Posiciones simuladas |
+| `transactions` | Historial de operaciones |
+| `alerts` | Alertas de precio/volumen/cambio |
+| `signals` | Senales generadas o guardadas |
+| `audit_logs` | Auditoria |
+
+## 10. Quant-engine
+
+| Ruta | Descripcion |
+|---|---|
+| `quant-engine/main.py` | FastAPI con endpoints MCP/tools, ML y workflow |
+| `quant-engine/risk_models.py` | HMM, GARCH/VaR y ARIMA |
+| `quant-engine/time_series_models.py` | Modelos de series temporales |
+| `quant-engine/graham_filters.py` | Filtros Benjamin Graham |
+| `quant-engine/ml_pipeline.py` | PCA/Lasso/Ridge iniciales |
+| `quant-engine/lean_integration.py` | Integracion LEAN pendiente end-to-end |
+| `quant-engine/agents/graph.py` | Workflow secuencial, no LangGraph real |
+| `quant-engine/tests/` | Tests Python existentes |
+| `quant-engine/requirements.txt` | Dependencias Python |
+| `quant-engine/run.py` | Arranque/ejecucion del servicio |
+
+## 11. QuantConnect / LEAN
+
+| Ruta | Descripcion |
+|---|---|
+| `qc-workspace/` | Workspace LEAN con configuracion y datos historicos |
+| `qc-workspace/TradeMindCRT/` | Algoritmo TradeMindCRT |
+| `lean-workspace/` | Workspace adicional relacionado a LEAN |
+
+Estado real:
+
+```text
+LEAN existe en estructura, pero no hay evidencia de backtest end-to-end conectado al SaaS.
+```
+
+## 12. Flujo de datos actual
+
+```text
+Browser
+  -> Next.js pages/components
+  -> API routes `/api/market/*` -> Yahoo Finance
+  -> API route `/api/ai/analyze` -> Yahoo + Gemini/OpenAI/fallback
+  -> API route `/api/signals` -> Supabase
+  -> API route `/api/trading` -> MCPClient -> quant-engine FastAPI -> Supabase signals
+  -> Supabase browser client para partes del portfolio, alerts y signals
+```
+
+Riesgo principal:
+
+```text
+Varias operaciones criticas aun viven en Client Components y deben moverse a API/RPC atomicas antes de escalar.
+```
+
+## 13. Tecnologias reales y aspiracionales
+
+| Categoria | Real hoy | Aspiracional / pendiente |
+|---|---|---|
+| Datos mercado | Yahoo Finance | Alpha Vantage, Finnhub, Polygon integrados end-to-end |
+| Agentes | Workflow Python secuencial | LangGraph real con memoria persistente |
+| XAI | Explicaciones deterministicas/textuales | SHAP/LIME real |
+| ML | HMM, GARCH, ARIMA, PCA/Lasso iniciales | Autoencoder real, validacion robusta, jobs asincronos |
+| Backtesting | Estructura LEAN | Backtest ejecutado y parseado desde SaaS |
+| Realtime | Polling/refetch parcial | SSE/WebSocket/Supabase Realtime validado |
+
+## 14. Regla de mantenimiento
+
+Actualizar este archivo cuando:
+
+- Se agregue una ruta API.
+- Se mueva logica critica de cliente a servidor.
+- Se agregue una migracion Supabase real.
+- Cambie el contrato entre frontend, API routes, Supabase o quant-engine.
+- Se cierre alguno de los P0 del runbook de escalamiento.
