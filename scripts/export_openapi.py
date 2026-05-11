@@ -7,7 +7,7 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 quant_engine_dir = os.path.join(script_dir, "..", "quant-engine")
 sys.path.append(quant_engine_dir)
 
-from main import app
+from main import app  # type: ignore
 
 openapi_schema = app.openapi()
 

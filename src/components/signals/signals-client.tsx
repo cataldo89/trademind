@@ -8,7 +8,6 @@ import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
-import { fetchVirtualBalanceProfile } from '@/lib/virtual-balance'
 
 interface Signal {
   id: string
@@ -45,25 +44,13 @@ async function fetchAllSignals(): Promise<SignalWithQuote[]> {
   if (!res.ok) return []
   const body = await res.json()
   const signals = (body.data || []) as Signal[]
-  if (signals.length === 0) return []
 
-  const symbols = Array.from(new Set(signals.map((signal) => signal.symbol).filter(Boolean)))
-  if (symbols.length === 0) return signals
-
-  try {
-    const market = signals[0]?.market || 'US'
-    const quoteRes = await fetch(`/api/market/quote?symbols=${encodeURIComponent(symbols.join(','))}&market=${market}`)
-    if (!quoteRes.ok) return signals
-
-    const payload = await quoteRes.json()
-    const quotes = Array.isArray(payload.data) ? payload.data : [payload.data]
-    const quoteBySymbol = new Map<string, { price?: number; regularMarketPrice?: number }>()
-    quotes.forEach((quote: { symbol?: string; price?: number; regularMarketPrice?: number; change?: number; changePercent?: number }) => {
-      if (quote?.symbol) quoteBySymbol.set(String(quote.symbol).toUpperCase(), quote)
-    })
-
-    return signals.map((signal) => {
-      const quote = quoteBySymbol.get(signal.symbol.toUpperCase())
+  return Promise.all(signals.map(async (signal) => {
+    try {
+      const quoteRes = await fetch(`/api/market/quote?symbol=${encodeURIComponent(signal.symbol)}&market=${signal.market}`, { cache: 'no-store' })
+      if (!quoteRes.ok) return signal
+      const payload = await quoteRes.json()
+      const quote = payload.data || payload
       const currentPrice = Number(quote?.price || quote?.regularMarketPrice)
       const entryPrice = Number(signal.price)
       if (!Number.isFinite(currentPrice) || currentPrice <= 0 || !Number.isFinite(entryPrice) || entryPrice <= 0) return signal
@@ -72,11 +59,12 @@ async function fetchAllSignals(): Promise<SignalWithQuote[]> {
         currentPrice,
         performance: ((currentPrice - entryPrice) / entryPrice) * 100,
       }
-    })
-  } catch {
-    return signals
-  }
+    } catch {
+      return signal
+    }
+  }))
 }
+
 function parseOrderAmount(value: string) {
   return Number(value.trim().replace(',', '.'))
 }
@@ -90,20 +78,14 @@ function formatQuantity(quantity: number) {
 
 async function fetchCurrentPrice(symbol: string, market: string, fallbackPrice?: number) {
   const fallback = Number(fallbackPrice)
+  if (Number.isFinite(fallback) && fallback > 0) return fallback
 
-  try {
-    const res = await fetch(`/api/market/quote?symbol=${encodeURIComponent(symbol)}&market=${market}`)
-    if (res.ok) {
-      const payload = await res.json()
-      const quote = payload.data || payload
-      const price = Number(quote?.price || quote?.regularMarketPrice)
-      if (Number.isFinite(price) && price > 0) return price
-    }
-  } catch {
-    // During weekends or data outages, keep the stored signal price as fallback.
-  }
-
-  return Number.isFinite(fallback) && fallback > 0 ? fallback : 0
+  const res = await fetch(`/api/market/quote?symbol=${encodeURIComponent(symbol)}&market=${market}`)
+  if (!res.ok) return 0
+  const payload = await res.json()
+  const quote = payload.data || payload
+  const price = Number(quote?.price || quote?.regularMarketPrice)
+  return Number.isFinite(price) ? price : 0
 }
 
 const signalConfig = {
@@ -125,44 +107,42 @@ export function SignalsClient() {
   const deleteSignalMutation = useMutation({
     mutationFn: async (signalId: string) => {
       const supabaseClient = createClient()
-      const { data: { session } } = await supabaseClient.auth.getSession()
-      const res = await fetch(`/api/signals/${signalId}/cancel`, {
-        method: 'POST',
-        headers: {
-          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
-        },
-      })
-      if (!res.ok) {
-        const body = await res.json().catch(() => null)
-        throw new Error(body?.error?.message || 'No se pudo cancelar la senal')
-      }
+      const { error } = await supabaseClient.from('signals').delete().eq('id', signalId)
+      if (error) throw error
     },
     onSuccess: () => {
-      toast.success('Senal cancelada')
+      toast.success('Señal eliminada')
       queryClient.invalidateQueries({ queryKey: ['all-signals'] })
       queryClient.invalidateQueries({ queryKey: ['active-signals'] })
     },
     onError: () => {
-      toast.error('Error al cancelar senal')
+      toast.error('Error al eliminar señal')
     },
   })
+
   const executeSignalMutation = useMutation({
     mutationFn: async (signal: Signal) => {
       if (signal.type !== 'BUY') {
-        toast.error('Solo las senales de compra abren posiciones nuevas')
+        toast.error('Solo las señales de compra abren posiciones nuevas')
         return
       }
 
       const supabaseClient = createClient()
       const { data: { user } } = await supabaseClient.auth.getUser()
       if (!user) {
-        toast.error('Inicia sesion para operar')
+        toast.error('Inicia sesión para operar')
         return
       }
 
-      const { data: { session } } = await supabaseClient.auth.getSession()
-      const profile = await fetchVirtualBalanceProfile(session?.access_token)
-      const virtualBalance = Number(profile.virtual_balance ?? 0)
+      const { data: profile, error: profileError } = await supabaseClient
+        .from('profiles')
+        .select('virtual_balance')
+        .eq('id', user.id)
+        .maybeSingle()
+
+      if (profileError) throw profileError
+
+      const virtualBalance = Number(profile?.virtual_balance ?? 0)
       if (!Number.isFinite(virtualBalance) || virtualBalance <= 0) {
         toast.error('No tienes capital virtual disponible. Ajusta el capital en Portafolio.')
         return
@@ -177,41 +157,74 @@ export function SignalsClient() {
 
       const amount = parseOrderAmount(input)
       if (!Number.isFinite(amount) || amount <= 0) {
-        toast.error('Ingresa un monto valido')
+        toast.error('Ingresa un monto válido')
+        return
+      }
+      if (amount > virtualBalance) {
+        toast.error(`Saldo insuficiente. Disponible: ${formatCurrency(virtualBalance)}`)
         return
       }
 
       const price = await fetchCurrentPrice(signal.symbol, signal.market, signal.price)
       if (!Number.isFinite(price) || price <= 0) {
-        toast.error(`No pude obtener precio valido para ${signal.symbol}`)
+        toast.error(`No pude obtener precio válido para ${signal.symbol}`)
         return
       }
 
-      const res = await fetch('/api/portfolio/trade', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
-        },
-        body: JSON.stringify({
-          side: 'BUY',
+      const quantity = Number((amount / price).toFixed(8))
+      const entryDate = new Date().toISOString().split('T')[0]
+      const nextBalance = Number((virtualBalance - amount).toFixed(2))
+
+      const { data: position, error: positionError } = await supabaseClient
+        .from('positions')
+        .insert({
+          user_id: user.id,
           symbol: signal.symbol,
           name: signal.symbol,
           market: signal.market,
-          amount,
-          price,
-          source: 'signal',
-          signalId: signal.id,
-          notes: `Compra fraccional simulada desde senal ${signal.id}`,
-        }),
-      })
+          quantity,
+          entry_price: price,
+          entry_date: entryDate,
+          currency: 'USD',
+          notes: `Orden fraccional simulada desde señal ${signal.id}`,
+          status: 'open',
+        })
+        .select('id')
+        .single()
 
-      const body = await res.json().catch(() => null)
-      if (!res.ok || !body?.ok) {
-        throw new Error(body?.error?.message || 'Error al ejecutar senal')
+      if (positionError) throw positionError
+
+      const { error: balanceError } = await supabaseClient
+        .from('profiles')
+        .update({ virtual_balance: nextBalance })
+        .eq('id', user.id)
+
+      if (balanceError) {
+        if (position?.id) {
+          await supabaseClient.from('positions').delete().eq('id', position.id)
+        }
+        throw balanceError
       }
 
-      const quantity = Number(body.data?.position?.quantity ?? amount / price)
+      const { error: transactionError } = await supabaseClient.from('transactions').insert({
+        user_id: user.id,
+        symbol: signal.symbol,
+        name: signal.symbol,
+        market: signal.market,
+        type: 'BUY',
+        quantity,
+        price,
+        currency: 'USD',
+        notes: `Compra fraccional simulada desde señal ${signal.id}`,
+      })
+      if (transactionError) console.warn('[execute signal transaction]', transactionError)
+
+      const { error: signalError } = await supabaseClient
+        .from('signals')
+        .update({ status: 'cancelled' })
+        .eq('id', signal.id)
+      if (signalError) console.warn('[execute signal status]', signalError)
+
       toast.success(`Compraste ${formatQuantity(quantity)} ${signal.symbol} por ${formatCurrency(amount)}`)
       queryClient.invalidateQueries({ queryKey: ['all-signals'] })
       queryClient.invalidateQueries({ queryKey: ['active-signals'] })
@@ -221,9 +234,10 @@ export function SignalsClient() {
     },
     onError: (error) => {
       console.warn('[execute signal]', error)
-      toast.error(error instanceof Error ? error.message : 'Error al ejecutar senal')
+      toast.error('Error al ejecutar señal')
     },
   })
+
   const activeSignals = signals.filter((s) => s.status === 'active')
   const buySignals = activeSignals.filter((s) => s.type === 'BUY').length
   const sellSignals = activeSignals.filter((s) => s.type === 'SELL').length
@@ -253,7 +267,7 @@ export function SignalsClient() {
           <p className="text-sm text-gray-500 mb-2">No hay señales activas</p>
           <p className="text-xs text-gray-600">Ve a Análisis para analizar una acción y guardar señales</p>
           <Link href="/analysis" className="inline-block mt-4 text-xs text-emerald-400 hover:text-emerald-300">
-            Ir a Análisis ?
+            Ir a Análisis →
           </Link>
         </div>
       ) : (
@@ -296,17 +310,17 @@ export function SignalsClient() {
 
                 {signal.price && (
                   <div className="text-xs text-gray-500 mb-2 space-y-1">
-                    <p>Precio se?al: <span className="font-mono text-white">{signal.price.toFixed(2)}</span></p>
+                    <p>Precio señal: <span className="font-mono text-white">{signal.price.toFixed(2)}</span></p>
                     {signal.currentPrice !== undefined && (
                       <p>Precio actual: <span className="font-mono text-white">{signal.currentPrice.toFixed(2)}</span></p>
                     )}
                     {signal.performance !== undefined && (
                       <p className={cn('font-semibold', performanceIsPositive ? 'text-emerald-400' : 'text-red-400')}>
-                        Rendimiento desde se?al: {performanceIsPositive ? '+' : ''}{signal.performance.toFixed(2)}%
+                        Rendimiento desde señal: {performanceIsPositive ? '+' : ''}{signal.performance.toFixed(2)}%
                       </p>
                     )}
                     {signalContradictsPrice && (
-                      <p className="text-amber-300">Se?al BUY guardada, pero el precio actual va en contra. Revalidar en An?lisis.</p>
+                      <p className="text-amber-300">Señal BUY guardada, pero el precio actual va en contra. Revalidar en Análisis.</p>
                     )}
                   </div>
                 )}
@@ -345,13 +359,13 @@ export function SignalsClient() {
                   </Link>
                   <button
                     onClick={() => {
-                      if (confirm('¿Cancelar esta senal?')) {
+                      if (confirm('¿Eliminar esta señal?')) {
                         deleteSignalMutation.mutate(signal.id)
                       }
                     }}
                     disabled={deleteSignalMutation.isPending}
                     className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-400/10 rounded transition-colors disabled:opacity-50"
-                    title="Cancelar senal"
+                    title="Eliminar señal"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
