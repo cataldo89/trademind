@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useEffect, useMemo, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Market } from '@/types'
 import { formatCurrency, formatPercent, getPnLColor, cn } from '@/lib/utils'
 import {
-  Plus, Loader2, TrendingUp, TrendingDown, Trash2, ArrowUpRight, Briefcase
+  Plus, Loader2, TrendingUp, TrendingDown, Trash2, ArrowUpRight, Briefcase, Clock, Play
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useForm } from 'react-hook-form'
@@ -31,9 +31,101 @@ interface Position {
   pnl?: number
   pnlPercent?: number
   value?: number
-}
+  }interface PendingSignal {
+    id: string
+    symbol: string
+    market: Market
+    type: 'BUY' | 'SELL' | 'HOLD'
+    strength: number
+    reason: string
+    price: number
+    timeframe: string
+    status: string
+    created_at: string
+    currentPrice?: number
+    performance?: number
+  }
+  interface PendingSignalResult {
+    signalId: string
+    symbol: string
+    price: number
+    position: any
+  }
 
-const addPositionSchema = z.object({
+  async function fetchPendingSignals(userId: string): Promise<PendingSignal[]> {
+    const supabase = createClient()
+    const cutoffDate = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+    const { data } = await supabase
+      .from('signals')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('status', 'active')
+      .eq('type', 'BUY')
+      .lte('created_at', cutoffDate)
+      .order('created_at', { ascending: true })
+    if (!data || data.length === 0) return []
+    const symbols = Array.from(new Set(data.map((s: any) => s.symbol).filter(Boolean)))
+    const quoteBySymbol = new Map<string, { price?: number }>()
+    if (symbols.length > 0) {
+      try {
+        const market = data[0]?.market || 'US'
+        const res = await fetch("/api/market/quote?symbols=$encodeURIComponent(symbols.join(','))&market=$market")
+        if (res.ok) {
+          const quoteData = await res.json()
+          const quotes = Array.isArray(quoteData.data) ? quoteData.data : [quoteData.data]
+          quotes.forEach((q: any) => {
+            if (q?.symbol) quoteBySymbol.set(String(q.symbol).toUpperCase(), q)
+          })
+        }
+      } catch {}
+    }
+    return data.map((signal: any) => {
+      const quote = quoteBySymbol.get(signal.symbol.toUpperCase())
+      const currentPrice = Number(quote?.price || signal.price)
+      if (!Number.isFinite(currentPrice) || currentPrice <= 0) return null
+      const entryPrice = Number(signal.price)
+      const performance = entryPrice > 0 ? ((currentPrice - entryPrice) / entryPrice) * 100 : 0
+      return { ...signal, currentPrice, performance } as PendingSignal
+    }).filter(Boolean) as PendingSignal[]
+  }
+  async function executePendingSignals(userId: string): Promise<PendingSignalResult[]> {
+    const supabase = createClient()
+    const { data: { session } } = await supabase.auth.getSession()
+    const cutoffDate = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+    const { data: pendingSignals } = await supabase
+      .from('signals')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('status', 'active')
+      .eq('type', 'BUY')
+      .lte('created_at', cutoffDate)
+    if (!pendingSignals || pendingSignals.length === 0) return []
+    const results: PendingSignalResult[] = []
+    for (const signal of pendingSignals) {
+      try {
+        const res = await fetch('/api/cron/pending-signals/execute', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(session?.access_token ? { Authorization: "Bearer ${session.access_token}" } : {}),
+          },
+          body: JSON.stringify({ signalId: signal.id, symbol: signal.symbol, market: signal.market, price: signal.price }),
+        })
+        if (res.ok) {
+          const body = await res.json().catch(() => null)
+          results.push({
+            signalId: signal.id,
+            symbol: signal.symbol,
+            price: signal.price,
+            position: body?.data?.position || null,
+          })
+        }
+      } catch (err) {
+        console.warn('[execute pending signal]', err)
+      }
+    }
+    return results
+  }const addPositionSchema = z.object({
   symbol: z.string().min(1, 'Requerido').toUpperCase(),
   name: z.string().optional(),
   market: z.enum(['US']),
@@ -101,8 +193,13 @@ export function PortfolioClient() {
   const { data: profile } = useQuery({
     queryKey: ['profile', user?.id],
     queryFn: async () => {
-      const { data } = await supabase.from('profiles').select('virtual_balance').eq('id', user!.id).single()
-      return data
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/profile/virtual-balance', {
+        headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {},
+      })
+      if (!res.ok) return null
+      const body = await res.json().catch(() => null)
+      return body?.data ?? null
     },
     enabled: !!user,
   })
@@ -127,6 +224,37 @@ export function PortfolioClient() {
     },
     enabled: !!user,
   })
+
+  const [pendingExecuting, setPendingExecuting] = useState(false)
+  const [executedResults, setExecutedResults] = useState<PendingSignalResult[]>([])
+    const { data: pendingSignals = [] } = useQuery({
+      queryKey: ['pending-signals', user?.id],
+      queryFn: () => fetchPendingSignals(user!.id),
+      enabled: !!user,
+      refetchInterval: 60 * 60 * 1000,
+    })
+    const handleExecutePending = async () => {
+      if (!user || pendingExecuting) return
+      setPendingExecuting(true)
+      try {
+        const results = await executePendingSignals(user.id)
+        setExecutedResults(results)
+        if (results.length > 0) {
+          toast.success("${results.length posicion(es) ejecutada(s exitosamente}")
+          queryClient.invalidateQueries({ queryKey: ['positions'] })
+          queryClient.invalidateQueries({ queryKey: ['profile'] })
+          queryClient.invalidateQueries({ queryKey: ['portfolio-summary'] })
+          queryClient.invalidateQueries({ queryKey: ['pending-signals', user.id] })
+        } else {
+          toast.info('No hay senales pendientes de ejecucion')
+        }
+      } catch (err) {
+        console.warn('[execute pending signals]', err)
+        toast.error('Error al ejecutar senales pendientes')
+      } finally {
+        setPendingExecuting(false)
+      }
+    }
 
   const { register, handleSubmit, reset, watch, setValue, formState: { errors, isSubmitting } } = useForm<AddPositionForm>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -200,8 +328,8 @@ export function PortfolioClient() {
       notes: data.notes,
       status: 'open',
     })
-    if (error) { toast.error('Error al agregar posición'); return }
-    toast.success(`Posición en ${data.symbol} agregada`)
+    if (error) { toast.error('Error al agregar posici�n'); return }
+    toast.success(`Posici�n en ${data.symbol} agregada`)
     reset()
     setShowAddForm(false)
     queryClient.invalidateQueries({ queryKey: ['positions'] })
@@ -282,7 +410,7 @@ export function PortfolioClient() {
             className="flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-white text-sm font-semibold rounded-lg transition-colors"
           >
             <Plus className="w-4 h-4" />
-            Nueva posición
+            Nueva posici�n
           </button>
         </div>
       </div>
@@ -358,16 +486,75 @@ export function PortfolioClient() {
           color={totalPnL >= 0 ? 'emerald' : 'red'}
         />
         <SummaryCard label="Posiciones" value={String(positions.length)} />
-      </div>
+        </div>
+        {/* Pending Signals Section - Weekend/Holiday signals waiting for market open */}
+        {pendingSignals.length > 0 && (
+          <div className="glass rounded-xl p-5 border border-blue-500/20 bg-blue-500/5">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-blue-400" />
+                <h3 className="text-sm font-semibold text-white">Se?ales Pendientes ({pendingSignals.length})</h3>
+              </div>
+              <button
+                onClick={handleExecutePending}
+                disabled={pendingExecuting}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500 hover:bg-blue-400 text-white text-xs font-semibold rounded-lg transition-colors disabled:opacity-50"
+              >
+                {pendingExecuting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Play className="w-3 h-3" />}
+                Ejecutar Todas
+              </button>
+            </div>
+            {executedResults.length > 0 && (
+              <div className="mb-4 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
+                <p className="text-xs text-emerald-300 font-semibold">
+                  {executedResults.length} posicion(es) ejecutada(s exitosamente:
+                </p>
+                <div className="mt-1 space-y-0.5">
+                  {executedResults.map((r, i) => (
+                    <p key={i} className="text-[10px] text-emerald-400/80 font-mono">
+                      {r.symbol} @ ${r.price.toFixed(2)}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div className="space-y-2">
+              {pendingSignals.map((sig) => (
+                <div key={sig.id} className="flex items-center justify-between p-3 bg-gray-800/40 rounded-lg border border-gray-700">
+                  <div className="flex items-center gap-3">
+                    <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
+                    <div>
+                      <Link href={"}/analysis?symbol=${sig.symbol}&market=${sig.market}"} className="text-xs font-mono font-bold text-white hover:text-emerald-400 transition-colors">
+                        {sig.symbol}
+                      </Link>
+                      <p className="text-[10px] text-gray-500">{sig.timeframe}   Guardada hace {((Date.now() - new Date(sig.created_at).getTime()) / (1000 * 60 * 60)).toFixed(0)}h</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs font-mono text-white">${sig.price.toFixed(2)}</p>
+                    {sig.currentPrice && sig.performance !== undefined && (
+                      <p className={" + 'text-[10px] font-semibold $' + ' + 'text-emerald-400' + ' + ' ? ' + ' + 'text-red-400' + ' + ' : ' + $ + } + "}>
+                        {sig.performance >= 0 ? '+' : ''}{sig.performance.toFixed(2)}%
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="mt-3 text-[10px] text-gray-500">
+              Se?ales guardadas fuera de horario de mercado. Se ejecutaran al abrir con el precio actual del mercado.
+            </p>
+          </div>
+        )}
 
       {/* Add form */}
       {showAddForm && (
         <div className="glass rounded-xl p-5">
-          <h3 className="text-sm font-semibold text-white mb-4">Nueva posición</h3>
+          <h3 className="text-sm font-semibold text-white mb-4">Nueva posici�n</h3>
           
           {signals.length > 0 && (
             <div className="mb-6 p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-lg">
-              <label className="block text-[10px] font-bold text-emerald-400 uppercase tracking-wider mb-2">Sincronizar con seÃ±al guardada</label>
+              <label className="block text-[10px] font-bold text-emerald-400 uppercase tracking-wider mb-2">Sincronizar con señal guardada</label>
               <div className="flex flex-wrap gap-2">
                 {signals.map((sig: any) => (
                   <button
@@ -390,7 +577,7 @@ export function PortfolioClient() {
           )}
 
           <form onSubmit={handleSubmit(addPosition)} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <FormField label="Símbolo *" error={errors.symbol?.message}>
+            <FormField label="S�mbolo *" error={errors.symbol?.message}>
               <input {...register('symbol')} list="portfolio-symbols" placeholder="NVDA, AMZN, SPY..." className={inputClass} />
               <datalist id="portfolio-symbols">
                 {ZESTY_SYMBOLS.map((item) => (
@@ -399,7 +586,7 @@ export function PortfolioClient() {
               </datalist>
             </FormField>
             <FormField label="Nombre">
-              <input {...register('name')} placeholder="Se completa automÃ¡ticamente" className={inputClass} />
+              <input {...register('name')} placeholder="Se completa automáticamente" className={inputClass} />
             </FormField>
             <FormField label="Mercado">
               <select {...register('market')} className={inputClass}>
@@ -429,7 +616,7 @@ export function PortfolioClient() {
                 className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-white text-sm font-semibold rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
               >
                 {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                Agregar posición
+                Agregar posici�n
               </button>
               <button
                 type="button"
@@ -457,7 +644,7 @@ export function PortfolioClient() {
               onClick={() => setShowAddForm(true)}
               className="mt-3 text-xs text-emerald-400 hover:text-emerald-300"
             >
-              Agregar tu primera posición →
+              Agregar tu primera posici�n ?
             </button>
           </div>
         ) : (
@@ -465,7 +652,7 @@ export function PortfolioClient() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-800">
-                  {['Símbolo', 'Cantidad', 'Precio entrada', 'Precio actual', 'Valor', 'P&L', 'P&L %', 'Acciones'].map((h) => (
+                  {['S�mbolo', 'Cantidad', 'Precio entrada', 'Precio actual', 'Valor', 'P&L', 'P&L %', 'Acciones'].map((h) => (
                     <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       {h}
                     </th>
@@ -494,22 +681,22 @@ export function PortfolioClient() {
                       <td className="px-4 py-3 font-mono text-white">{pos.quantity}</td>
                       <td className="px-4 py-3 font-mono text-white">{pos.entry_price.toFixed(2)}</td>
                       <td className="px-4 py-3 font-mono text-white">
-                        {pos.currentPrice ? pos.currentPrice.toFixed(2) : '—'}
+                        {pos.currentPrice ? pos.currentPrice.toFixed(2) : '�'}
                       </td>
                       <td className="px-4 py-3 font-mono text-white">
-                        {pos.value ? formatCurrency(pos.value) : '—'}
+                        {pos.value ? formatCurrency(pos.value) : '�'}
                       </td>
                       <td className={cn('px-4 py-3 font-mono font-semibold', isPnLPositive ? 'text-emerald-400' : 'text-red-400')}>
-                        {pos.pnl !== undefined ? `${isPnLPositive ? '+' : ''}${formatCurrency(Math.abs(pos.pnl))}` : '—'}
+                        {pos.pnl !== undefined ? `${isPnLPositive ? '+' : ''}${formatCurrency(Math.abs(pos.pnl))}` : '�'}
                       </td>
                       <td className={cn('px-4 py-3 font-mono font-semibold', isPnLPositive ? 'text-emerald-400' : 'text-red-400')}>
-                        {pos.pnlPercent !== undefined ? formatPercent(pos.pnlPercent) : '—'}
+                        {pos.pnlPercent !== undefined ? formatPercent(pos.pnlPercent) : '�'}
                       </td>
                       <td className="px-4 py-3">
                         <button
                           onClick={() => closePosition(pos.id, pos.symbol)}
                           className="text-gray-600 hover:text-red-400 transition-colors p-1"
-                          title="Cerrar posición"
+                          title="Cerrar posici�n"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>

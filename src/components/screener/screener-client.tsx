@@ -204,13 +204,24 @@ export function ScreenerClient() {
   const { data: quotes = [], isLoading: quotesLoading } = useQuery({
     queryKey: ['screener-quotes', category, scanSymbols.map(s => s.symbol)],
     queryFn: async () => {
-      const results = await Promise.allSettled(
-        scanSymbols.map(s => fetchQuote(s.symbol, s.market))
-      )
-      return results
-        .filter((r): r is PromiseFulfilledResult<{ symbol: string; price: number; changePercent: number; volume: number; name: string } | null> => r.status === 'fulfilled')
-        .map(r => r.value)
-        .filter(Boolean)
+      const symbols = Array.from(new Set(scanSymbols.map((s) => s.symbol).filter(Boolean)))
+      if (symbols.length === 0) return []
+
+      const market = scanSymbols[0]?.market || 'US'
+      const res = await fetch(`/api/market/quote?symbols=${encodeURIComponent(symbols.join(','))}&market=${market}`)
+      if (!res.ok) return []
+
+      const data = await res.json()
+      const quotes = Array.isArray(data.data) ? data.data : [data.data]
+      return quotes
+        .filter((q: { symbol?: string }) => q?.symbol)
+        .map((q: { symbol?: string; price?: number; regularMarketPrice?: number; changePercent?: number; regularMarketChangePercent?: number; volume?: number; regularMarketVolume?: number; name?: string; shortName?: string; longName?: string }) => ({
+          symbol: String(q.symbol),
+          price: Number(q.price || q.regularMarketPrice || 0),
+          changePercent: Number(q.changePercent || q.regularMarketChangePercent || 0),
+          volume: Number(q.volume || q.regularMarketVolume || 0),
+          name: String(q.name || q.shortName || q.longName || q.symbol),
+        }))
     },
     staleTime: 60 * 1000,
     refetchInterval: 5 * 60 * 1000,
@@ -220,16 +231,23 @@ export function ScreenerClient() {
     queryKey: ['screener-scan', category, scanSymbols.map(s => s.symbol)],
     queryFn: async () => {
       const quoteMap = new Map()
-      quotes.forEach(q => {
+      quotes.forEach((q: { symbol: string }) => {
         if (q) quoteMap.set(q.symbol, q)
       })
 
-      const candlePromises = scanSymbols.map(async (s) => {
-        const candles = await fetchCandles(s.symbol, s.market)
-        const quote = quoteMap.get(s.symbol) || { price: 0, changePercent: 0, volume: 0, name: s.name }
-        return analyzeSymbol(s.symbol, s.name, s.market, candles, quote)
-      })
-      return Promise.all(candlePromises)
+      const results: ScanResult[] = []
+      const concurrency = 8
+      for (let i = 0; i < scanSymbols.length; i += concurrency) {
+        const chunk = scanSymbols.slice(i, i + concurrency)
+        const analyzed = await Promise.all(chunk.map(async (s) => {
+          const candles = await fetchCandles(s.symbol, s.market)
+          const quote = quoteMap.get(s.symbol) || { price: 0, changePercent: 0, volume: 0, name: s.name }
+          return analyzeSymbol(s.symbol, s.name, s.market, candles, quote)
+        }))
+        results.push(...analyzed)
+      }
+
+      return results
     },
     staleTime: 5 * 60 * 1000,
     refetchInterval: 10 * 60 * 1000,
@@ -551,4 +569,4 @@ export function ScreenerClient() {
     </div>
   )
 }
-
+

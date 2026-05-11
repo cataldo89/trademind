@@ -1,0 +1,89 @@
+
+async function fetchPendingSignals(userId: string): Promise<PendingSignal[]> {
+  const supabase = createClient()
+  const cutoffDate = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+  
+  const { data } = await supabase
+    .from('signals')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('status', 'active')
+    .eq('type', 'BUY')
+    .lte('created_at', cutoffDate)
+    .order('created_at', { ascending: true })
+
+  if (!data || data.length === 0) return []
+
+  const symbols = Array.from(new Set(data.map((s: any) => s.symbol).filter(Boolean)))
+  const quoteBySymbol = new Map<string, { price?: number }>()
+
+  if (symbols.length > 0) {
+    try {
+      const market = data[0]?.market || 'US'
+      const res = await fetch(/api/market/quote?symbols=&market=)
+      if (res.ok) {
+        const quoteData = await res.json()
+        const quotes = Array.isArray(quoteData.data) ? quoteData.data : [quoteData.data]
+        quotes.forEach((q: any) => {
+          if (q?.symbol) quoteBySymbol.set(String(q.symbol).toUpperCase(), q)
+        })
+      }
+    } catch {}
+  }
+
+  return data.map((signal: any) => {
+    const quote = quoteBySymbol.get(signal.symbol.toUpperCase())
+    const currentPrice = Number(quote?.price || signal.price)
+    if (!Number.isFinite(currentPrice) || currentPrice <= 0) return null
+    
+    const entryPrice = Number(signal.price)
+    const performance = entryPrice > 0 ? ((currentPrice - entryPrice) / entryPrice) * 100 : 0
+    
+    return { ...signal, currentPrice, performance } as PendingSignal
+  }).filter(Boolean) as PendingSignal[]
+}
+
+async function executePendingSignals(userId: string): Promise<PendingSignalResult[]> {
+  const supabase = createClient()
+  const { data: { session } } = await supabase.auth.getSession()
+  
+  const cutoffDate = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+  const { data: pendingSignals } = await supabase
+    .from('signals')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('status', 'active')
+    .eq('type', 'BUY')
+    .lte('created_at', cutoffDate)
+
+  if (!pendingSignals || pendingSignals.length === 0) return []
+
+  const results: PendingSignalResult[] = []
+
+  for (const signal of pendingSignals) {
+    try {
+      const res = await fetch('/api/cron/pending-signals/execute', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { Authorization: Bearer  } : {}),
+        },
+        body: JSON.stringify({ signalId: signal.id, symbol: signal.symbol, market: signal.market, price: signal.price }),
+      })
+
+      if (res.ok) {
+        const body = await res.json().catch(() => null)
+        results.push({
+          signalId: signal.id,
+          symbol: signal.symbol,
+          price: signal.price,
+          position: body?.data?.position || null,
+        })
+      }
+    } catch (err) {
+      console.warn('[execute pending signal]', err)
+    }
+  }
+
+  return results
+}

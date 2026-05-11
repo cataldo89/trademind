@@ -1,7 +1,8 @@
 // Runtime cambiado a Node.js por compatibilidad con @supabase/ssr
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createAdminClient, createClient } from '@/lib/supabase/server'
+import { createClient, createClientForAuthToken } from '@/lib/supabase/server'
+import { normalizeStrength, normalizeSymbol, parseMarketOrLegacy, parseSignalType } from '@/lib/domain/market'
 
 type SignalPayload = {
   symbol?: string
@@ -15,46 +16,50 @@ type SignalPayload = {
 
 const ACTIONABLE_TIMEFRAMES = new Set(['1D', '5D', '1M'])
 
-async function getSignalsDbClient(userClient: Awaited<ReturnType<typeof createClient>>) {
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    return userClient
+type UserScopedContext = {
+  dbClient: Awaited<ReturnType<typeof createClient>> | ReturnType<typeof createClientForAuthToken>
+  user: { id: string } | null
+  userError: unknown
+}
+
+async function getUserScopedContext(request: NextRequest): Promise<UserScopedContext> {
+  const userClient = await createClient()
+  let dbClient: UserScopedContext['dbClient'] = userClient
+  let user: UserScopedContext['user'] = null
+  let userError: unknown = null
+
+  const authHeader = request.headers.get('Authorization')
+  const token = authHeader?.replace('Bearer ', '').trim()
+
+  if (token) {
+    const { data, error } = await userClient.auth.getUser(token)
+    user = data?.user ? { id: data.user.id } : null
+    userError = error
+
+    if (user) {
+      dbClient = createClientForAuthToken(token)
+    }
   }
 
-  try {
-    return await createAdminClient()
-  } catch (error) {
-    console.error('[api/signals admin client]', error)
-    return userClient
+  if (!user) {
+    const { data, error } = await userClient.auth.getUser()
+    user = data?.user ? { id: data.user.id } : null
+    userError = error
+    dbClient = userClient
   }
+
+  return { dbClient, user, userError }
 }
 
 export async function GET(request: NextRequest) {
   try {
-    const userClient = await createClient()
-    let user = null
-    let userError = null
-
-    const authHeader = request?.headers?.get('Authorization')
-    const token = authHeader?.replace('Bearer ', '')
-
-    if (token) {
-      const { data, error } = await userClient.auth.getUser(token)
-      user = data?.user
-      userError = error
-    }
-
-    if (!user) {
-      const { data, error } = await userClient.auth.getUser()
-      user = data?.user
-      userError = error
-    }
+    const { dbClient, user, userError } = await getUserScopedContext(request)
 
     if (userError || !user) {
       return NextResponse.json({ data: [] })
     }
 
-    const supabase = await getSignalsDbClient(userClient)
-    const { data, error } = await supabase
+    const { data, error } = await dbClient
       .from('signals')
       .select('*')
       .eq('user_id', user.id)
@@ -63,66 +68,54 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error('[api/signals GET]', error)
-      return NextResponse.json({ error: error.message || 'Failed to fetch signals' }, { status: 500 })
+      return NextResponse.json({ error: 'Failed to fetch signals' }, { status: 500 })
     }
 
     return NextResponse.json({ data: data || [] })
   } catch (error) {
     console.error('[api/signals GET fatal]', error)
-    return NextResponse.json({ error: error instanceof Error ? error.message : 'Unexpected signals error' }, { status: 500 })
+    return NextResponse.json({ error: 'Unexpected signals error' }, { status: 500 })
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
     const payload = await request.json().catch(() => null) as SignalPayload | null
-    const userClient = await createClient()
-    let user = null
-    let userError = null
-
-    const authHeader = request.headers.get('Authorization')
-    const token = authHeader?.replace('Bearer ', '')
-
-    if (token) {
-      const { data, error } = await userClient.auth.getUser(token)
-      user = data?.user
-      userError = error
-    }
-
-    if (!user) {
-      const { data, error } = await userClient.auth.getUser()
-      user = data?.user
-      userError = error
-    }
+    const { dbClient, user, userError } = await getUserScopedContext(request)
 
     if (userError || !user) {
-      console.error('[api/signals POST] auth error:', userError, 'user:', user);
+      console.error('[api/signals POST] auth error:', userError, 'user:', user)
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    if (!payload?.symbol || !payload.market || !payload.type || !payload.timeframe) {
-      return NextResponse.json({ error: 'Missing required signal fields' }, { status: 400 })
+    const symbol = normalizeSymbol(payload?.symbol)
+    const market = parseMarketOrLegacy(payload?.market, symbol)
+    const type = parseSignalType(payload?.type)
+    const timeframe = payload?.timeframe
+
+    if (!symbol || !market || !type || !timeframe) {
+      return NextResponse.json({ error: 'Missing or invalid required signal fields' }, { status: 400 })
     }
 
-    if (!ACTIONABLE_TIMEFRAMES.has(payload.timeframe)) {
+    if (!ACTIONABLE_TIMEFRAMES.has(timeframe)) {
       return NextResponse.json({ error: 'Only 1D, 5D and 1M signals can be saved' }, { status: 400 })
     }
 
+    const price = Number(payload?.price)
     const expiresAt = new Date()
-    expiresAt.setDate(expiresAt.getDate() + (payload.timeframe === '1D' ? 1 : payload.timeframe === '5D' ? 5 : 30))
+    expiresAt.setDate(expiresAt.getDate() + (timeframe === '1D' ? 1 : timeframe === '5D' ? 5 : 30))
 
-    const supabase = await getSignalsDbClient(userClient)
-    const { data, error } = await supabase
+    const { data, error } = await dbClient
       .from('signals')
       .insert({
         user_id: user.id,
-        symbol: payload.symbol.toUpperCase(),
-        market: payload.market,
-        type: payload.type,
-        strength: payload.strength ?? 50,
-        reason: payload.reason || null,
-        price: payload.price ?? null,
-        timeframe: payload.timeframe,
+        symbol,
+        market,
+        type,
+        strength: normalizeStrength(payload?.strength),
+        reason: payload?.reason || null,
+        price: Number.isFinite(price) && price > 0 ? price : null,
+        timeframe,
         status: 'active',
         expires_at: expiresAt.toISOString(),
       })
@@ -131,13 +124,12 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('[api/signals POST]', error)
-      return NextResponse.json({ error: error.message || 'Failed to save signal' }, { status: 500 })
+      return NextResponse.json({ error: 'Failed to save signal' }, { status: 500 })
     }
 
     return NextResponse.json({ data }, { status: 201 })
   } catch (error) {
     console.error('[api/signals POST fatal]', error)
-    return NextResponse.json({ error: error instanceof Error ? error.message : 'Unexpected signal save error' }, { status: 500 })
+    return NextResponse.json({ error: 'Unexpected signal save error' }, { status: 500 })
   }
 }
-

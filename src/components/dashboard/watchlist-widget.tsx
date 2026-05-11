@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useQuery } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
@@ -35,22 +35,27 @@ async function fetchWatchlist(): Promise<WatchlistItemData[]> {
 
     if (!items || items.length === 0) return []
 
-    // Fetch live prices for each item
-    const withPrices = await Promise.all(
-      items.map(async (item) => {
-        try {
-          const res = await fetch(`/api/market/quote?symbol=${item.symbol}&market=${item.market}`)
-          if (!res.ok) return item
-          const data = await res.json()
-          const q = data.data
-          return { ...item, price: q?.price, change: q?.change, changePercent: q?.changePercent }
-        } catch {
-          return item
-        }
-      })
-    )
+    const symbols = Array.from(new Set(items.map((item) => item.symbol).filter(Boolean)))
+    if (symbols.length === 0) return items
 
-    return withPrices
+    try {
+      const market = items[0]?.market || 'US'
+      const res = await fetch(`/api/market/quote?symbols=${encodeURIComponent(symbols.join(','))}&market=${market}`)
+      if (!res.ok) return items
+      const data = await res.json()
+      const quotes = Array.isArray(data.data) ? data.data : [data.data]
+      const quoteBySymbol = new Map<string, { price?: number; change?: number; changePercent?: number }>()
+      quotes.forEach((quote: { symbol?: string; price?: number; regularMarketPrice?: number; change?: number; changePercent?: number }) => {
+        if (quote?.symbol) quoteBySymbol.set(String(quote.symbol).toUpperCase(), quote)
+      })
+
+      return items.map((item) => {
+        const q = quoteBySymbol.get(item.symbol.toUpperCase())
+        return q ? { ...item, price: q.price, change: q.change, changePercent: q.changePercent } : item
+      })
+    } catch {
+      return items
+    }
   } catch (e) {
     console.error('[Watchlist] Sync error:', e)
     return []

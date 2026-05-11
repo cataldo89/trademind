@@ -14,7 +14,7 @@ export interface UserProfile {
 }
 
 // ---- MARKET ------------------------------------------------
-export type Market = 'US'
+export type Market = 'US' | 'CL'
 export type Timeframe = '1m' | '5m' | '15m' | '30m' | '1h' | '4h' | '1d' | '1w'
 export type SignalType = 'BUY' | 'SELL' | 'HOLD'
 
@@ -264,4 +264,6 @@ export interface AdminStats {
   totalPositions: number
   apiCallsToday: number
 }
-
+
+// ---- GENERATED API TYPES -----------------------------------------
+export * from './api'

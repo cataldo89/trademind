@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useQuery } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
@@ -6,6 +6,7 @@ import { formatCurrency, formatPercent, getPnLColor } from '@/lib/utils'
 import { Briefcase, TrendingUp, TrendingDown, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
+import { DEFAULT_VIRTUAL_BALANCE, fetchVirtualBalanceProfile } from '@/lib/virtual-balance'
 
 interface PortfolioStats {
   totalValue: number
@@ -22,7 +23,14 @@ async function fetchPortfolioStats(): Promise<PortfolioStats | null> {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
 
-  const { data: profile } = await supabase.from('profiles').select('virtual_balance').eq('id', user.id).single()
+  const { data: { session } } = await supabase.auth.getSession()
+  let virtualBalance = DEFAULT_VIRTUAL_BALANCE
+
+  try {
+    virtualBalance = (await fetchVirtualBalanceProfile(session?.access_token)).virtual_balance
+  } catch {
+    // Keep dashboard usable even if profile capital cannot be loaded.
+  }
 
   const { data: positions } = await supabase
     .from('positions')
@@ -31,32 +39,41 @@ async function fetchPortfolioStats(): Promise<PortfolioStats | null> {
     .eq('status', 'open')
 
   if (!positions || positions.length === 0) {
-    return { totalValue: 0, totalPnL: 0, totalPnLPercent: 0, dayPnL: 0, dayPnLPercent: 0, positionsCount: 0, virtualBalance: profile?.virtual_balance ?? 10000 }
+    return { totalValue: 0, totalPnL: 0, totalPnLPercent: 0, dayPnL: 0, dayPnLPercent: 0, positionsCount: 0, virtualBalance }
   }
 
-  // Fetch current prices for each position
-  const updatedPositions = await Promise.all(
-    positions.map(async (pos) => {
-      try {
-        const res = await fetch(`/api/market/quote?symbol=${pos.symbol}&market=${pos.market}`)
-        if (!res.ok) return pos
+  const symbols = Array.from(new Set(positions.map((pos) => pos.symbol).filter(Boolean)))
+  const quoteBySymbol = new Map<string, { price?: number; change?: number }>()
+
+  if (symbols.length > 0) {
+    try {
+      const market = positions[0]?.market || 'US'
+      const res = await fetch(`/api/market/quote?symbols=${encodeURIComponent(symbols.join(','))}&market=${market}`)
+      if (res.ok) {
         const data = await res.json()
-        const quote = data.data
-        if (!quote) return pos
-        const currentPrice = quote.price
-        const value = currentPrice * pos.quantity
-        const cost = pos.entry_price * pos.quantity
-        const pnl = value - cost
-        const pnlPercent = cost > 0 ? (pnl / cost) * 100 : 0
-        const dayPnL = quote.change * pos.quantity
-
-        return { ...pos, currentPrice, value, cost, pnl, pnlPercent, dayPnL }
-      } catch {
-        return pos
+        const quotes = Array.isArray(data.data) ? data.data : [data.data]
+        quotes.forEach((quote: { symbol?: string; price?: number; regularMarketPrice?: number; change?: number; changePercent?: number }) => {
+          if (quote?.symbol) quoteBySymbol.set(String(quote.symbol).toUpperCase(), quote)
+        })
       }
-    })
-  )
+    } catch {
+      // Keep portfolio summary available with entry prices if market data fails.
+    }
+  }
 
+  const updatedPositions = positions.map((pos) => {
+    const quote = quoteBySymbol.get(String(pos.symbol).toUpperCase())
+    const currentPrice = Number(quote?.price)
+    if (!Number.isFinite(currentPrice) || currentPrice <= 0) return pos
+
+    const value = currentPrice * pos.quantity
+    const cost = pos.entry_price * pos.quantity
+    const pnl = value - cost
+    const pnlPercent = cost > 0 ? (pnl / cost) * 100 : 0
+    const dayPnL = Number(quote?.change || 0) * pos.quantity
+
+    return { ...pos, currentPrice, value, cost, pnl, pnlPercent, dayPnL }
+  })
   const totalValue = updatedPositions.reduce((sum, p) => sum + (p.value || p.entry_price * p.quantity), 0)
   const totalCost = updatedPositions.reduce((sum, p) => sum + p.entry_price * p.quantity, 0)
   const totalPnL = totalValue - totalCost
@@ -71,7 +88,7 @@ async function fetchPortfolioStats(): Promise<PortfolioStats | null> {
     dayPnL,
     dayPnLPercent,
     positionsCount: positions.length,
-    virtualBalance: profile?.virtual_balance ?? 10000
+    virtualBalance
   }
 }
 

@@ -108,14 +108,27 @@ export function getUSMarketStatus(): MarketStatus {
   }
 }
 
+
+export function getCLMarketStatus(): MarketStatus {
+  return {
+    market: 'CL',
+    isOpen: false,
+    session: 'closed',
+    openTime: '09:30',
+    closeTime: '16:00',
+    timezone: 'America/Santiago',
+  }
+}
 export function getAllMarketStatus(): Record<Market, MarketStatus> {
   return {
     US: getUSMarketStatus(),
+    CL: getCLMarketStatus(),
   }
 }
 
 export function isMarketOpen(market: Market): boolean {
   if (market === 'US') return getUSMarketStatus().isOpen
+  if (market === 'CL') return getCLMarketStatus().isOpen
   return false
 }
 
@@ -124,4 +137,4 @@ export function getMarketCurrentTime(market: Market): string {
   const now = getTimeInZone(tz)
   return formatTimeHHMM(now)
 }
-
+

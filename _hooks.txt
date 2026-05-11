@@ -1,0 +1,32 @@
+  const [pendingExecuting, setPendingExecuting] = useState(false)
+  const [executedResults, setExecutedResults] = useState<PendingSignalResult[]>([])
+
+  const { data: pendingSignals = [] } = useQuery({
+    queryKey: ['pending-signals', user?.id],
+    queryFn: () => fetchPendingSignals(user!.id),
+    enabled: !!user,
+    refetchInterval: 60 * 60 * 1000,
+  })
+
+  const handleExecutePending = async () => {
+    if (!user || pendingExecuting) return
+    setPendingExecuting(true)
+    try {
+      const results = await executePendingSignals(user.id)
+      setExecutedResults(results)
+      if (results.length > 0) {
+        toast.success("${results.length posicion(es) ejecutada(s exitosamente}")
+        queryClient.invalidateQueries({ queryKey: ['positions'] })
+        queryClient.invalidateQueries({ queryKey: ['profile'] })
+        queryClient.invalidateQueries({ queryKey: ['portfolio-summary'] })
+        queryClient.invalidateQueries({ queryKey: ['pending-signals', user.id] })
+      } else {
+        toast.info('No hay senales pendientes de ejecucion')
+      }
+    } catch (err) {
+      console.warn('[execute pending signals]', err)
+      toast.error('Error al ejecutar senales pendientes')
+    } finally {
+      setPendingExecuting(false)
+    }
+  }

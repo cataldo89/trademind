@@ -1,4 +1,4 @@
-# Problemas de escalamiento y errores producidos en el frontend por backend
+﻿# Problemas de escalamiento y errores producidos en el frontend por backend
 
 Fecha de auditoria: 2026-05-10  
 Estado: memoria operativa para IAs y desarrolladores  
@@ -15,6 +15,15 @@ La regla para cualquier IA futura es:
 
 Este archivo no reemplaza la auditoria general. Complementa `ESTADO_ACTUAL_PROYECTO.md` con foco en incidentes frontend/backend y escalabilidad SaaS.
 
+
+## Cierres aplicados - 2026-05-10
+
+- P0 `/api/trading`: cerrado en codigo. `market` se normaliza/rechaza antes de persistir y `success/persisted` reflejan Supabase.
+- P0 schema/migraciones: cerrado con `supabase/migrations/000_initial_schema.sql` y snapshot `supabase/schema.sql` aplicable.
+- P0 operaciones financieras: cerrado para compra y cierre virtual con RPCs atomicas.
+- P0 alertas cron: cerrado con `CRON_SECRET`, service role protegido, batch de quotes y metricas.
+- P1 market data: mitigado con limite de simbolos, cache server-side, rate limit y batching en pantallas principales.
+- P1 quant-engine: mitigado con cliente TS configurado por URL/secreto, sin localhost en produccion, y cache TTL en FastAPI.
 ## 2. Resumen ejecutivo
 
 Los problemas mas importantes detectados son:

@@ -1,0 +1,21 @@
+interface PendingSignal {
+  id: string
+  symbol: string
+  market: Market
+  type: 'BUY' | 'SELL' | 'HOLD'
+  strength: number
+  reason: string
+  price: number
+  timeframe: string
+  status: string
+  created_at: string
+  currentPrice?: number
+  performance?: number
+}
+
+interface PendingSignalResult {
+  signalId: string
+  symbol: string
+  price: number
+  position: any
+}

@@ -1,0 +1,44 @@
+async function executePendingSignals(userId: string): Promise<PendingSignalResult[]> {
+  const supabase = createClient()
+  const { data: { session } } = await supabase.auth.getSession()
+  
+  const cutoffDate = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+  const { data: pendingSignals } = await supabase
+    .from('signals')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('status', 'active')
+    .eq('type', 'BUY')
+    .lte('created_at', cutoffDate)
+
+  if (!pendingSignals || pendingSignals.length === 0) return []
+
+  const results: PendingSignalResult[] = []
+
+  for (const signal of pendingSignals) {
+    try {
+      const res = await fetch('/api/cron/pending-signals/execute', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { Authorization: "Bearer ${session.access_token}" } : {}),
+        },
+        body: JSON.stringify({ signalId: signal.id, symbol: signal.symbol, market: signal.market, price: signal.price }),
+      })
+
+      if (res.ok) {
+        const body = await res.json().catch(() => null)
+        results.push({
+          signalId: signal.id,
+          symbol: signal.symbol,
+          price: signal.price,
+          position: body?.data?.position || null,
+        })
+      }
+    } catch (err) {
+      console.warn('[execute pending signal]', err)
+    }
+  }
+
+  return results
+}

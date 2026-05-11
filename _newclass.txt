@@ -1,0 +1,1 @@
+className=`text-[10px] font-semibold ${sig.performance >= 0 ? 'text-emerald-400' : 'text-red-400'}`

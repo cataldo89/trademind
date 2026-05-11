@@ -1,5 +1,5 @@
 ﻿/**
- * Candles API Route â€” OHLCV data
+ * Candles API Route — OHLCV data
  * Primary: Yahoo Finance (yahoo-finance2)
  * Supports: US stocks, ETFs, Crypto
  */
@@ -14,6 +14,14 @@ import {
   normalizeChartRange,
 } from '@/lib/chart-ranges'
 import { yahooFinance } from '@/lib/yahoo-finance'
+import { normalizeSymbol } from '@/lib/domain/market'
+import { checkRateLimit, getClientIp } from '@/lib/api/rate-limit'
+import { getCached } from '@/lib/api/memory-cache'
+
+const VALID_TIMEFRAMES = new Set<Timeframe>(['1m', '5m', '15m', '30m', '1h', '4h', '1d', '1w'])
+const RATE_LIMIT = 90
+const RATE_WINDOW_MS = 60_000
+const CANDLES_TTL_MS = 60_000
 
 const ONE_DAY_LOOKBACK_DAYS = 5
 const US_MARKET_TIMEZONE = 'America/New_York'
@@ -92,7 +100,7 @@ function getYahooInterval(timeframe: Timeframe): YahooChartInterval {
     '15m': '15m',
     '30m': '30m',
     '1h': '1h',
-    '4h': '1h',   // Yahoo doesn't have 4h â€” use 1h
+    '4h': '1h',   // Yahoo doesn't have 4h — use 1h
     '1d': '1d',
     '1w': '1wk',
   }
@@ -101,7 +109,7 @@ function getYahooInterval(timeframe: Timeframe): YahooChartInterval {
 
 function getRangeForTimeframe(timeframe: Timeframe): string {
   switch (timeframe) {
-    case '1m': return '5d' // Retroactivo por si el mercado estÃ¡ cerrado (After-Hours)
+    case '1m': return '5d' // Retroactivo por si el mercado está cerrado (After-Hours)
     case '5m': return '5d'
     case '15m': return '1mo'
     case '30m': return '1mo'
@@ -221,7 +229,7 @@ async function fetchCandlesForRange(symbol: string, requestedRange: ChartRange) 
         interval: config.interval,
         fallback,
         fallbackReason: fallback
-          ? `Sin datos para el rango solicitado; se usÃ³ ${config.label}`
+          ? `Sin datos para el rango solicitado; se usó ${config.label}`
           : undefined,
       }
     }
@@ -240,23 +248,37 @@ async function fetchCandlesForRange(symbol: string, requestedRange: ChartRange) 
 }
 
 export async function GET(request: NextRequest) {
+  const rate = checkRateLimit(`market:candles:${getClientIp(request)}`, RATE_LIMIT, RATE_WINDOW_MS)
+  if (!rate.allowed) {
+    return NextResponse.json({ error: 'Too many candle requests' }, { status: 429 })
+  }
+
   const { searchParams } = new URL(request.url)
-  const symbol = searchParams.get('symbol')
+  const symbol = normalizeSymbol(searchParams.get('symbol'))
   const rangeParam = searchParams.get('range')
   const timeframe = (searchParams.get('timeframe') || '1d') as Timeframe
 
   if (!symbol) {
-    return NextResponse.json({ error: 'Symbol is required' }, { status: 400 })
+    return NextResponse.json({ error: 'Valid symbol is required' }, { status: 400 })
+  }
+
+  if (!VALID_TIMEFRAMES.has(timeframe)) {
+    return NextResponse.json({ error: 'Invalid timeframe' }, { status: 400 })
   }
 
   try {
     if (rangeParam) {
       const requestedRange = normalizeChartRange(rangeParam)
-      const response = await fetchCandlesForRange(symbol, requestedRange)
+      const response = await getCached(
+        `candles:${symbol}:range:${requestedRange}`,
+        CANDLES_TTL_MS,
+        () => fetchCandlesForRange(symbol, requestedRange)
+      )
 
       return NextResponse.json(response, {
         headers: {
           'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120',
+          'X-RateLimit-Remaining': String(rate.remaining),
         },
       })
     }
@@ -264,22 +286,23 @@ export async function GET(request: NextRequest) {
     const interval = getYahooInterval(timeframe)
     const daysAgo = getRangeForTimeframe(timeframe)
 
-    const period1 = new Date();
-    period1.setDate(period1.getDate() - (daysAgo === '5d' ? 5 : daysAgo === '1mo' ? 30 : daysAgo === '3mo' ? 90 : daysAgo === '6mo' ? 180 : daysAgo === '1y' ? 365 : daysAgo === '2y' ? 730 : daysAgo === '5y' ? 1825 : 30));
+    const period1 = new Date()
+    period1.setDate(period1.getDate() - (daysAgo === '5d' ? 5 : daysAgo === '1mo' ? 30 : daysAgo === '3mo' ? 90 : daysAgo === '6mo' ? 180 : daysAgo === '1y' ? 365 : daysAgo === '2y' ? 730 : daysAgo === '5y' ? 1825 : 30))
 
-    const candles = await fetchCandles(symbol, interval, period1)
+    const candles = await getCached(
+      `candles:${symbol}:timeframe:${timeframe}`,
+      CANDLES_TTL_MS,
+      () => fetchCandles(symbol, interval, period1)
+    )
 
     return NextResponse.json({ data: candles }, {
       headers: {
         'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120',
+        'X-RateLimit-Remaining': String(rate.remaining),
       },
     })
   } catch (error) {
     console.error('[API/candles] Error:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch candles', details: String(error) },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to fetch candles' }, { status: 500 })
   }
 }
-

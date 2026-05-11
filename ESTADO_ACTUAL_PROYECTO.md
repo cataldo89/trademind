@@ -1,4 +1,4 @@
-# ESTADO ACTUAL DEL PROYECTO - TradeMind CV
+﻿# ESTADO ACTUAL DEL PROYECTO - TradeMind CV
 
 Fecha de auditoria: 2026-05-10  
 Rol: memoria tecnica maestra para agentes IA  
@@ -18,6 +18,18 @@ Antes de modificar codigo, leer:
 
 Este archivo describe el estado tecnico actual. El runbook de escalamiento documenta con mas detalle los errores frontend/backend y riesgos de crecimiento del SaaS.
 
+
+## Actualizacion de estabilizacion - 2026-05-10
+
+Cambios aplicados despues de la auditoria inicial:
+
+- `/api/trading` normaliza `market` a `US`/`CL`, rechaza mercados invalidos y devuelve `persisted: true` solo si Supabase confirma el insert.
+- `supabase/migrations/000_initial_schema.sql` consolida schema, RLS, policies idempotentes y RPCs `execute_virtual_trade` / `close_virtual_position`.
+- Compras/cierres virtuales se ejecutan server-side via RPC transaccional; el cliente envia intenciones de orden.
+- `/api/alerts/check` requiere `CRON_SECRET`, usa service role solo tras validar el secreto, batch de quotes y metricas.
+- `/api/market/*` tiene validacion, limites, cache server-side y rate limit basico; pantallas principales agrupan quotes.
+- Quant-engine se consume via `QUANT_ENGINE_URL` + `QUANT_ENGINE_SECRET` sin localhost en produccion y FastAPI cachea resultados por TTL.
+- Validacion local: `npm run test:contracts`, `npm run typecheck` y `npm run lint` pasan; lint queda con warnings no bloqueantes.
 ## 1. Stack verificado
 
 | Area | Estado actual |

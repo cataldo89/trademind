@@ -1,4 +1,4 @@
-# TradeMind SaaS
+﻿# TradeMind SaaS
 
 TradeMind es un SaaS de trading e inversion AI-native enfocado en senales cuantitativas explicables, persistencia auditada y una experiencia anti-FOMO inspirada en principios de Benjamin Graham.
 
@@ -41,12 +41,12 @@ Antes de modificar el proyecto, leer:
 Consulta `ESTADO_ACTUAL_PROYECTO.md` para detalle. Resumen al 2026-05-10:
 
 - `npm run typecheck` pasa.
-- `npm run lint` falla con errores existentes, por lo que `npm run verify` no esta verde.
-- `/api/trading` ya llama a quant-engine, pero tiene un P0 de persistencia: inserta `market: 'EQUITY'` y Supabase solo acepta `US` o `CL`.
-- `supabase/schema.sql` requiere saneamiento y migraciones completas.
-- Las operaciones financieras virtuales aun no son atomicas.
-- Market data funciona con Yahoo Finance, pero necesita batching, cache y rate limits para escalar.
-- Quant-engine tiene modelos iniciales reales, pero necesita URL de produccion, secreto, cache, cola/async y health checks.
+- `npm run lint` pasa sin errores bloqueantes; quedan warnings no criticos de imports/variables sin uso.
+- `/api/trading` llama a quant-engine, normaliza `market` a `US`/`CL` y devuelve `persisted: true` solo con insert confirmado.
+- `supabase/migrations/000_initial_schema.sql` consolida schema, RLS, policies y RPCs financieras.
+- Las operaciones financieras virtuales pasan por RPCs transaccionales (`execute_virtual_trade`, `close_virtual_position`).
+- Market data usa batching en pantallas principales, cache server-side y rate limit basico en APIs.
+- Quant-engine se consume por HTTP con `QUANT_ENGINE_URL` + `QUANT_ENGINE_SECRET`; en produccion no cae a localhost y el FastAPI incluye cache TTL.
 - QuantConnect LEAN existe en estructura, pero el backtest end-to-end aun no esta validado.
 
 Para errores donde el frontend parece fallar por backend, leer:
@@ -103,9 +103,21 @@ Estado conocido:
 
 ```text
 npm run typecheck -> pasa
-npm run lint -> falla actualmente
-npm run verify -> falla mientras lint no este corregido
+npm run lint -> pasa con warnings no bloqueantes
+npm run test:contracts -> pasa
 ```
+
+## Supabase y migraciones
+
+Para un entorno nuevo, aplicar las migraciones versionadas del repo con Supabase CLI:
+
+```bash
+supabase db reset
+```
+
+La migracion inicial `supabase/migrations/000_initial_schema.sql` crea tablas, indices, RLS, policies idempotentes y RPCs financieras. `supabase/schema.sql` se mantiene como snapshot aplicable equivalente.
+
+Si aplicas contra una base remota, usa el flujo oficial de Supabase CLI para linkear el proyecto y ejecutar/pushear migraciones. No edites manualmente tablas en Dashboard sin reflejar el cambio en `supabase/migrations/`.
 
 ## Variables de entorno
 
@@ -118,6 +130,7 @@ NEXT_PUBLIC_SUPABASE_URL=tu_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=tu_supabase_anon_key
 SUPABASE_SERVICE_ROLE_KEY=tu_service_role_key
 NEXT_PUBLIC_APP_URL=http://localhost:3000
+CRON_SECRET=secreto_para_vercel_cron
 
 GEMINI_API_KEY=tu_gemini_key
 OPENAI_API_KEY=tu_openai_key
@@ -126,7 +139,8 @@ GEMINI_MODEL=gemini-2.5-flash
 
 QUANT_ENGINE_URL=http://127.0.0.1:8000
 QUANT_ENGINE_SECRET=tu_secreto_interno
-QUANT_ENGINE_AUTH_DISABLED=true
+QUANT_ENGINE_CACHE_TTL_SECONDS=300
+QUANT_ENGINE_AUTH_DISABLED=false
 ```
 
 Variables de scripts/mantenimiento:
@@ -145,6 +159,7 @@ Variables de quant-engine:
 QC_USER_ID=tu_quantconnect_user_id
 QC_API_TOKEN=replace-with-quantconnect-api-token
 QUANT_ENGINE_SECRET=tu_secreto_interno
+QUANT_ENGINE_CACHE_TTL_SECONDS=300
 QUANT_ENGINE_AUTH_DISABLED=false
 QUANT_ENGINE_ALLOWED_ORIGINS=http://localhost:3000,https://trademind-cv.vercel.app
 ```

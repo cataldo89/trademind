@@ -79,7 +79,7 @@ export function ZestyWorkspace() {
   const initialSymbol = searchParams.get('symbol')?.trim().toUpperCase() || categories[0]?.symbols[0]?.symbol || 'SPY'
   const initialMarket = (searchParams.get('market') || 'US') as Market
   const initialRange = normalizeChartRange(searchParams.get('range'))
-  
+
   const [activeCategoryId, setActiveCategoryId] = useState<string>(categories[0]?.id || '')
   const [searchQuery, setSearchQuery] = useState('')
   const [symbol, setSymbol] = useState(initialSymbol)
@@ -95,6 +95,8 @@ export function ZestyWorkspace() {
   useEffect(() => {
     const s = searchParams.get('symbol')?.trim().toUpperCase()
     if (s && s !== symbol) {
+      // URL params are the external source of truth for deep-linked analysis.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSymbol(s)
       setSymbolsOpen(false)
     }
@@ -114,19 +116,19 @@ export function ZestyWorkspace() {
     const nextRange = normalizeChartRange(searchParams.get('range'))
 
     if (nextRange !== chartRange) {
+      // URL params are the external source of truth for chart range.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setChartRange(nextRange)
       setEffectiveRange(nextRange)
     }
 
     if (nextSymbol && nextSymbol !== symbol) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSymbol(nextSymbol)
       setMarket(nextMarket)
       setSearchQuery('')
       setSymbolsOpen(false)
     }
-  }, [searchParams, symbol])
-
+  }, [searchParams, symbol, chartRange])
   const normalizedSearchQuery = normalizeSearchText(searchQuery)
   const isSearching = normalizedSearchQuery.length > 0
 
@@ -180,7 +182,7 @@ export function ZestyWorkspace() {
           <Activity className="w-5 h-5" />
           <span>Zesty Workspace</span>
         </div>
-        
+
         <div className="w-px h-6 bg-gray-700 mx-2" />
 
         {/* Range selector */}
@@ -272,8 +274,8 @@ export function ZestyWorkspace() {
                   }}
                   className={cn(
                     'w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors flex justify-between items-center',
-                    activeCategoryId === cat.id 
-                      ? 'bg-emerald-500/10 text-emerald-400' 
+                    activeCategoryId === cat.id
+                      ? 'bg-emerald-500/10 text-emerald-400'
                       : 'text-gray-400 hover:bg-gray-800/50 hover:text-gray-200'
                   )}
                 >
@@ -308,8 +310,8 @@ export function ZestyWorkspace() {
            <div className="p-3 border-b border-gray-800">
              <div className="relative">
                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-               <input 
-                 type="text" 
+               <input
+                 type="text"
                  placeholder="Buscar acción o ETF: NVDA, Nvidia, envidia..."
                  value={searchQuery}
                  onChange={(e) => setSearchQuery(e.target.value)}
@@ -359,8 +361,8 @@ export function ZestyWorkspace() {
                     onClick={() => handleSymbolSelect(item.symbol)}
                     className={cn(
                       'w-full text-left p-3 rounded-lg transition-colors group',
-                      symbol === item.symbol 
-                        ? 'bg-emerald-500 text-white' 
+                      symbol === item.symbol
+                        ? 'bg-emerald-500 text-white'
                         : 'hover:bg-gray-800/50'
                     )}
                   >
@@ -382,7 +384,7 @@ export function ZestyWorkspace() {
         {/* Main Content: Chart & Summary */}
         <div className="flex-1 flex flex-col min-w-0 bg-gray-950">
           <QuoteHeader symbol={symbol} market={market} />
-          
+
           <div className="flex flex-1 overflow-hidden">
             {/* Chart */}
             <div className="flex-1 flex flex-col min-w-0 p-4 h-[50vh] lg:h-[65vh]">
@@ -427,4 +429,4 @@ export function ZestyWorkspace() {
     </div>
   )
 }
-
+

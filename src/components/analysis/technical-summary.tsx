@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Market, Candle } from '@/types'
@@ -13,6 +13,7 @@ import Link from 'next/link'
 import { toast } from 'sonner'
 import { useState } from 'react'
 import { AIAdvisor } from './ai-advisor'
+import { fetchVirtualBalanceProfile } from '@/lib/virtual-balance'
 
 interface TechnicalSummaryProps {
   symbol: string
@@ -124,6 +125,7 @@ export function TechnicalSummary({ symbol, market, range }: TechnicalSummaryProp
     ? ((performanceCurrentPrice - performanceStartPrice) / performanceStartPrice) * 100
     : null
   const canSaveSignal = ACTIONABLE_SIGNAL_RANGES.has(range)
+  const canExecuteBuy = signal.type === 'BUY'
 
   const SignalIcon = signal.type === 'BUY' ? TrendingUp : signal.type === 'SELL' ? TrendingDown : Minus
   const signalColors = {
@@ -326,6 +328,11 @@ export function TechnicalSummary({ symbol, market, range }: TechnicalSummaryProp
       {/* Add to portfolio CTA */}
       <button
         onClick={async () => {
+          if (!canExecuteBuy) {
+            toast.error(`No se ejecuta compra porque la señal actual es ${signal.type}. Guárdala para seguimiento o usa ajuste manual si decides operar.`)
+            return
+          }
+
           setIsSaving(true)
           try {
             const { createClient } = await import('@/lib/supabase/client')
@@ -339,14 +346,9 @@ export function TechnicalSummary({ symbol, market, range }: TechnicalSummaryProp
               return
             }
 
-            const { data: profile, error: profileError } = await supabaseClient
-              .from('profiles')
-              .select('virtual_balance')
-              .eq('id', user.id)
-              .maybeSingle()
-            if (profileError) throw profileError
-
-            const virtualBalance = Number(profile?.virtual_balance ?? 0)
+            const { data: { session } } = await supabaseClient.auth.getSession()
+            const profile = await fetchVirtualBalanceProfile(session?.access_token)
+            const virtualBalance = Number(profile.virtual_balance ?? 0)
             if (!Number.isFinite(virtualBalance) || virtualBalance <= 0) {
               toast.error('No tienes capital virtual disponible. Ajusta el capital en Portafolio.')
               return
@@ -363,67 +365,53 @@ export function TechnicalSummary({ symbol, market, range }: TechnicalSummaryProp
               toast.error('Ingresa un monto valido')
               return
             }
-            if (amount > virtualBalance) {
-              toast.error(`Saldo insuficiente. Disponible: ${formatCurrency(virtualBalance)}`)
-              return
-            }
 
-            const quantity = Number((amount / price).toFixed(8))
-            const nextBalance = Number((virtualBalance - amount).toFixed(2))
-            const { data: position, error } = await supabaseClient.from('positions').insert({
-              user_id: user.id,
-              symbol,
-              name: symbol,
-              market,
-              quantity,
-              entry_price: price,
-              entry_date: new Date().toISOString().split('T')[0],
-              currency: 'USD',
-              notes: 'Compra fraccional simulada desde analisis tecnico',
-              status: 'open',
-            }).select('id').single()
-            if (error) throw error
-
-            const { error: balanceError } = await supabaseClient
-              .from('profiles')
-              .update({ virtual_balance: nextBalance })
-              .eq('id', user.id)
-            if (balanceError) {
-              if (position?.id) await supabaseClient.from('positions').delete().eq('id', position.id)
-              throw balanceError
-            }
-
-            const { error: transactionError } = await supabaseClient.from('transactions').insert({
-              user_id: user.id,
-              symbol,
-              name: symbol,
-              market,
-              type: 'BUY',
-              quantity,
-              price,
-              currency: 'USD',
-              notes: 'Compra fraccional simulada desde analisis tecnico',
+            const res = await fetch('/api/portfolio/trade', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+              },
+              body: JSON.stringify({
+                side: 'BUY',
+                symbol,
+                name: symbol,
+                market,
+                amount,
+                price,
+                source: 'analysis',
+                notes: 'Compra fraccional simulada desde analisis tecnico',
+              }),
             })
-            if (transactionError) console.warn('[analysis fractional transaction]', transactionError)
 
+            const body = await res.json().catch(() => null)
+            if (!res.ok || !body?.ok) {
+              throw new Error(body?.error?.message || 'Error al ejecutar operacion simulada')
+            }
+
+            const quantity = Number(body.data?.position?.quantity ?? amount / price)
             toast.success(`Compraste ${formatSimulatedQuantity(quantity)} ${symbol} por ${formatCurrency(amount)}`)
             queryClient.invalidateQueries({ queryKey: ['positions'] })
             queryClient.invalidateQueries({ queryKey: ['profile'] })
             queryClient.invalidateQueries({ queryKey: ['portfolio-summary'] })
           } catch (err) {
             console.warn('[analysis fractional buy]', err)
-            toast.error('Error al ejecutar operacion simulada')
+            toast.error(err instanceof Error ? err.message : 'Error al ejecutar operacion simulada')
           } finally {
             setIsSaving(false)
           }
         }}
-        disabled={isSaving}
-        className="flex items-center justify-center gap-2 w-full py-2 text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-white rounded-lg transition-all shadow-lg shadow-emerald-500/20 active:scale-95 disabled:opacity-50"
+        disabled={isSaving || !canExecuteBuy}
+        className={cn(
+          "flex items-center justify-center gap-2 w-full py-2 text-xs font-bold rounded-lg transition-all active:scale-95 disabled:opacity-50",
+          canExecuteBuy
+            ? "bg-emerald-500 hover:bg-emerald-400 text-white shadow-lg shadow-emerald-500/20"
+            : "bg-gray-800 text-gray-500 border border-gray-700"
+        )}
       >
         {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
-        EJECUTAR COMPRA FRACCIONAL
+        {canExecuteBuy ? 'EJECUTAR COMPRA FRACCIONAL' : `COMPRA BLOQUEADA: SEÑAL ${signal.type}`}
       </button>
-
       <Link
         href={`/portfolio?add=${symbol}&market=${market}`}
         className="flex items-center justify-center gap-2 w-full py-2 text-xs font-medium bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors border border-gray-700"

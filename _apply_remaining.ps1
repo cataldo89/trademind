@@ -1,0 +1,115 @@
+const fs = require('fs')
+const path = 'src/components/portfolio/portfolio-client.tsx'
+let content = fs.readFileSync(path, 'utf8')
+
+// 1. Add Clock and Play to lucide-react imports
+content = content.replace(
+  /Plus, Loader2, Trash2, ArrowUpRight, Briefcase/,
+  'Plus, Loader2, Trash2, ArrowUpRight, Briefcase, Clock, Play'
+)
+
+// 2. Add pendingExecuting state and handleExecutePending after pendingSignals query
+const hooksToAdd = \
+  const [pendingExecuting, setPendingExecuting] = useState(false)
+  const [executedResults, setExecutedResults] = useState([])
+
+  const handleExecutePending = async () => {
+    if (!user || pendingExecuting) return
+    setPendingExecuting(true)
+    try {
+      const results = await executePendingSignals(user.id)
+      setExecutedResults(results)
+      if (results.length > 0) {
+        toast.success(\\\\ posicion(es) ejecutada(s exitosamente)\\\)
+        queryClient.invalidateQueries({ queryKey: ['positions'] })
+        queryClient.invalidateQueries({ queryKey: ['profile'] })
+        queryClient.invalidateQueries({ queryKey: ['portfolio-summary'] })
+        queryClient.invalidateQueries({ queryKey: ['pending-signals', user.id] })
+      } else {
+        toast.info('No hay senales pendientes de ejecucion')
+      }
+    } catch (err) {
+      console.warn('[execute pending signals]', err)
+      toast.error('Error al ejecutar senales pendientes')
+    } finally {
+      setPendingExecuting(false)
+    }
+  }\
+
+const queryMarker = "refetchInterval: 60 * 60 * 1000,\\n  })"
+content = content.replace(queryMarker, queryMarker + hooksToAdd)
+
+// 3. Add JSX section for pending signals
+const jsxSection = \
+
+
+      {/* Pending Signals Section - Weekend/Holiday signals waiting for market open */}
+      {pendingSignals.length > 0 && (
+        <div className="glass rounded-xl p-5 border border-blue-500/20 bg-blue-500/5">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-blue-400" />
+              <h3 className="text-sm font-semibold text-white">Señales Pendientes ({pendingSignals.length})</h3>
+            </div>
+            <button
+              onClick={handleExecutePending}
+              disabled={pendingExecuting}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500 hover:bg-blue-400 text-white text-xs font-semibold rounded-lg transition-colors disabled:opacity-50"
+            >
+              {pendingExecuting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Play className="w-3 h-3" />}
+              Ejecutar Todas
+            </button>
+          </div>
+
+          {executedResults.length > 0 && (
+            <div className="mb-4 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
+              <p className="text-xs text-emerald-300 font-semibold">
+                {executedResults.length} posicion(es) ejecutada(s exitosamente:
+              </p>
+              <div className="mt-1 space-y-0.5">
+                {executedResults.map((r, i) => (
+                  <p key={i} className="text-[10px] text-emerald-400/80 font-mono">
+                    {r.symbol} @ 
+                  </p>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-2">
+            {pendingSignals.map((sig) => (
+              <div key={sig.id} className="flex items-center justify-between p-3 bg-gray-800/40 rounded-lg border border-gray-700">
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
+                  <div>
+                    <Link href={/analysis?symbol=&market=} className="text-xs font-mono font-bold text-white hover:text-emerald-400 transition-colors">
+                      {sig.symbol}
+                    </Link>
+                    <p className="text-[10px] text-gray-500">{sig.timeframe} · Guardada hace {(Date.now() - new Date(sig.created_at).getTime()) / (1000 * 60 * 60).toFixed(0)}h</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs font-mono text-white"></p>
+                  {sig.currentPrice && sig.performance !== undefined && (
+                    <p className={	ext-[10px] font-semibold }>
+                      {sig.performance >= 0 ? '+' : ''}{sig.performance.toFixed(2)}%
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <p className="mt-3 text-[10px] text-gray-500">
+            Señales guardadas fuera de horario de mercado. Se ejecutaran al abrir con el precio actual del mercado.
+          </p>
+        </div>
+      )}
+
+\
+
+const jsxMarker = '      <SummaryCard label="Posiciones" value={String(positions.length)} />\\n      </div>\\n\\n'
+content = content.replace(jsxMarker, jsxMarker + jsxSection)
+
+fs.writeFileSync(path, content)
+console.log('All updates applied successfully')
