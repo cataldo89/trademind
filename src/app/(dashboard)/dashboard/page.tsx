@@ -3,6 +3,7 @@ import { Suspense } from 'react'
 import { MarketMoversWidget } from '@/components/dashboard/market-movers-widget'
 import { WatchlistWidget } from '@/components/dashboard/watchlist-widget'
 import { PortfolioSummaryWidget } from '@/components/dashboard/portfolio-summary-widget'
+import { LivePortfolioSimulation } from '@/components/dashboard/live-portfolio-simulation'
 import { ActiveSignalsWidget } from '@/components/dashboard/active-signals-widget'
 import { MarketCalendarWidget } from '@/components/dashboard/market-calendar-widget'
 import { SkeletonCard } from '@/components/ui/skeleton-card'
@@ -34,6 +35,10 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      <Suspense fallback={<SkeletonCard className="h-96" />}>
+        <LivePortfolioSimulation />
+      </Suspense>
+
       {/* Middle row: Gainers/Losers + Signals */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
@@ -55,4 +60,4 @@ export default function DashboardPage() {
     </div>
   )
 }
-
+
