@@ -218,6 +218,24 @@ export function ScreenerClient() {
   const [category, setCategory] = useState('zesty-all')
   const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null)
 
+  const { data: quantAnalysis, isLoading: quantLoading, isError: quantError } = useQuery({
+    queryKey: ['quant-analysis', selectedSymbol],
+    queryFn: async () => {
+      if (!selectedSymbol) return null
+      const res = await fetch('/api/quant/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ symbol: selectedSymbol }),
+      })
+      if (!res.ok) throw new Error('Quant analysis failed')
+      const data = await res.json()
+      return data.data?.workflow_result || null
+    },
+    enabled: !!selectedSymbol,
+    retry: false,
+    staleTime: 60 * 1000,
+  })
+
   const categories = useMemo(() => getCategorizedZestySymbols(), [])
   const selectedCategory = categories.find((cat) => cat.id === category) ?? categories[0]
   const scanSymbols = useMemo(() => {
@@ -463,7 +481,25 @@ export function ScreenerClient() {
                 <span className="text-sm font-bold text-gray-400">{selectedResult.symbol.slice(0, 3)}</span>
               </div>
               <div>
-                <p className="font-mono font-semibold text-white">{selectedResult.symbol}</p>
+                <div className="flex items-center gap-2">
+                  <p className="font-mono font-semibold text-white">{selectedResult.symbol}</p>
+                  
+                  {/* Status Badge */}
+                  {quantLoading ? (
+                    <span className="flex items-center gap-1 text-[9px] bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded border border-amber-500/20 animate-pulse">
+                      <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                      Motor Cuant...
+                    </span>
+                  ) : quantError || !quantAnalysis ? (
+                    <span className="text-[9px] bg-gray-800/40 text-gray-400 px-2 py-0.5 rounded border border-gray-700 font-medium">
+                      Modo básico: motor cuant no disponible
+                    </span>
+                  ) : (
+                    <span className="text-[9px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/20 font-semibold uppercase tracking-wider">
+                      Motor Cuántico Conectado
+                    </span>
+                  )}
+                </div>
                 <p className="text-xs text-gray-500">{selectedResult.name}</p>
               </div>
             </div>
@@ -474,63 +510,127 @@ export function ScreenerClient() {
               Ver gráfico →
             </Link>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="bg-gray-800/50 rounded-lg p-2">
-              <p className="text-[10px] text-gray-500 uppercase">Precio</p>
-              {selectedResult.noData || selectedResult.price === null ? (
-                <p className="text-sm font-mono font-semibold text-gray-500">—</p>
-              ) : (
-                <div className="flex flex-col">
-                  <p className="text-sm font-mono font-semibold text-white">${selectedResult.price.toFixed(2)}</p>
-                  {selectedResult.isFallback && (
-                    <span className="text-[8px] text-amber-500 font-semibold uppercase tracking-wider leading-none mt-0.5">Cierre anterior</span>
+
+          {/* Quant Engine Metrics */}
+          {!quantLoading && !quantError && quantAnalysis ? (
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="bg-gray-800/50 rounded-lg p-2">
+                  <p className="text-[10px] text-gray-500 uppercase">Recomendación Cuant</p>
+                  <p className={cn(
+                    'text-xs font-bold leading-tight mt-0.5',
+                    quantAnalysis.action === 'BUY' ? 'text-emerald-400' 
+                      : quantAnalysis.action === 'SELL' ? 'text-red-400' 
+                      : 'text-amber-400'
+                  )}>
+                    {quantAnalysis.label}
+                  </p>
+                  <p className="text-[9px] text-gray-500">Confianza: {quantAnalysis.confidence}%</p>
+                </div>
+                <div className="bg-gray-800/50 rounded-lg p-2">
+                  <p className="text-[10px] text-gray-500 uppercase">Régimen de Mercado</p>
+                  <p className="text-sm font-mono font-semibold text-white mt-0.5">{quantAnalysis.market_regime}</p>
+                </div>
+                <div className="bg-gray-800/50 rounded-lg p-2">
+                  <p className="text-[10px] text-gray-500 uppercase">Predicción ML (Arima)</p>
+                  <p className="text-sm font-mono font-semibold text-white mt-0.5">
+                    {quantAnalysis.ml_prediction !== undefined ? `${(quantAnalysis.ml_prediction * 100).toFixed(2)}%` : '—'}
+                  </p>
+                </div>
+                <div className="bg-gray-800/50 rounded-lg p-2">
+                  <p className="text-[10px] text-gray-500 uppercase">Riesgo VaR 1D (GARCH)</p>
+                  <p className={cn(
+                    'text-sm font-mono font-semibold mt-0.5',
+                    quantAnalysis.var_95 > 0.05 ? 'text-red-400' : 'text-emerald-400'
+                  )}>
+                    {quantAnalysis.var_95 !== undefined ? `${(quantAnalysis.var_95 * 100).toFixed(2)}%` : '—'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Graham Filter */}
+              <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-800/50 flex flex-col gap-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-gray-500 uppercase">Filtro de Graham (Margen de Seguridad):</span>
+                  <span className={cn(
+                    'text-[10px] font-bold px-1.5 py-0.5 rounded leading-none',
+                    quantAnalysis.graham_passed ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+                      : 'bg-red-500/10 text-red-400 border border-red-500/20'
+                  )}>
+                    {quantAnalysis.graham_passed ? 'APROBADO' : 'RECHAZADO'}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-400">{quantAnalysis.graham_reason || '—'}</p>
+              </div>
+
+              {/* XAI Explanation */}
+              <div className="bg-emerald-500/5 rounded-lg p-3 border border-emerald-500/10 space-y-1">
+                <p className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider">Explicación del Motor (XAI)</p>
+                <p className="text-xs text-gray-300 leading-relaxed font-sans">{quantAnalysis.xai_explanation}</p>
+              </div>
+            </div>
+          ) : (
+            /* Fallback regular TS indicators panel */
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="bg-gray-800/50 rounded-lg p-2">
+                  <p className="text-[10px] text-gray-500 uppercase">Precio</p>
+                  {selectedResult.noData || selectedResult.price === null ? (
+                    <p className="text-sm font-mono font-semibold text-gray-500">—</p>
+                  ) : (
+                    <div className="flex flex-col">
+                      <p className="text-sm font-mono font-semibold text-white">${selectedResult.price.toFixed(2)}</p>
+                      {selectedResult.isFallback && (
+                        <span className="text-[8px] text-amber-500 font-semibold uppercase tracking-wider leading-none mt-0.5">Cierre anterior</span>
+                      )}
+                    </div>
                   )}
                 </div>
-              )}
-            </div>
-            <div className="bg-gray-800/50 rounded-lg p-2">
-              <p className="text-[10px] text-gray-500 uppercase">Cambio</p>
-              {selectedResult.noData || selectedResult.changePercent === null ? (
-                <p className="text-sm font-mono font-semibold text-gray-500">—</p>
-              ) : (
-                <p className={cn('text-sm font-mono font-semibold', selectedResult.changePercent >= 0 ? 'text-emerald-400' : 'text-red-400')}>
-                  {selectedResult.changePercent >= 0 ? '+' : ''}{selectedResult.changePercent.toFixed(2)}%
-                </p>
-              )}
-            </div>
-            <div className="bg-gray-800/50 rounded-lg p-2">
-              <p className="text-[10px] text-gray-500 uppercase">RSI (14)</p>
-              {selectedResult.noData || selectedResult.rsi === null ? (
-                <p className="text-sm font-mono font-semibold text-gray-500">—</p>
-              ) : (
-                <p className={cn('text-sm font-mono font-semibold', selectedResult.rsiColor)}>{selectedResult.rsi.toFixed(1)}</p>
-              )}
-            </div>
-            <div className="bg-gray-800/50 rounded-lg p-2">
-              <p className="text-[10px] text-gray-500 uppercase">MACD</p>
-              {selectedResult.noData || selectedResult.macdSignal === 'Sin datos' ? (
-                <p className="text-sm font-mono font-semibold text-gray-500">—</p>
-              ) : (
-                <p className={cn('text-sm font-mono font-semibold', selectedResult.macdColor)}>{selectedResult.macdSignal}</p>
-              )}
-            </div>
-          </div>
-          {selectedResult.suggestions.length > 0 && (
-            <div className="space-y-1">
-              <p className="text-[10px] text-gray-500 uppercase">Señales detectadas</p>
-              {selectedResult.suggestions.map((s, i) => (
-                <div key={i} className={cn(
-                  'flex items-center gap-2 text-xs px-2 py-1 rounded',
-                  s.type === 'opportunity' ? 'bg-emerald-500/10 text-emerald-300'
-                    : s.type === 'warning' ? 'bg-red-500/10 text-red-300'
-                    : 'bg-gray-800/50 text-gray-300'
-                )}>
-                  <ChevronRight className="w-3 h-3 flex-shrink-0" />
-                  <span className="font-medium">{s.label}:</span>
-                  <span className="text-gray-400">{s.description}</span>
+                <div className="bg-gray-800/50 rounded-lg p-2">
+                  <p className="text-[10px] text-gray-500 uppercase">Cambio</p>
+                  {selectedResult.noData || selectedResult.changePercent === null ? (
+                    <p className="text-sm font-mono font-semibold text-gray-500">—</p>
+                  ) : (
+                    <p className={cn('text-sm font-mono font-semibold', selectedResult.changePercent >= 0 ? 'text-emerald-400' : 'text-red-400')}>
+                      {selectedResult.changePercent >= 0 ? '+' : ''}{selectedResult.changePercent.toFixed(2)}%
+                    </p>
+                  )}
                 </div>
-              ))}
-            </div>
+                <div className="bg-gray-800/50 rounded-lg p-2">
+                  <p className="text-[10px] text-gray-500 uppercase">RSI (14)</p>
+                  {selectedResult.noData || selectedResult.rsi === null ? (
+                    <p className="text-sm font-mono font-semibold text-gray-500">—</p>
+                  ) : (
+                    <p className={cn('text-sm font-mono font-semibold', selectedResult.rsiColor)}>{selectedResult.rsi.toFixed(1)}</p>
+                  )}
+                </div>
+                <div className="bg-gray-800/50 rounded-lg p-2">
+                  <p className="text-[10px] text-gray-500 uppercase">MACD</p>
+                  {selectedResult.noData || selectedResult.macdSignal === 'Sin datos' ? (
+                    <p className="text-sm font-mono font-semibold text-gray-500">—</p>
+                  ) : (
+                    <p className={cn('text-sm font-mono font-semibold', selectedResult.macdColor)}>{selectedResult.macdSignal}</p>
+                  )}
+                </div>
+              </div>
+              {selectedResult.suggestions.length > 0 && (
+                <div className="space-y-1">
+                  <p className="text-[10px] text-gray-500 uppercase">Señales detectadas</p>
+                  {selectedResult.suggestions.map((s, i) => (
+                    <div key={i} className={cn(
+                      'flex items-center gap-2 text-xs px-2 py-1 rounded',
+                      s.type === 'opportunity' ? 'bg-emerald-500/10 text-emerald-300'
+                        : s.type === 'warning' ? 'bg-red-500/10 text-red-300'
+                        : 'bg-gray-800/50 text-gray-300'
+                    )}>
+                      <ChevronRight className="w-3 h-3 flex-shrink-0" />
+                      <span className="font-medium">{s.label}:</span>
+                      <span className="text-gray-400">{s.description}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
