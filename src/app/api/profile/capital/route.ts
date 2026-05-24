@@ -32,6 +32,9 @@ function isMissingVirtualBalanceColumn(error: unknown) {
 }
 
 function parseVirtualBalance(value: unknown) {
+  if (value === null || value === undefined || value === '') {
+    return DEFAULT_VIRTUAL_BALANCE
+  }
   const balance = Number(value)
   return Number.isFinite(balance) && balance >= 0 ? balance : DEFAULT_VIRTUAL_BALANCE
 }

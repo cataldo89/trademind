@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { TrendingUp, TrendingDown, Minus, Zap, Loader2, ArrowUpRight, Trash2 } from 'lucide-react'
@@ -134,13 +134,15 @@ export function SignalsClient() {
         return
       }
 
-      const { data: profile, error: profileError } = await supabaseClient
-        .from('profiles')
-        .select('virtual_balance')
-        .eq('id', user.id)
-        .maybeSingle()
-
-      if (profileError) throw profileError
+      const { data: { session } } = await supabaseClient.auth.getSession()
+      const token = session?.access_token
+      const balanceRes = await fetch('/api/profile/capital', {
+        cache: 'no-store',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
+      if (!balanceRes.ok) throw new Error('Failed to load virtual balance')
+      const balanceData = await balanceRes.json()
+      const profile = balanceData.data
 
       const virtualBalance = Number(profile?.virtual_balance ?? 0)
       if (!Number.isFinite(virtualBalance) || virtualBalance <= 0) {
@@ -194,16 +196,20 @@ export function SignalsClient() {
 
       if (positionError) throw positionError
 
-      const { error: balanceError } = await supabaseClient
-        .from('profiles')
-        .update({ virtual_balance: nextBalance })
-        .eq('id', user.id)
+      const balanceUpdateRes = await fetch('/api/profile/capital', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
+        body: JSON.stringify({ virtualBalance: nextBalance }),
+      })
 
-      if (balanceError) {
+      if (!balanceUpdateRes.ok) {
         if (position?.id) {
           await supabaseClient.from('positions').delete().eq('id', position.id)
         }
-        throw balanceError
+        throw new Error('Failed to update virtual balance')
       }
 
       const { error: transactionError } = await supabaseClient.from('transactions').insert({

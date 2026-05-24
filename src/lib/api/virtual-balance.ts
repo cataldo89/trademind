@@ -8,6 +8,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 export function parseVirtualBalance(value: unknown, fallback = DEFAULT_VIRTUAL_BALANCE) {
+  if (value === null || value === undefined || value === '') {
+    return fallback
+  }
   const balance = Number(value)
   return Number.isFinite(balance) && balance >= 0 ? balance : fallback
 }
