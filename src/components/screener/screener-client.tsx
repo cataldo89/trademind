@@ -27,6 +27,7 @@ export function ScreenerClient() {
     httpStatus: number | null
     source: 'TypeScript frontend' | 'Python quant-engine' | 'Fallback básico'
     data: any | null
+    errorMessage?: string
   }>({
     status: 'idle',
     symbol: '',
@@ -35,7 +36,8 @@ export function ScreenerClient() {
     latency: null,
     httpStatus: null,
     source: 'TypeScript frontend',
-    data: null
+    data: null,
+    errorMessage: undefined
   })
 
   const runVerification = async (symbol: string) => {
@@ -48,7 +50,8 @@ export function ScreenerClient() {
       endpoint: '/api/quant/analyze',
       latency: null,
       httpStatus: null,
-      data: null
+      data: null,
+      errorMessage: undefined
     }))
 
     try {
@@ -61,6 +64,15 @@ export function ScreenerClient() {
       const httpStatus = res.status
 
       if (!res.ok) {
+        let errMsg = 'Quant workflow failed';
+        try {
+          const errBody = await res.json();
+          errMsg = errBody.error || errMsg;
+        } catch {
+          try {
+            errMsg = await res.text() || errMsg;
+          } catch {}
+        }
         setVerifyState({
           status: 'modo_basico',
           symbol,
@@ -69,7 +81,8 @@ export function ScreenerClient() {
           latency,
           httpStatus,
           source: 'Fallback básico',
-          data: null
+          data: null,
+          errorMessage: errMsg
         })
         return
       }
@@ -83,7 +96,8 @@ export function ScreenerClient() {
         latency,
         httpStatus,
         source: 'Python quant-engine',
-        data: body.data?.workflow_result || null
+        data: body.data?.workflow_result || null,
+        errorMessage: undefined
       })
     } catch (err: any) {
       const latency = Date.now() - start
@@ -95,7 +109,8 @@ export function ScreenerClient() {
         latency,
         httpStatus: null,
         source: 'Fallback básico',
-        data: null
+        data: null,
+        errorMessage: err.message || String(err)
       })
     }
   }
@@ -276,7 +291,7 @@ export function ScreenerClient() {
         {/* Status Message */}
         {verifyState.symbol && (
           <div className={cn(
-            "text-xs px-3 py-2 rounded-lg border font-medium flex items-center justify-between",
+            "text-xs px-3 py-2 rounded-lg border font-medium flex items-center justify-between flex-wrap gap-2",
             verifyState.status === 'conectado'
               ? "bg-emerald-500/5 text-emerald-400 border-emerald-500/20"
               : verifyState.status === 'consultando'
@@ -285,12 +300,19 @@ export function ScreenerClient() {
               ? "bg-gray-800/40 text-gray-400 border-gray-700"
               : "bg-red-500/5 text-red-400 border-red-500/20"
           )}>
-            <span>
-              {verifyState.status === 'conectado' ? `Python ejecutado para: ${verifyState.symbol}`
-                : verifyState.status === 'consultando' ? `Consultando Python para: ${verifyState.symbol}...`
-                : verifyState.status === 'modo_basico' ? `Python no disponible para ${verifyState.symbol}, usando modo básico`
-                : `Error en consulta para: ${verifyState.symbol}`}
-            </span>
+            <div className="flex flex-col gap-0.5">
+              <span>
+                {verifyState.status === 'conectado' ? `Motor Cuántico Conectado para: ${verifyState.symbol}`
+                  : verifyState.status === 'consultando' ? `Consultando Python para: ${verifyState.symbol}...`
+                  : verifyState.status === 'modo_basico' ? `Python no disponible para ${verifyState.symbol}, usando modo básico`
+                  : `Error en consulta para: ${verifyState.symbol}`}
+              </span>
+              {verifyState.errorMessage && (
+                <span className="text-[10px] text-red-400 font-mono mt-0.5 bg-red-950/20 px-1.5 py-0.5 rounded border border-red-900/30">
+                  Real Error: {verifyState.errorMessage}
+                </span>
+              )}
+            </div>
             <span className="text-[10px] opacity-75 font-mono">{verifyState.timestamp}</span>
           </div>
         )}
@@ -314,12 +336,17 @@ export function ScreenerClient() {
                   verifyState.status === 'error' ? "text-red-400" :
                   verifyState.status === 'modo_basico' ? "text-amber-500" : "text-gray-400"
                 )}>
-                  {verifyState.status === 'conectado' ? 'Conectado' :
+                  {verifyState.status === 'conectado' ? 'Motor Cuántico Conectado' :
                    verifyState.status === 'consultando' ? 'Consultando' :
                    verifyState.status === 'error' ? 'Error' :
                    verifyState.status === 'modo_basico' ? 'Modo básico' : 'Sin iniciar'}
                 </span>
               </div>
+              {verifyState.httpStatus !== null && (
+                <p className="text-[10px] text-gray-400 font-mono mt-1">
+                  Response Code: <span className="font-semibold text-white">HTTP {verifyState.httpStatus}</span>
+                </p>
+              )}
             </div>
           </div>
 
@@ -327,6 +354,12 @@ export function ScreenerClient() {
             <p className="text-[10px] text-gray-500 uppercase font-semibold mb-2">Última consulta realizada</p>
             <div className="flex justify-between text-xs font-mono text-gray-400">
               <span>Símbolo:</span><span className="text-white">{verifyState.symbol || '—'}</span>
+            </div>
+            <div className="flex justify-between text-xs font-mono text-gray-400">
+              <span>Fuente:</span>
+              <span className="text-white font-semibold">
+                {verifyState.status === 'conectado' ? 'Python quant-engine' : verifyState.source || '—'}
+              </span>
             </div>
             <div className="flex justify-between text-xs font-mono text-gray-400">
               <span>Latencia:</span>
@@ -339,11 +372,16 @@ export function ScreenerClient() {
           <div className="bg-gray-900/30 p-3 rounded-lg border border-gray-800/60 space-y-1">
             <p className="text-[10px] text-gray-500 uppercase font-semibold mb-2">Resultado Python</p>
             {verifyState.status === 'conectado' && verifyState.data ? (
-              <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-[11px] font-mono">
-                <div className="text-gray-400">Acción:</div>
-                <div className={cn("font-bold text-right", verifyState.data.action === 'BUY' ? 'text-emerald-400' : verifyState.data.action === 'SELL' ? 'text-red-400' : 'text-amber-400')}>{verifyState.data.action}</div>
-                <div className="text-gray-400">Confianza:</div>
-                <div className="text-white text-right">{verifyState.data.confidence}%</div>
+              <div className="space-y-1 text-[11px] font-mono">
+                <div className="grid grid-cols-2 gap-x-2 gap-y-0.5">
+                  <div className="text-gray-400">Acción:</div>
+                  <div className={cn("font-bold text-right", verifyState.data.action === 'BUY' ? 'text-emerald-400' : verifyState.data.action === 'SELL' ? 'text-red-400' : 'text-amber-400')}>{verifyState.data.action}</div>
+                  <div className="text-gray-400">Confianza:</div>
+                  <div className="text-white text-right">{verifyState.data.confidence}%</div>
+                </div>
+                <div className="text-[9px] text-emerald-400 text-center font-bold mt-1 bg-emerald-950/20 border border-emerald-900/30 rounded py-0.5">
+                  Resultado recibido desde Python
+                </div>
               </div>
             ) : (
               <div className="flex items-center justify-center h-12 text-xs text-gray-500 font-mono italic">Sin datos</div>
