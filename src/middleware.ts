@@ -50,7 +50,17 @@ export async function middleware(request: NextRequest) {
   }
 
   // Redirigir a login si no hay usuario y no es una ruta pública
-  if (!user && !isPublicRoute && pathname !== '/') {
+  let shouldRedirect = !user && !isPublicRoute && pathname !== '/'
+
+  // Dev bypass para /api/quant (solo desarrollo y con header)
+  if (process.env.NODE_ENV === 'development' && pathname.startsWith('/api/quant')) {
+    const devBypass = request.headers.get('X-Dev-Bypass') === 'true'
+    if (devBypass) {
+      shouldRedirect = false
+    }
+  }
+
+  if (shouldRedirect) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     url.searchParams.set('redirectTo', pathname)

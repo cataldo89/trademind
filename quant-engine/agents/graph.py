@@ -133,23 +133,46 @@ def decision_node(state: AgentState):
     return state
 
 def run_analysis_workflow(symbol: str):
-    # Vanilla Python Workflow Execution
-    state: AgentState = {"symbol": symbol}
-    
-    # 1. Research Manager
-    state = research_manager(state)
-    
-    # 2. Technical Analyst
-    state = technical_analyst(state)
-    
-    # 3. Risk Manager
-    state = risk_manager(state)
-    
-    # 3.5 YouTuber Analyst
-    state = youtube_analyst(state)
-    
-    # 4. Decision Node
-    state = decision_node(state)
-    
-    return state
+    try:
+        # Vanilla Python Workflow Execution
+        state: AgentState = {"symbol": symbol}
+        
+        # 1. Research Manager
+        state = research_manager(state)
+        
+        # 2. Technical Analyst
+        state = technical_analyst(state)
+        
+        # 3. Risk Manager
+        state = risk_manager(state)
+        
+        # 3.5 YouTuber Analyst
+        state = youtube_analyst(state)
+        
+        # 4. Decision Node
+        state = decision_node(state)
+        
+        return state
+    except Exception as e:
+        import traceback
+        err_msg = f"Error en ejecución del motor Python: {str(e)}"
+        print(f"[ERROR] {err_msg}")
+        traceback.print_exc()
+        return {
+            "symbol": symbol,
+            "graham_passed": False,
+            "graham_reason": f"Fallo interno: {str(e)}",
+            "market_regime": "Unknown",
+            "ml_prediction": 0.0,
+            "var_95": 0.0,
+            "youtube_signal": "NEUTRAL",
+            "youtube_reason": "Workflow error",
+            "action": "HOLD",
+            "label": "Sin conclusión / datos insuficientes",
+            "confidence": 0,
+            "xai_explanation": err_msg,
+            "error_reason": err_msg,
+            "data_status": "incomplete"
+        }
+
 

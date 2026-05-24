@@ -3,214 +3,14 @@
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getCategorizedZestySymbols } from '@/lib/market-data'
-import { Market, Candle } from '@/types'
+import { Market } from '@/types'
 import { cn } from '@/lib/utils'
 import {
   ArrowUp, ArrowDown, ArrowRightLeft,
-  AlertCircle, Loader2, Search, ChevronRight, Activity, Eye
+  AlertCircle, Loader2, Search, ChevronRight, Activity, Eye, Zap
 } from 'lucide-react'
 import Link from 'next/link'
-import { calculateRSI, calculateMACD, calculateSMA, interpretRSI } from '@/lib/indicators'
-
-const MAX_SCAN_SYMBOLS = 80
-
-interface ScanResult {
-  symbol: string
-  name: string
-  market: Market
-  price: number | null
-  changePercent: number | null
-  volume: number | null
-  rsi: number | null
-  rsiSignal: string
-  rsiColor: string
-  macdSignal: string
-  macdColor: string
-  ma20: number | null
-  ma50: number | null
-  priceVsMA20: 'above' | 'below' | null
-  priceVsMA50: 'above' | 'below' | null
-  suggestions: Suggestion[]
-  noData?: boolean
-  isFallback?: boolean
-}
-
-interface Suggestion {
-  type: 'opportunity' | 'warning' | 'neutral'
-  label: string
-  description: string
-  icon: 'trending-up' | 'trending-down' | 'activity' | 'alert'
-}
-
-async function fetchCandles(symbol: string, market: Market): Promise<Candle[]> {
-  const res = await fetch(`/api/market/candles?symbol=${encodeURIComponent(symbol)}&range=1Y&market=${market}`)
-  if (!res.ok) return []
-  const data = await res.json()
-  return data.data || []
-}
-
-function analyzeSymbol(
-  symbol: string,
-  name: string,
-  market: Market,
-  candles: Candle[],
-  quote: { price: number | null; changePercent: number | null; volume: number | null },
-  noData?: boolean,
-  isFallback?: boolean
-): ScanResult {
-  if (noData || !candles || candles.length === 0) {
-    return {
-      symbol,
-      name,
-      market,
-      price: null,
-      changePercent: null,
-      volume: null,
-      rsi: null,
-      rsiSignal: 'Sin datos',
-      rsiColor: 'text-gray-500',
-      macdSignal: 'Sin datos',
-      macdColor: 'text-gray-500',
-      ma20: null,
-      ma50: null,
-      priceVsMA20: null,
-      priceVsMA50: null,
-      suggestions: [],
-      noData: true,
-      isFallback: false,
-    }
-  }
-
-  const rsi = calculateRSI(candles, 14)
-  const macd = calculateMACD(candles)
-  const ma20 = calculateSMA(candles, 20)
-  const ma50 = calculateSMA(candles, 50)
-
-  const lastRSI = rsi[rsi.length - 1]?.value ?? null
-  const rsiInterp = lastRSI !== null ? interpretRSI(lastRSI) : { signal: 'Sin datos', color: 'text-gray-500' }
-
-  const lastMACD = macd[macd.length - 1]
-  const prevMACD = macd[macd.length - 2]
-  let macdSignal = 'Neutral'
-  let macdColor = 'text-gray-400'
-  if (lastMACD && prevMACD) {
-    if (lastMACD.histogram > 0 && prevMACD.histogram <= 0) {
-      macdSignal = 'Cruce alcista'
-      macdColor = 'text-emerald-400'
-    } else if (lastMACD.histogram < 0 && prevMACD.histogram >= 0) {
-      macdSignal = 'Cruce bajista'
-      macdColor = 'text-red-400'
-    } else if (lastMACD.histogram > 0) {
-      macdSignal = 'Positivo'
-      macdColor = 'text-emerald-300'
-    } else {
-      macdSignal = 'Negativo'
-      macdColor = 'text-red-300'
-    }
-  } else {
-    macdSignal = 'Sin datos'
-    macdColor = 'text-gray-500'
-  }
-
-  const lastMA20 = ma20[ma20.length - 1]?.value ?? null
-  const lastMA50 = ma50[ma50.length - 1]?.value ?? null
-  const price = quote.price
-
-  const priceVsMA20 = (price !== null && lastMA20 !== null) ? (price > lastMA20 ? 'above' : 'below') : null
-  const priceVsMA50 = (price !== null && lastMA50 !== null) ? (price > lastMA50 ? 'above' : 'below') : null
-
-  // Generate suggestions
-  const suggestions: Suggestion[] = []
-
-  if (lastRSI !== null) {
-    if (lastRSI < 30) {
-      suggestions.push({
-        type: 'opportunity',
-        label: 'Sobreventa técnica',
-        description: `RSI ${lastRSI.toFixed(1)} — Posible rebote cercano`,
-        icon: 'trending-up',
-      })
-    } else if (lastRSI > 70) {
-      suggestions.push({
-        type: 'warning',
-        label: 'Sobrecompra técnica',
-        description: `RSI ${lastRSI.toFixed(1)} — Posible corrección`,
-        icon: 'trending-down',
-      })
-    }
-  }
-
-  if (macdSignal === 'Cruce alcista') {
-    suggestions.push({
-      type: 'opportunity',
-      label: 'Cruce MACD alcista',
-      description: 'Posible inicio de tendencia alcista',
-      icon: 'trending-up',
-    })
-  } else if (macdSignal === 'Cruce bajista') {
-    suggestions.push({
-      type: 'warning',
-      label: 'Cruce MACD bajista',
-      description: 'Posible inicio de tendencia bajista',
-      icon: 'trending-down',
-    })
-  }
-
-  if (priceVsMA50 === 'above' && priceVsMA20 === 'below') {
-    suggestions.push({
-      type: 'opportunity',
-      label: 'Cruce MA20→MA50',
-      description: 'Precio rompió sobre MA50 — posible breakout',
-      icon: 'activity',
-    })
-  } else if (priceVsMA50 === 'below' && priceVsMA20 === 'above') {
-    suggestions.push({
-      type: 'warning',
-      label: 'Ruptura MA50',
-      description: 'Precio cayó sobre MA50 — posible breakdown',
-      icon: 'alert',
-    })
-  }
-
-  if (quote.changePercent !== null) {
-    if (quote.changePercent < -5) {
-      suggestions.push({
-        type: 'warning',
-        label: 'Caída fuerte',
-        description: `${quote.changePercent.toFixed(1)}% hoy — monitorear`,
-        icon: 'alert',
-      })
-    } else if (quote.changePercent > 5) {
-      suggestions.push({
-        type: 'neutral',
-        label: 'Subida fuerte',
-        description: `${quote.changePercent.toFixed(1)}% hoy — confirmar continuidad`,
-        icon: 'activity',
-      })
-    }
-  }
-
-  return {
-    symbol,
-    name,
-    market,
-    price,
-    changePercent: quote.changePercent,
-    volume: quote.volume,
-    rsi: lastRSI,
-    rsiSignal: rsiInterp.signal,
-    rsiColor: rsiInterp.color,
-    macdSignal,
-    macdColor,
-    ma20: lastMA20,
-    ma50: lastMA50,
-    priceVsMA20,
-    priceVsMA50,
-    suggestions,
-    noData: false,
-    isFallback: !!isFallback,
-  }
-}
+import { FinalQuantScore } from '@/lib/ranking'
 
 export function ScreenerClient() {
   const [search, setSearch] = useState('')
@@ -251,10 +51,6 @@ export function ScreenerClient() {
       data: null
     }))
 
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`[Quant Verification] Starting fetch for ${symbol}...`)
-    }
-
     try {
       const res = await fetch('/api/quant/analyze', {
         method: 'POST',
@@ -264,15 +60,7 @@ export function ScreenerClient() {
       const latency = Date.now() - start
       const httpStatus = res.status
 
-      if (process.env.NODE_ENV === 'development') {
-        console.log(`[Quant Verification] HTTP Status: ${httpStatus}, Latency: ${latency}ms`)
-      }
-
       if (!res.ok) {
-        const errText = await res.text()
-        if (process.env.NODE_ENV === 'development') {
-          console.error(`[Quant Verification] Request failed: ${errText}`)
-        }
         setVerifyState({
           status: 'modo_basico',
           symbol,
@@ -287,10 +75,6 @@ export function ScreenerClient() {
       }
 
       const body = await res.json()
-      if (process.env.NODE_ENV === 'development') {
-        console.log(`[Quant Verification] Success:`, body)
-      }
-
       setVerifyState({
         status: 'conectado',
         symbol,
@@ -303,9 +87,6 @@ export function ScreenerClient() {
       })
     } catch (err: any) {
       const latency = Date.now() - start
-      if (process.env.NODE_ENV === 'development') {
-        console.error(`[Quant Verification] Exception:`, err)
-      }
       setVerifyState({
         status: 'error',
         symbol,
@@ -330,118 +111,53 @@ export function ScreenerClient() {
 
   const categories = useMemo(() => getCategorizedZestySymbols(), [])
   const selectedCategory = categories.find((cat) => cat.id === category) ?? categories[0]
+  
+  // Enviar todos los activos de la categoría (con un límite de 500)
   const scanSymbols = useMemo(() => {
     return (selectedCategory?.symbols ?? [])
-      .slice(0, MAX_SCAN_SYMBOLS)
+      .slice(0, 500)
       .map((s) => ({ ...s, market: 'US' as Market }))
   }, [selectedCategory])
 
   const categoryTotal = selectedCategory?.symbols.length ?? 0
 
-  const { data: quotes = [], isLoading: quotesLoading } = useQuery({
-    queryKey: ['screener-quotes', category, scanSymbols.map(s => s.symbol)],
+  const { data: scanResponse, isLoading: scanLoading } = useQuery({
+    queryKey: ['screener-quant-scan', category],
     queryFn: async () => {
       const symbols = Array.from(new Set(scanSymbols.map((s) => s.symbol).filter(Boolean)))
-      if (symbols.length === 0) return []
+      if (symbols.length === 0) return null
+
+      const symbolMap: Record<string, string> = {}
+      scanSymbols.forEach(s => { symbolMap[s.symbol] = s.name })
 
       const market = scanSymbols[0]?.market || 'US'
-      const res = await fetch(`/api/market/quote?symbols=${encodeURIComponent(symbols.join(','))}&market=${market}`)
-      if (!res.ok) return []
-
-      const data = await res.json()
-      const quotes = Array.isArray(data.data) ? data.data : [data.data]
-      return quotes
-        .filter((q: { symbol?: string }) => q?.symbol)
-        .map((q: { symbol?: string; price?: number; regularMarketPrice?: number; changePercent?: number; regularMarketChangePercent?: number; volume?: number; regularMarketVolume?: number; name?: string; shortName?: string; longName?: string }) => ({
-          symbol: String(q.symbol),
-          price: Number(q.price || q.regularMarketPrice || 0),
-          changePercent: Number(q.changePercent || q.regularMarketChangePercent || 0),
-          volume: Number(q.volume || q.regularMarketVolume || 0),
-          name: String(q.name || q.shortName || q.longName || q.symbol),
-        }))
-    },
-    staleTime: 60 * 1000,
-    refetchInterval: 5 * 60 * 1000,
-  })
-
-  const { data: scanResults = [], isLoading: scanLoading } = useQuery({
-    queryKey: ['screener-scan', category, scanSymbols.map(s => s.symbol), quotes],
-    queryFn: async () => {
-      const quoteMap = new Map()
-      quotes.forEach((q: { symbol: string }) => {
-        if (q && q.symbol) {
-          const upper = q.symbol.toUpperCase()
-          quoteMap.set(upper, q)
-          quoteMap.set(upper.replace('.', '-'), q)
-          quoteMap.set(upper.replace('-', '.'), q)
-        }
+      const res = await fetch('/api/quant/scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ symbols, category, market, symbolMap })
       })
 
-      const results: ScanResult[] = []
-      const concurrency = 8
-      for (let i = 0; i < scanSymbols.length; i += concurrency) {
-        const chunk = scanSymbols.slice(i, i + concurrency)
-        const analyzed = await Promise.all(chunk.map(async (s) => {
-          const candles = await fetchCandles(s.symbol, s.market)
-          const searchKey = s.symbol.toUpperCase()
-          const quote = quoteMap.get(searchKey) || quoteMap.get(searchKey.replace('.', '-')) || quoteMap.get(searchKey.replace('-', '.'))
-
-          let price: number | null = quote ? (quote.price || null) : null
-          let changePercent: number | null = quote ? (quote.changePercent ?? null) : null
-          let volume: number | null = quote ? (quote.volume ?? null) : null
-          let name = quote?.name || s.name
-          let isFallback = false
-          let noData = false
-
-          if (price === null || price === 0) {
-            if (candles && candles.length > 0) {
-              const lastCandle = candles[candles.length - 1]
-              price = lastCandle.close
-              if (candles.length > 1) {
-                const prevCandle = candles[candles.length - 2]
-                changePercent = ((price - prevCandle.close) / prevCandle.close) * 100
-              } else {
-                changePercent = 0
-              }
-              volume = lastCandle.volume || 0
-              isFallback = true
-            } else {
-              noData = true
-            }
-          }
-
-          const finalQuote = { price, changePercent, volume }
-          return analyzeSymbol(s.symbol, name, s.market, candles, finalQuote, noData, isFallback)
-        }))
-        results.push(...analyzed)
-      }
-
-      return results
+      if (!res.ok) throw new Error('Failed to fetch scan results')
+      return res.json()
     },
     staleTime: 5 * 60 * 1000,
     refetchInterval: 10 * 60 * 1000,
   })
 
-  const allSuggestions = scanResults
-    .flatMap(r => r.suggestions.map(s => ({ ...s, symbol: r.symbol, name: r.name, result: r })))
-    .filter(s => s.type !== 'neutral')
+  const scanResults: FinalQuantScore[] = scanResponse?.results || []
+
+  // Top candidates para las tarjetas
+  const topCards = scanResults.slice(0, 9).filter(r => !r.noData)
 
   const filtered = scanResults
     .filter(r => {
-      if (filter === 'opportunities') return r.suggestions.some(s => s.type === 'opportunity')
-      if (filter === 'warnings') return r.suggestions.some(s => s.type === 'warning')
+      if (filter === 'opportunities') return r.suggestions.some(s => s.type === 'opportunity') || r.quant?.action === 'BUY'
+      if (filter === 'warnings') return r.suggestions.some(s => s.type === 'warning') || r.quant?.action === 'SELL'
       return true
     })
     .filter(r => {
       if (!search) return true
       return r.symbol.toLowerCase().includes(search.toLowerCase()) || r.name.toLowerCase().includes(search.toLowerCase())
-    })
-    .sort((a, b) => {
-      if (a.suggestions.length > b.suggestions.length) return -1
-      if (b.suggestions.length > a.suggestions.length) return 1
-      const aChange = a.changePercent ?? 0
-      const bChange = b.changePercent ?? 0
-      return Math.abs(bChange) - Math.abs(aChange)
     })
 
   const selectedResult = scanResults.find(r => r.symbol === selectedSymbol)
@@ -457,44 +173,74 @@ export function ScreenerClient() {
       <div>
         <h1 className="text-2xl font-bold text-white">TradeMind Intelligence</h1>
         <p className="text-sm text-gray-400 mt-1">
-          Escaneo {scanSymbols.length} de {categoryTotal} activos en {selectedCategory?.name ?? 'Zesty'} · {allSuggestions.length} señales detectadas
+          Escaneo Quant de {scanSymbols.length} activos en {selectedCategory?.name ?? 'Zesty'}
+          {scanResponse && ` · Python top ${scanResponse.quant_processed}`}
         </p>
       </div>
 
-      {/* Suggestions Panel */}
-      {allSuggestions.length > 0 && (
+      {/* Top Cards Panel */}
+      {topCards.length > 0 && (
         <div className="space-y-3">
-          <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-            TradeMind sugiere que mires
+          <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+            <Zap className="w-3.5 h-3.5 text-emerald-400" />
+            Top Activos (Quant Engine)
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {allSuggestions.slice(0, 9).map((s, i) => (
+            {topCards.map((r, i) => (
               <Link
-                key={`${s.symbol}-${i}`}
-                href={`/analysis?symbol=${s.symbol}&market=${s.result.market}`}
+                key={`${r.symbol}-${i}`}
+                href={`/analysis?symbol=${r.symbol}&market=${r.market}`}
                 className={cn(
                   'p-4 rounded-xl border transition-all hover:scale-[1.02]',
-                  s.type === 'opportunity'
+                  r.quant?.action === 'BUY' || (!r.quant && r.finalScore >= 60)
                     ? 'bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/15'
-                    : 'bg-red-500/10 border-red-500/30 hover:bg-red-500/15'
+                    : r.quant?.action === 'SELL' || (!r.quant && r.finalScore <= 40)
+                    ? 'bg-red-500/10 border-red-500/30 hover:bg-red-500/15'
+                    : 'bg-gray-800/40 border-gray-700 hover:bg-gray-800'
                 )}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className={cn(
-                    'text-xs font-bold',
-                    s.type === 'opportunity' ? 'text-emerald-400' : 'text-red-400'
-                  )}>
-                    {s.label}
-                  </span>
-                  <span className="text-xs font-mono text-gray-400 bg-gray-800 px-2 py-0.5 rounded">
-                    {s.symbol}
-                  </span>
+                  <div className="flex flex-col gap-1">
+                    <span className={cn(
+                      'text-[10px] font-bold px-1.5 py-0.5 rounded leading-none w-fit',
+                      r.quant?.action === 'BUY' ? 'bg-emerald-500/20 text-emerald-400' 
+                        : r.quant?.action === 'SELL' ? 'bg-red-500/20 text-red-400'
+                        : 'bg-gray-700 text-gray-300'
+                    )}>
+                      {r.quant?.action || (r.finalScore > 60 ? 'BUY (Tech)' : r.finalScore < 40 ? 'SELL (Tech)' : 'HOLD')}
+                    </span>
+                    <span className="text-xs font-semibold text-white truncate max-w-[150px]" title={r.name}>{r.name}</span>
+                  </div>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className="text-xs font-mono text-gray-300 bg-gray-900 px-2 py-0.5 rounded shadow-inner">
+                      {r.symbol}
+                    </span>
+                    <span className="text-[10px] text-gray-500">Score: {r.finalScore.toFixed(0)}</span>
+                  </div>
                 </div>
-                <p className="text-xs text-gray-400 mb-2">{s.description}</p>
-                <div className="flex items-center gap-1 text-xs text-gray-500">
+                
+                {r.quant && (
+                   <div className="text-[10px] text-gray-400 mb-2 mt-1 space-y-1">
+                     <div className="flex justify-between">
+                       <span>Confianza:</span>
+                       <span className="text-white font-mono">{r.quant.confidence}%</span>
+                     </div>
+                     <div className="flex justify-between">
+                       <span>Régimen:</span>
+                       <span className="text-white truncate max-w-[100px]">{r.quant.market_regime}</span>
+                     </div>
+                   </div>
+                )}
+                {!r.quant && r.suggestions.length > 0 && (
+                   <div className="text-[10px] text-gray-400 mb-2 mt-1 space-y-1">
+                     <p className="truncate">{r.suggestions[0]?.label}</p>
+                   </div>
+                )}
+
+                <div className="flex items-center gap-1 text-xs text-gray-500 mt-2 border-t border-gray-800/50 pt-2">
                   <Eye className="w-3 h-3" />
                   <span>Ver análisis</span>
-                  <ChevronRight className="w-3 h-3" />
+                  <ChevronRight className="w-3 h-3 ml-auto" />
                 </div>
               </Link>
             ))}
@@ -502,10 +248,10 @@ export function ScreenerClient() {
         </div>
       )}
 
-      {allSuggestions.length === 0 && (
+      {scanLoading && (
         <div className="p-8 text-center rounded-xl border border-gray-800 bg-gray-900/30">
-          <Activity className="w-8 h-8 text-gray-600 mx-auto mb-2" />
-          <p className="text-sm text-gray-500">Escaneando mercados...</p>
+          <Loader2 className="w-8 h-8 text-emerald-500 animate-spin mx-auto mb-2" />
+          <p className="text-sm text-gray-500">Escaneando mercados con Engine Quant...</p>
         </div>
       )}
 
@@ -527,7 +273,7 @@ export function ScreenerClient() {
           </button>
         </div>
 
-        {/* Status Message based on action selection */}
+        {/* Status Message */}
         {verifyState.symbol && (
           <div className={cn(
             "text-xs px-3 py-2 rounded-lg border font-medium flex items-center justify-between",
@@ -540,134 +286,67 @@ export function ScreenerClient() {
               : "bg-red-500/5 text-red-400 border-red-500/20"
           )}>
             <span>
-              {verifyState.status === 'conectado'
-                ? `Python ejecutado para: ${verifyState.symbol}`
-                : verifyState.status === 'consultando'
-                ? `Consultando Python para: ${verifyState.symbol}...`
-                : verifyState.status === 'modo_basico'
-                ? `Python no disponible para ${verifyState.symbol}, usando modo básico`
-                : `Error en consulta para: ${verifyState.symbol}`
-              }
+              {verifyState.status === 'conectado' ? `Python ejecutado para: ${verifyState.symbol}`
+                : verifyState.status === 'consultando' ? `Consultando Python para: ${verifyState.symbol}...`
+                : verifyState.status === 'modo_basico' ? `Python no disponible para ${verifyState.symbol}, usando modo básico`
+                : `Error en consulta para: ${verifyState.symbol}`}
             </span>
-            <span className="text-[10px] opacity-75 font-mono">
-              {verifyState.timestamp}
-            </span>
+            <span className="text-[10px] opacity-75 font-mono">{verifyState.timestamp}</span>
           </div>
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Col 1: Connection & Source */}
           <div className="bg-gray-900/30 p-3 rounded-lg border border-gray-800/60 space-y-2.5">
             <div>
               <p className="text-[10px] text-gray-500 uppercase font-semibold">Estado de conexión</p>
               <div className="flex items-center gap-2 mt-1">
                 <span className={cn(
                   "w-2 h-2 rounded-full",
-                  verifyState.status === 'conectado' ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]" :
+                  verifyState.status === 'conectado' ? "bg-emerald-400" :
                   verifyState.status === 'consultando' ? "bg-amber-400 animate-ping" :
-                  verifyState.status === 'error' ? "bg-red-400 shadow-[0_0_8px_rgba(248,113,113,0.5)]" :
-                  verifyState.status === 'modo_basico' ? "bg-amber-500" :
-                  "bg-gray-600"
+                  verifyState.status === 'error' ? "bg-red-400" :
+                  verifyState.status === 'modo_basico' ? "bg-amber-500" : "bg-gray-600"
                 )} />
                 <span className={cn(
                   "text-xs font-bold font-mono",
                   verifyState.status === 'conectado' ? "text-emerald-400" :
                   verifyState.status === 'consultando' ? "text-amber-400" :
                   verifyState.status === 'error' ? "text-red-400" :
-                  verifyState.status === 'modo_basico' ? "text-amber-500" :
-                  "text-gray-400"
+                  verifyState.status === 'modo_basico' ? "text-amber-500" : "text-gray-400"
                 )}>
                   {verifyState.status === 'conectado' ? 'Conectado' :
                    verifyState.status === 'consultando' ? 'Consultando' :
                    verifyState.status === 'error' ? 'Error' :
-                   verifyState.status === 'modo_basico' ? 'Modo básico' :
-                   'Sin iniciar'}
+                   verifyState.status === 'modo_basico' ? 'Modo básico' : 'Sin iniciar'}
                 </span>
               </div>
             </div>
-            <div>
-              <p className="text-[10px] text-gray-500 uppercase font-semibold">Fuente del análisis</p>
-              <p className="text-xs font-mono font-semibold text-white mt-1">
-                {verifyState.source}
-              </p>
-            </div>
           </div>
 
-          {/* Col 2: Query Info */}
           <div className="bg-gray-900/30 p-3 rounded-lg border border-gray-800/60 space-y-1">
             <p className="text-[10px] text-gray-500 uppercase font-semibold mb-2">Última consulta realizada</p>
             <div className="flex justify-between text-xs font-mono text-gray-400">
-              <span>Símbolo:</span>
-              <span className="text-white font-semibold">{verifyState.symbol || '—'}</span>
-            </div>
-            <div className="flex justify-between text-xs font-mono text-gray-400">
-              <span>Hora:</span>
-              <span className="text-white">{verifyState.timestamp || '—'}</span>
-            </div>
-            <div className="flex justify-between text-xs font-mono text-gray-400">
-              <span>Endpoint:</span>
-              <span className="text-white truncate max-w-[150px]">{verifyState.endpoint || '—'}</span>
+              <span>Símbolo:</span><span className="text-white">{verifyState.symbol || '—'}</span>
             </div>
             <div className="flex justify-between text-xs font-mono text-gray-400">
               <span>Latencia:</span>
-              <span className={cn(
-                "text-white",
-                verifyState.latency !== null && (verifyState.latency > 3000 ? "text-amber-400" : "text-emerald-400")
-              )}>
-                {verifyState.latency !== null ? `${verifyState.latency} ms` : '—'}
-              </span>
-            </div>
-            <div className="flex justify-between text-xs font-mono text-gray-400">
-              <span>Respuesta HTTP:</span>
-              <span className={cn(
-                "text-white font-semibold",
-                verifyState.httpStatus === 200 ? "text-emerald-400" : verifyState.httpStatus ? "text-red-400" : ""
-              )}>
-                {verifyState.httpStatus !== null ? `${verifyState.httpStatus}` : '—'}
+              <span className={cn("text-white", verifyState.latency && verifyState.latency > 3000 ? "text-amber-400" : "text-emerald-400")}>
+                {verifyState.latency ? `${verifyState.latency} ms` : '—'}
               </span>
             </div>
           </div>
 
-          {/* Col 3: Python Results */}
           <div className="bg-gray-900/30 p-3 rounded-lg border border-gray-800/60 space-y-1">
-            <p className="text-[10px] text-gray-500 uppercase font-semibold mb-2">Resultado recibido desde Python</p>
+            <p className="text-[10px] text-gray-500 uppercase font-semibold mb-2">Resultado Python</p>
             {verifyState.status === 'conectado' && verifyState.data ? (
               <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-[11px] font-mono">
                 <div className="text-gray-400">Acción:</div>
-                <div className={cn(
-                  "font-bold text-right",
-                  verifyState.data.action === 'BUY' ? 'text-emerald-400' :
-                  verifyState.data.action === 'SELL' ? 'text-red-400' :
-                  'text-amber-400'
-                )}>{verifyState.data.action || '—'}</div>
-
-                <div className="text-gray-400 text-ellipsis overflow-hidden whitespace-nowrap">Label:</div>
-                <div className="text-white text-right text-ellipsis overflow-hidden whitespace-nowrap" title={verifyState.data.label}>
-                  {verifyState.data.label || '—'}
-                </div>
-
+                <div className={cn("font-bold text-right", verifyState.data.action === 'BUY' ? 'text-emerald-400' : verifyState.data.action === 'SELL' ? 'text-red-400' : 'text-amber-400')}>{verifyState.data.action}</div>
                 <div className="text-gray-400">Confianza:</div>
-                <div className="text-white text-right">{verifyState.data.confidence !== undefined ? `${verifyState.data.confidence}%` : '—'}</div>
-
-                <div className="text-gray-400">Régimen:</div>
-                <div className="text-white text-right truncate" title={verifyState.data.market_regime}>{verifyState.data.market_regime || '—'}</div>
-
-                <div className="text-gray-400">VaR 95%:</div>
-                <div className="text-white text-right">{verifyState.data.var_95 !== undefined ? `${(verifyState.data.var_95 * 100).toFixed(2)}%` : '—'}</div>
-
-                <div className="text-gray-400">Predicción ML:</div>
-                <div className="text-white text-right">{verifyState.data.ml_prediction !== undefined ? `${(verifyState.data.ml_prediction * 100).toFixed(2)}%` : '—'}</div>
-
-                <div className="text-gray-400">Graham passed:</div>
-                <div className={cn(
-                  "font-semibold text-right",
-                  verifyState.data.graham_passed ? "text-emerald-400" : "text-red-400"
-                )}>{verifyState.data.graham_passed ? 'Sí' : 'No'}</div>
+                <div className="text-white text-right">{verifyState.data.confidence}%</div>
               </div>
             ) : (
-              <div className="flex items-center justify-center h-24 text-xs text-gray-500 font-mono italic">
-                {verifyState.status === 'consultando' ? 'Obteniendo resultados...' : 'Sin datos de Python'}
-              </div>
+              <div className="flex items-center justify-center h-12 text-xs text-gray-500 font-mono italic">Sin datos</div>
             )}
           </div>
         </div>
@@ -675,226 +354,31 @@ export function ScreenerClient() {
 
       {/* Category tabs */}
       <div className="flex items-center gap-1 flex-wrap">
-        {categories.map((cat) => {
-          const count = cat.symbols.length
-          return (
-            <button
-              key={cat.id}
-              onClick={() => {
-                setCategory(cat.id)
-                setSelectedSymbol(null)
-              }}
-              className={cn(
-                'px-3 py-1.5 text-sm font-medium rounded-lg transition-all',
-                category === cat.id
-                  ? 'bg-emerald-500 text-white'
-                  : 'text-gray-400 hover:text-white bg-gray-800/50 hover:bg-gray-800'
-              )}
-            >
-              {cat.name}
-              <span className={cn('ml-1 text-xs', category === cat.id ? 'opacity-70' : 'opacity-50')}>{count}</span>
-            </button>
-          )
-        })}
+        {categories.map((cat) => (
+          <button
+            key={cat.id}
+            onClick={() => { setCategory(cat.id); setSelectedSymbol(null) }}
+            className={cn('px-3 py-1.5 text-sm font-medium rounded-lg transition-all', category === cat.id ? 'bg-emerald-500 text-white' : 'text-gray-400 hover:text-white bg-gray-800/50')}
+          >
+            {cat.name} <span className={cn('ml-1 text-xs', category === cat.id ? 'opacity-70' : 'opacity-50')}>{cat.symbols.length}</span>
+          </button>
+        ))}
       </div>
 
       {/* Controls */}
       <div className="flex items-center gap-3 flex-wrap">
         <div className="relative flex-1 max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar símbolo..."
-            className="w-full pl-9 pr-4 py-2 bg-gray-800/50 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-600 outline-none focus:border-emerald-500"
-          />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar símbolo..." className="w-full pl-9 pr-4 py-2 bg-gray-800/50 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-600 outline-none focus:border-emerald-500" />
         </div>
         <div className="flex items-center gap-1">
-          {([
-            { key: 'all', label: 'Todos' },
-            { key: 'opportunities', label: 'Señales' },
-            { key: 'warnings', label: 'Alertas' },
-          ] as const).map(f => (
-            <button
-              key={f.key}
-              onClick={() => setFilter(f.key)}
-              className={cn(
-                'px-3 py-1.5 text-sm font-medium rounded-lg transition-all',
-                filter === f.key
-                  ? f.key === 'opportunities' ? 'bg-emerald-500 text-white'
-                    : f.key === 'warnings' ? 'bg-red-500 text-white'
-                    : 'bg-gray-700 text-white'
-                  : 'text-gray-400 hover:text-white bg-gray-800/50 hover:bg-gray-800'
-              )}
-            >
+          {([ { key: 'all', label: 'Todos' }, { key: 'opportunities', label: 'Señales' }, { key: 'warnings', label: 'Alertas' } ] as const).map(f => (
+            <button key={f.key} onClick={() => setFilter(f.key)} className={cn('px-3 py-1.5 text-sm font-medium rounded-lg transition-all', filter === f.key ? (f.key === 'opportunities' ? 'bg-emerald-500 text-white' : f.key === 'warnings' ? 'bg-red-500 text-white' : 'bg-gray-700 text-white') : 'text-gray-400 hover:text-white bg-gray-800/50')}>
               {f.label}
             </button>
           ))}
         </div>
       </div>
-
-      {/* Detail Panel */}
-      {selectedResult && (
-        <div className="p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/5 space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-gray-800 flex items-center justify-center">
-                <span className="text-sm font-bold text-gray-400">{selectedResult.symbol.slice(0, 3)}</span>
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <p className="font-mono font-semibold text-white">{selectedResult.symbol}</p>
-                  
-                  {/* Status Badge */}
-                  {quantLoading ? (
-                    <span className="flex items-center gap-1 text-[9px] bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded border border-amber-500/20 animate-pulse">
-                      <Loader2 className="w-2.5 h-2.5 animate-spin" />
-                      Motor Cuant...
-                    </span>
-                  ) : quantError || !quantAnalysis ? (
-                    <span className="text-[9px] bg-gray-800/40 text-gray-400 px-2 py-0.5 rounded border border-gray-700 font-medium">
-                      Modo básico: motor cuant no disponible
-                    </span>
-                  ) : (
-                    <span className="text-[9px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/20 font-semibold uppercase tracking-wider">
-                      Motor Cuántico Conectado
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs text-gray-500">{selectedResult.name}</p>
-              </div>
-            </div>
-            <Link
-              href={`/analysis?symbol=${selectedResult.symbol}&market=${selectedResult.market}`}
-              className="px-3 py-1.5 text-xs font-medium bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors"
-            >
-              Ver gráfico →
-            </Link>
-          </div>
-
-          {/* Quant Engine Metrics */}
-          {!quantLoading && !quantError && quantAnalysis ? (
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div className="bg-gray-800/50 rounded-lg p-2">
-                  <p className="text-[10px] text-gray-500 uppercase">Recomendación Cuant</p>
-                  <p className={cn(
-                    'text-xs font-bold leading-tight mt-0.5',
-                    quantAnalysis.action === 'BUY' ? 'text-emerald-400' 
-                      : quantAnalysis.action === 'SELL' ? 'text-red-400' 
-                      : 'text-amber-400'
-                  )}>
-                    {quantAnalysis.label}
-                  </p>
-                  <p className="text-[9px] text-gray-500">Confianza: {quantAnalysis.confidence}%</p>
-                </div>
-                <div className="bg-gray-800/50 rounded-lg p-2">
-                  <p className="text-[10px] text-gray-500 uppercase">Régimen de Mercado</p>
-                  <p className="text-sm font-mono font-semibold text-white mt-0.5">{quantAnalysis.market_regime}</p>
-                </div>
-                <div className="bg-gray-800/50 rounded-lg p-2">
-                  <p className="text-[10px] text-gray-500 uppercase">Predicción ML (Arima)</p>
-                  <p className="text-sm font-mono font-semibold text-white mt-0.5">
-                    {quantAnalysis.ml_prediction !== undefined ? `${(quantAnalysis.ml_prediction * 100).toFixed(2)}%` : '—'}
-                  </p>
-                </div>
-                <div className="bg-gray-800/50 rounded-lg p-2">
-                  <p className="text-[10px] text-gray-500 uppercase">Riesgo VaR 1D (GARCH)</p>
-                  <p className={cn(
-                    'text-sm font-mono font-semibold mt-0.5',
-                    quantAnalysis.var_95 > 0.05 ? 'text-red-400' : 'text-emerald-400'
-                  )}>
-                    {quantAnalysis.var_95 !== undefined ? `${(quantAnalysis.var_95 * 100).toFixed(2)}%` : '—'}
-                  </p>
-                </div>
-              </div>
-
-              {/* Graham Filter */}
-              <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-800/50 flex flex-col gap-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-gray-500 uppercase">Filtro de Graham (Margen de Seguridad):</span>
-                  <span className={cn(
-                    'text-[10px] font-bold px-1.5 py-0.5 rounded leading-none',
-                    quantAnalysis.graham_passed ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
-                      : 'bg-red-500/10 text-red-400 border border-red-500/20'
-                  )}>
-                    {quantAnalysis.graham_passed ? 'APROBADO' : 'RECHAZADO'}
-                  </span>
-                </div>
-                <p className="text-xs text-gray-400">{quantAnalysis.graham_reason || '—'}</p>
-              </div>
-
-              {/* XAI Explanation */}
-              <div className="bg-emerald-500/5 rounded-lg p-3 border border-emerald-500/10 space-y-1">
-                <p className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider">Explicación del Motor (XAI)</p>
-                <p className="text-xs text-gray-300 leading-relaxed font-sans">{quantAnalysis.xai_explanation}</p>
-              </div>
-            </div>
-          ) : (
-            /* Fallback regular TS indicators panel */
-            <>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div className="bg-gray-800/50 rounded-lg p-2">
-                  <p className="text-[10px] text-gray-500 uppercase">Precio</p>
-                  {selectedResult.noData || selectedResult.price === null ? (
-                    <p className="text-sm font-mono font-semibold text-gray-500">—</p>
-                  ) : (
-                    <div className="flex flex-col">
-                      <p className="text-sm font-mono font-semibold text-white">${selectedResult.price.toFixed(2)}</p>
-                      {selectedResult.isFallback && (
-                        <span className="text-[8px] text-amber-500 font-semibold uppercase tracking-wider leading-none mt-0.5">Cierre anterior</span>
-                      )}
-                    </div>
-                  )}
-                </div>
-                <div className="bg-gray-800/50 rounded-lg p-2">
-                  <p className="text-[10px] text-gray-500 uppercase">Cambio</p>
-                  {selectedResult.noData || selectedResult.changePercent === null ? (
-                    <p className="text-sm font-mono font-semibold text-gray-500">—</p>
-                  ) : (
-                    <p className={cn('text-sm font-mono font-semibold', selectedResult.changePercent >= 0 ? 'text-emerald-400' : 'text-red-400')}>
-                      {selectedResult.changePercent >= 0 ? '+' : ''}{selectedResult.changePercent.toFixed(2)}%
-                    </p>
-                  )}
-                </div>
-                <div className="bg-gray-800/50 rounded-lg p-2">
-                  <p className="text-[10px] text-gray-500 uppercase">RSI (14)</p>
-                  {selectedResult.noData || selectedResult.rsi === null ? (
-                    <p className="text-sm font-mono font-semibold text-gray-500">—</p>
-                  ) : (
-                    <p className={cn('text-sm font-mono font-semibold', selectedResult.rsiColor)}>{selectedResult.rsi.toFixed(1)}</p>
-                  )}
-                </div>
-                <div className="bg-gray-800/50 rounded-lg p-2">
-                  <p className="text-[10px] text-gray-500 uppercase">MACD</p>
-                  {selectedResult.noData || selectedResult.macdSignal === 'Sin datos' ? (
-                    <p className="text-sm font-mono font-semibold text-gray-500">—</p>
-                  ) : (
-                    <p className={cn('text-sm font-mono font-semibold', selectedResult.macdColor)}>{selectedResult.macdSignal}</p>
-                  )}
-                </div>
-              </div>
-              {selectedResult.suggestions.length > 0 && (
-                <div className="space-y-1">
-                  <p className="text-[10px] text-gray-500 uppercase">Señales detectadas</p>
-                  {selectedResult.suggestions.map((s, i) => (
-                    <div key={i} className={cn(
-                      'flex items-center gap-2 text-xs px-2 py-1 rounded',
-                      s.type === 'opportunity' ? 'bg-emerald-500/10 text-emerald-300'
-                        : s.type === 'warning' ? 'bg-red-500/10 text-red-300'
-                        : 'bg-gray-800/50 text-gray-300'
-                    )}>
-                      <ChevronRight className="w-3 h-3 flex-shrink-0" />
-                      <span className="font-medium">{s.label}:</span>
-                      <span className="text-gray-400">{s.description}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </>
-          )}
-        </div>
-      )}
 
       {/* Table */}
       <div className="glass rounded-xl overflow-hidden">
@@ -903,25 +387,18 @@ export function ScreenerClient() {
             <thead>
               <tr className="border-b border-gray-800">
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Activo</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Score</th>
                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Precio</th>
                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Cambio %</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Quant</th>
                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">RSI</th>
                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">MACD</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">vs MA20</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">vs MA50</th>
                 <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Señales</th>
                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-800/50">
-              {(scanLoading || quotesLoading) && (
-                <tr>
-                  <td colSpan={9} className="py-12 text-center">
-                    <Loader2 className="w-5 h-5 text-emerald-400 animate-spin mx-auto" />
-                  </td>
-                </tr>
-              )}
-              {!scanLoading && !quotesLoading && filtered.map((r) => (
+              {!scanLoading && filtered.map((r) => (
                 <tr
                   key={r.symbol}
                   onClick={() => handleSelectSymbol(r.symbol)}
@@ -942,99 +419,49 @@ export function ScreenerClient() {
                     </div>
                   </td>
                   <td className="px-4 py-3 text-right font-mono font-semibold">
-                    {r.noData || r.price === null ? (
-                      <span className="text-gray-500">—</span>
-                    ) : (
-                      <div className="flex flex-col items-end">
-                        <span className="text-white">${r.price.toFixed(2)}</span>
-                        {r.isFallback && (
-                          <span className="text-[9px] text-amber-500 font-medium font-sans">Cierre anterior</span>
-                        )}
-                      </div>
-                    )}
+                    <span className={cn(r.finalScore > 60 ? 'text-emerald-400' : r.finalScore < 40 ? 'text-red-400' : 'text-gray-300')}>
+                      {r.finalScore.toFixed(0)}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-right font-mono font-semibold">
+                    {r.noData || r.price === null ? <span className="text-gray-500">—</span> : <span className="text-white">${r.price.toFixed(2)}</span>}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    {r.noData || r.changePercent === null ? (
-                      <span className="text-gray-500">—</span>
-                    ) : (
+                    {r.noData || r.changePercent === null ? <span className="text-gray-500">—</span> : (
                       <span className={cn('flex items-center justify-end gap-0.5 font-mono font-semibold text-sm', r.changePercent >= 0 ? 'text-emerald-400' : 'text-red-400')}>
-                        {r.changePercent >= 0 ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
                         {r.changePercent >= 0 ? '+' : ''}{r.changePercent.toFixed(2)}%
                       </span>
                     )}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    {r.noData || r.rsi === null ? (
-                      <span className="text-gray-500">—</span>
-                    ) : (
-                      <div className="inline-flex items-center justify-end gap-1">
-                        <span className={cn('font-mono font-semibold text-sm', r.rsiColor)}>
-                          {r.rsi.toFixed(1)}
-                        </span>
-                        <span className={cn('text-[10px]', r.rsiColor)}>{r.rsiSignal}</span>
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    {r.noData || r.macdSignal === 'Sin datos' ? (
-                      <span className="text-gray-500">—</span>
-                    ) : (
-                      <span className={cn('text-xs font-semibold', r.macdColor)}>{r.macdSignal}</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    {r.noData || r.ma20 === null || r.priceVsMA20 === null ? (
-                      <span className="text-gray-500">—</span>
-                    ) : (
-                      <span className={cn('text-xs font-semibold', r.priceVsMA20 === 'above' ? 'text-emerald-400' : 'text-red-400')}>
-                        {r.priceVsMA20 === 'above' ? '↑' : '↓'} {r.ma20.toFixed(0)}
+                    {r.quant ? (
+                      <span className={cn('text-xs font-bold px-2 py-1 rounded', r.quant.action === 'BUY' ? 'bg-emerald-500/20 text-emerald-400' : r.quant.action === 'SELL' ? 'bg-red-500/20 text-red-400' : 'bg-gray-800 text-gray-400')}>
+                        {r.quant.action}
                       </span>
+                    ) : (
+                      <span className="text-[10px] text-gray-600">N/A</span>
                     )}
                   </td>
+                  <td className="px-4 py-3 text-right font-mono">
+                    {r.noData || r.rsi === null ? <span className="text-gray-500">—</span> : <span className={cn('text-sm font-semibold', r.rsi > 70 ? 'text-red-400' : r.rsi < 30 ? 'text-emerald-400' : 'text-gray-400')}>{r.rsi.toFixed(1)}</span>}
+                  </td>
                   <td className="px-4 py-3 text-right">
-                    {r.noData || r.ma50 === null || r.priceVsMA50 === null ? (
-                      <span className="text-gray-500">—</span>
-                    ) : (
-                      <span className={cn('text-xs font-semibold', r.priceVsMA50 === 'above' ? 'text-emerald-400' : 'text-red-400')}>
-                        {r.priceVsMA50 === 'above' ? '↑' : '↓'} {r.ma50.toFixed(0)}
-                      </span>
-                    )}
+                    {r.noData || r.macdSignal === 'Sin datos' ? <span className="text-gray-500">—</span> : <span className={cn('text-xs font-semibold', r.macdSignal.includes('alcista') || r.macdSignal === 'Positivo' ? 'text-emerald-400' : 'text-red-400')}>{r.macdSignal}</span>}
                   </td>
                   <td className="px-4 py-3 text-center">
-                    {r.noData ? (
-                      <span className="text-gray-500">—</span>
-                    ) : r.suggestions.length > 0 ? (
-                      <span className={cn(
-                        'inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium rounded-full',
-                        r.suggestions.some(s => s.type === 'warning')
-                          ? 'bg-red-500/10 text-red-400'
-                          : 'bg-emerald-500/10 text-emerald-400'
-                      )}>
-                        {r.suggestions.length} señal{r.suggestions.length > 1 ? 'es' : ''}
+                    {r.noData ? <span className="text-gray-500">—</span> : r.suggestions.length > 0 ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium rounded-full bg-gray-800 text-gray-300">
+                        {r.suggestions.length} señal(es)
                       </span>
-                    ) : (
-                      <span className="text-xs text-gray-600">—</span>
-                    )}
+                    ) : <span className="text-xs text-gray-600">—</span>}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <Link
-                      href={`/analysis?symbol=${r.symbol}&market=${r.market}`}
-                      onClick={(e) => e.stopPropagation()}
-                      className="text-gray-500 hover:text-emerald-400 transition-colors"
-                    >
+                    <Link href={`/analysis?symbol=${r.symbol}&market=${r.market}`} onClick={(e) => e.stopPropagation()} className="text-gray-500 hover:text-emerald-400 transition-colors">
                       <ArrowRightLeft className="w-4 h-4" />
                     </Link>
                   </td>
                 </tr>
               ))}
-              {!scanLoading && !quotesLoading && filtered.length === 0 && (
-                <tr>
-                  <td colSpan={9} className="py-12 text-center">
-                    <AlertCircle className="w-5 h-5 text-gray-600 mx-auto mb-2" />
-                    <p className="text-sm text-gray-500">No se encontraron resultados</p>
-                  </td>
-                </tr>
-              )}
             </tbody>
           </table>
         </div>
@@ -1042,4 +469,3 @@ export function ScreenerClient() {
     </div>
   )
 }
-

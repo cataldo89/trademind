@@ -4,12 +4,14 @@ status: "operational-source-of-truth"
 owner: "Carlos / TradeMind"
 created_at: "2026-05-04"
 updated_at: "2026-05-10"
-recommended_path: "ANTIGRAVITY_CONTEXT.md"
+recommended_path: "LLM_CONTEXT.md"
 editable_by: "human-or-agent-with-evidence"
 purpose: "Orientar a cualquier IA para estabilizar TradeMind sin confundir vision futura con estado real del codigo."
 ---
 
 # TradeMind - Contexto canonico para agentes IA
+
+El entorno operativo principal es VS Code. Las reglas de ejecución local, puertos fijos y pruebas visuales se encuentran en `AGENTS.md` y deben respetarse por cualquier agente IA.
 
 ## 0. Regla principal
 
@@ -31,14 +33,14 @@ La funcion de este archivo es mantener esa separacion para que ninguna IA constr
 Toda IA debe leer en este orden:
 
 1. `AGENTS.md`
-2. `ANTIGRAVITY_CONTEXT.md`
+2. `LLM_CONTEXT.md`
 3. `ESTADO_ACTUAL_PROYECTO.md`
 4. `ESTRUCTURA_PROYECTO.md`
 5. `soluciones_tecnicas.md`
 6. `docs/runbooks/problemas-escalamiento-errores-frontend-backend.md`
 7. `SEGURIDAD.md`
 8. `README.md` si necesita ejecutar localmente
-9. `GEMINI.md` solo para vision futura
+9. `LLM.md` solo para vision futura
 10. `MEMORY.md` solo para filosofia e historia del producto
 
 ## 2. Roles documentales
@@ -46,13 +48,13 @@ Toda IA debe leer en este orden:
 | Documento | Autoridad | Uso correcto |
 |---|---|---|
 | `AGENTS.md` | Operativa | GitHub oficial, Vercel, orden de lectura, reglas de deploy |
-| `ANTIGRAVITY_CONTEXT.md` | Canónica para agentes | Separar realidad, vision, gaps y reglas de trabajo |
+| `LLM_CONTEXT.md` | Canónica para agentes | Separar realidad, vision, gaps y reglas de trabajo |
 | `ESTADO_ACTUAL_PROYECTO.md` | Tecnica actual | Estado real auditado, validaciones y brechas |
 | `ESTRUCTURA_PROYECTO.md` | Mapa | Ubicar archivos; no usar como prueba de funcionalidad |
 | `soluciones_tecnicas.md` | Runbook historico | Problemas ya resueltos y patrones que no deben revertirse |
 | `docs/runbooks/problemas-escalamiento-errores-frontend-backend.md` | Incidentes/escala | Errores actuales frontend/backend, causas raiz y riesgos futuros |
 | `SEGURIDAD.md` | Seguridad | Secretos, service role, scripts, pre-push |
-| `GEMINI.md` | Vision | Roadmap aspiracional; no estado real |
+| `LLM.md` | Vision | Roadmap aspiracional AI-native; no estado real |
 | `MEMORY.md` | Memoria historica | Identidad, filosofia y estilo de producto |
 | `README.md` | Entrada publica | Stack, ejecucion local y documentacion maestra |
 
@@ -123,7 +125,7 @@ docs/runbooks/problemas-escalamiento-errores-frontend-backend.md
 
 ```text
 [ ] Leer AGENTS.md
-[ ] Leer ANTIGRAVITY_CONTEXT.md
+[ ] Leer LLM_CONTEXT.md
 [ ] Leer ESTADO_ACTUAL_PROYECTO.md
 [ ] Leer ESTRUCTURA_PROYECTO.md
 [ ] Leer soluciones_tecnicas.md
@@ -190,7 +192,7 @@ docs/runbooks/problemas-escalamiento-errores-frontend-backend.md
 
 ## 9. Vision futura permitida, pero no asumida
 
-`GEMINI.md` puede hablar de:
+`LLM.md` puede hablar de:
 
 - LangGraph.
 - MCP completo.
@@ -235,7 +237,7 @@ Trabaja en modo estabilizacion.
 
 Antes de modificar codigo, lee:
 1. AGENTS.md
-2. ANTIGRAVITY_CONTEXT.md
+2. LLM_CONTEXT.md
 3. ESTADO_ACTUAL_PROYECTO.md
 4. ESTRUCTURA_PROYECTO.md
 5. soluciones_tecnicas.md

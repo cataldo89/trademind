@@ -59,5 +59,21 @@ def calculate_var_garch(symbol: str, timeframe: str):
         "annualized_vol": ann_vol / 100.0
     }
 
+try:
+    from time_series_models import (
+        predict_direction_arima,
+        predict_direction_sarima,
+        predict_direction_marima,
+    )
+except Exception:
+    def predict_direction_arima(symbol: str):
+        return {"status": "error", "message": "time_series_models unavailable"}
 
-
+    def predict_direction_sarima(symbol: str):
+        return {"status": "error", "message": "time_series_models unavailable"}
+
+    def predict_direction_marima(symbols: list):
+        return {"status": "error", "message": "time_series_models unavailable"}
+
+
+

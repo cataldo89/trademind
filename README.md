@@ -15,15 +15,14 @@ Antes de modificar el proyecto, leer:
 | Documento | Uso |
 |---|---|
 | `AGENTS.md` | Reglas operativas, GitHub oficial, Vercel y orden obligatorio |
-| `ANTIGRAVITY_CONTEXT.md` | Fuente canonica para agentes IA |
+| `LLM_CONTEXT.md` | Fuente canonica para agentes IA |
 | `ESTADO_ACTUAL_PROYECTO.md` | Estado tecnico auditado |
 | `ESTRUCTURA_PROYECTO.md` | Mapa del repositorio |
 | `soluciones_tecnicas.md` | Problemas resueltos y patrones obligatorios |
 | `docs/runbooks/problemas-escalamiento-errores-frontend-backend.md` | Errores frontend/backend y riesgos de escalamiento SaaS |
 | `SEGURIDAD.md` | Secretos, credenciales, service role y pre-push |
-| `GEMINI.md` | Roadmap aspiracional |
 | `MEMORY.md` | Memoria historica y filosofia |
-| `CLAUDE.md` | Wrapper para Claude |
+| `LLM.md` | Roadmap aspiracional AI-native |
 
 ## Stack tecnologico
 
@@ -88,7 +87,7 @@ uvicorn main:app --reload --port 8000
 La API cuantitativa queda en:
 
 ```text
-http://localhost:8000
+http://127.0.0.1:8000
 ```
 
 ## Validacion local

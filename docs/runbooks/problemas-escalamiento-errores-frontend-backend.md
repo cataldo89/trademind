@@ -3,7 +3,7 @@
 Fecha de auditoria: 2026-05-10  
 Estado: memoria operativa para IAs y desarrolladores  
 Prioridad: alta  
-Relacion directa: `AGENTS.md`, `ANTIGRAVITY_CONTEXT.md`, `ESTADO_ACTUAL_PROYECTO.md`, `ESTRUCTURA_PROYECTO.md`, `soluciones_tecnicas.md`, `SEGURIDAD.md`
+Relacion directa: `AGENTS.md`, `LLM_CONTEXT.md`, `ESTADO_ACTUAL_PROYECTO.md`, `ESTRUCTURA_PROYECTO.md`, `soluciones_tecnicas.md`, `SEGURIDAD.md`
 
 ## 1. Objetivo
 

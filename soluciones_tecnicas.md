@@ -7,7 +7,7 @@ Este documento centraliza problemas tecnicos complejos encontrados durante el de
 Antes de modificar auth, Supabase, Vercel, Route Handlers, service role, deploy o rutas que conecten frontend/backend, leer:
 
 1. `AGENTS.md`
-2. `ANTIGRAVITY_CONTEXT.md`
+2. `LLM_CONTEXT.md`
 3. `ESTADO_ACTUAL_PROYECTO.md`
 4. `docs/runbooks/problemas-escalamiento-errores-frontend-backend.md`
 5. `SEGURIDAD.md`
@@ -154,8 +154,8 @@ Backend devuelve newBalance y IDs creados
 |---|---|
 | Reglas operativas y deploy | `AGENTS.md` |
 | Realidad tecnica actual | `ESTADO_ACTUAL_PROYECTO.md` |
-| Separacion vision/realidad | `ANTIGRAVITY_CONTEXT.md` |
+| Separacion vision/realidad | `LLM_CONTEXT.md` |
 | Errores frontend/backend y escalamiento | `docs/runbooks/problemas-escalamiento-errores-frontend-backend.md` |
 | Seguridad y secretos | `SEGURIDAD.md` |
-| Vision futura | `GEMINI.md` |
+| Vision futura | `LLM.md` |
 | Memoria historica | `MEMORY.md` |

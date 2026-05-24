@@ -1,11 +1,11 @@
-# TradeMind SaaS 2026 - Guia de Desarrollo Agent-First
+# TradeMind SaaS 2026 - Guia LLM y roadmap AI-native
 
 > ADVERTENCIA PARA AGENTES IA: este documento es vision futura y roadmap aspiracional. No asumir que LangGraph completo, MCP real, Edge AI generalizado, autoencoders, SHAP/LIME o algoritmos geneticos estan implementados de forma estable.
 
 Para realidad tecnica actual leer:
 
 1. `AGENTS.md`
-2. `ANTIGRAVITY_CONTEXT.md`
+2. `LLM_CONTEXT.md`
 3. `ESTADO_ACTUAL_PROYECTO.md`
 4. `docs/runbooks/problemas-escalamiento-errores-frontend-backend.md`
 5. `soluciones_tecnicas.md`
@@ -13,7 +13,7 @@ Para realidad tecnica actual leer:
 
 ## 1. Rol de este documento
 
-`GEMINI.md` define direccion aspiracional para evolucionar TradeMind hacia una plataforma SaaS AI-native. No es auditoria del codigo actual.
+`LLM.md` define la direccion aspiracional para evolucionar TradeMind hacia una plataforma SaaS AI-native. No es auditoria del codigo actual ni depende de una marca, proveedor o agente especifico.
 
 Si este archivo contradice codigo, tests o `ESTADO_ACTUAL_PROYECTO.md`, manda la evidencia tecnica actual.
 

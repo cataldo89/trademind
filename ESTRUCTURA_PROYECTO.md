@@ -9,15 +9,14 @@ Regla: inventario no equivale a funcionalidad. Para estado real leer `ESTADO_ACT
 | Archivo | Rol |
 |---|---|
 | `AGENTS.md` | Reglas operativas, GitHub oficial, Vercel, orden de lectura obligatorio |
-| `ANTIGRAVITY_CONTEXT.md` | Fuente operativa para agentes IA y separacion entre vision, realidad y gaps |
+| `LLM_CONTEXT.md` | Fuente operativa para agentes IA y separacion entre vision, realidad y gaps |
 | `ESTADO_ACTUAL_PROYECTO.md` | Auditoria tecnica actual del codigo, validaciones y brechas |
 | `ESTRUCTURA_PROYECTO.md` | Mapa de archivos y carpetas del repositorio |
 | `soluciones_tecnicas.md` | Problemas resueltos y patrones tecnicos obligatorios |
 | `docs/runbooks/problemas-escalamiento-errores-frontend-backend.md` | Runbook de fallas frontend/backend y riesgos de escalamiento SaaS |
 | `SEGURIDAD.md` | Reglas de secretos, service role, scripts y checklist pre-push |
 | `MEMORY.md` | Memoria historica y filosofia del producto |
-| `GEMINI.md` | Vision futura y roadmap aspiracional AI-native |
-| `CLAUDE.md` | Wrapper de lectura para Claude |
+| `LLM.md` | Vision futura y roadmap aspiracional AI-native |
 | `README.md` | Entrada publica, stack y ejecucion local |
 
 ## 2. Raiz del repo `trademind/`

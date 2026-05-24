@@ -9,7 +9,7 @@ Metodo: lectura de archivos, auditoria estatica de rutas frontend/backend y ejec
 Antes de modificar codigo, leer:
 
 1. `AGENTS.md`
-2. `ANTIGRAVITY_CONTEXT.md`
+2. `LLM_CONTEXT.md`
 3. `ESTADO_ACTUAL_PROYECTO.md`
 4. `ESTRUCTURA_PROYECTO.md`
 5. `soluciones_tecnicas.md`
