@@ -483,7 +483,7 @@ export function ScreenerClient() {
                 <div className="flex flex-col">
                   <p className="text-sm font-mono font-semibold text-white">${selectedResult.price.toFixed(2)}</p>
                   {selectedResult.isFallback && (
-                    <span className="text-[8px] text-amber-500 font-semibold uppercase tracking-wider leading-none mt-0.5">Cierre Anterior</span>
+                    <span className="text-[8px] text-amber-500 font-semibold uppercase tracking-wider leading-none mt-0.5">Cierre anterior</span>
                   )}
                 </div>
               )}
@@ -587,7 +587,7 @@ export function ScreenerClient() {
                       <div className="flex flex-col items-end">
                         <span className="text-white">${r.price.toFixed(2)}</span>
                         {r.isFallback && (
-                          <span className="text-[9px] text-amber-500 font-medium font-sans">Último cierre</span>
+                          <span className="text-[9px] text-amber-500 font-medium font-sans">Cierre anterior</span>
                         )}
                       </div>
                     )}
