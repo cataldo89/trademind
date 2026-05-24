@@ -6,7 +6,7 @@ import { getCategorizedZestySymbols } from '@/lib/market-data'
 import { Market, Candle } from '@/types'
 import { cn } from '@/lib/utils'
 import {
-  ArrowUp, ArrowDown, ArrowRightLeft, TrendingUp, TrendingDown,
+  ArrowUp, ArrowDown, ArrowRightLeft,
   AlertCircle, Loader2, Search, ChevronRight, Activity, Eye
 } from 'lucide-react'
 import Link from 'next/link'
@@ -18,19 +18,21 @@ interface ScanResult {
   symbol: string
   name: string
   market: Market
-  price: number
-  changePercent: number
-  volume: number
-  rsi: number
+  price: number | null
+  changePercent: number | null
+  volume: number | null
+  rsi: number | null
   rsiSignal: string
   rsiColor: string
   macdSignal: string
   macdColor: string
-  ma20: number
-  ma50: number
-  priceVsMA20: 'above' | 'below'
-  priceVsMA50: 'above' | 'below'
+  ma20: number | null
+  ma50: number | null
+  priceVsMA20: 'above' | 'below' | null
+  priceVsMA50: 'above' | 'below' | null
   suggestions: Suggestion[]
+  noData?: boolean
+  isFallback?: boolean
 }
 
 interface Suggestion {
@@ -47,29 +49,45 @@ async function fetchCandles(symbol: string, market: Market): Promise<Candle[]> {
   return data.data || []
 }
 
-async function fetchQuote(symbol: string, market: Market): Promise<{ symbol: string; price: number; changePercent: number; volume: number; name: string } | null> {
-  const res = await fetch(`/api/market/quote?symbol=${encodeURIComponent(symbol)}&market=${market}`)
-  if (!res.ok) return null
-  const data = await res.json()
-  const q = data.data || data
-  if (!q?.symbol) return null
-  return {
-    symbol,
-    price: q.price || q.regularMarketPrice || 0,
-    changePercent: q.changePercent || q.regularMarketChangePercent || 0,
-    volume: q.volume || q.regularMarketVolume || 0,
-    name: q.name || q.shortName || q.longName || symbol,
+function analyzeSymbol(
+  symbol: string,
+  name: string,
+  market: Market,
+  candles: Candle[],
+  quote: { price: number | null; changePercent: number | null; volume: number | null },
+  noData?: boolean,
+  isFallback?: boolean
+): ScanResult {
+  if (noData || !candles || candles.length === 0) {
+    return {
+      symbol,
+      name,
+      market,
+      price: null,
+      changePercent: null,
+      volume: null,
+      rsi: null,
+      rsiSignal: 'Sin datos',
+      rsiColor: 'text-gray-500',
+      macdSignal: 'Sin datos',
+      macdColor: 'text-gray-500',
+      ma20: null,
+      ma50: null,
+      priceVsMA20: null,
+      priceVsMA50: null,
+      suggestions: [],
+      noData: true,
+      isFallback: false,
+    }
   }
-}
 
-function analyzeSymbol(symbol: string, name: string, market: Market, candles: Candle[], quote: { price: number; changePercent: number; volume: number }): ScanResult {
   const rsi = calculateRSI(candles, 14)
   const macd = calculateMACD(candles)
   const ma20 = calculateSMA(candles, 20)
   const ma50 = calculateSMA(candles, 50)
 
-  const lastRSI = rsi[rsi.length - 1]?.value ?? 50
-  const rsiInterp = interpretRSI(lastRSI)
+  const lastRSI = rsi[rsi.length - 1]?.value ?? null
+  const rsiInterp = lastRSI !== null ? interpretRSI(lastRSI) : { signal: 'Sin datos', color: 'text-gray-500' }
 
   const lastMACD = macd[macd.length - 1]
   const prevMACD = macd[macd.length - 2]
@@ -89,32 +107,37 @@ function analyzeSymbol(symbol: string, name: string, market: Market, candles: Ca
       macdSignal = 'Negativo'
       macdColor = 'text-red-300'
     }
+  } else {
+    macdSignal = 'Sin datos'
+    macdColor = 'text-gray-500'
   }
 
-  const lastMA20 = ma20[ma20.length - 1]?.value ?? 0
-  const lastMA50 = ma50[ma50.length - 1]?.value ?? 0
+  const lastMA20 = ma20[ma20.length - 1]?.value ?? null
+  const lastMA50 = ma50[ma50.length - 1]?.value ?? null
   const price = quote.price
 
-  const priceVsMA20 = price > lastMA20 ? 'above' : 'below'
-  const priceVsMA50 = price > lastMA50 ? 'above' : 'below'
+  const priceVsMA20 = (price !== null && lastMA20 !== null) ? (price > lastMA20 ? 'above' : 'below') : null
+  const priceVsMA50 = (price !== null && lastMA50 !== null) ? (price > lastMA50 ? 'above' : 'below') : null
 
   // Generate suggestions
   const suggestions: Suggestion[] = []
 
-  if (lastRSI < 30) {
-    suggestions.push({
-      type: 'opportunity',
-      label: 'Sobreventa técnica',
-      description: `RSI ${lastRSI.toFixed(1)} — Posible rebote cercano`,
-      icon: 'trending-up',
-    })
-  } else if (lastRSI > 70) {
-    suggestions.push({
-      type: 'warning',
-      label: 'Sobrecompra técnica',
-      description: `RSI ${lastRSI.toFixed(1)} — Posible corrección`,
-      icon: 'trending-down',
-    })
+  if (lastRSI !== null) {
+    if (lastRSI < 30) {
+      suggestions.push({
+        type: 'opportunity',
+        label: 'Sobreventa técnica',
+        description: `RSI ${lastRSI.toFixed(1)} — Posible rebote cercano`,
+        icon: 'trending-up',
+      })
+    } else if (lastRSI > 70) {
+      suggestions.push({
+        type: 'warning',
+        label: 'Sobrecompra técnica',
+        description: `RSI ${lastRSI.toFixed(1)} — Posible corrección`,
+        icon: 'trending-down',
+      })
+    }
   }
 
   if (macdSignal === 'Cruce alcista') {
@@ -149,20 +172,22 @@ function analyzeSymbol(symbol: string, name: string, market: Market, candles: Ca
     })
   }
 
-  if (quote.changePercent < -5) {
-    suggestions.push({
-      type: 'warning',
-      label: 'Caída fuerte',
-      description: `${quote.changePercent.toFixed(1)}% hoy — monitorear`,
-      icon: 'alert',
-    })
-  } else if (quote.changePercent > 5) {
-    suggestions.push({
-      type: 'neutral',
-      label: 'Subida fuerte',
-      description: `${quote.changePercent.toFixed(1)}% hoy — confirmar continuidad`,
-      icon: 'activity',
-    })
+  if (quote.changePercent !== null) {
+    if (quote.changePercent < -5) {
+      suggestions.push({
+        type: 'warning',
+        label: 'Caída fuerte',
+        description: `${quote.changePercent.toFixed(1)}% hoy — monitorear`,
+        icon: 'alert',
+      })
+    } else if (quote.changePercent > 5) {
+      suggestions.push({
+        type: 'neutral',
+        label: 'Subida fuerte',
+        description: `${quote.changePercent.toFixed(1)}% hoy — confirmar continuidad`,
+        icon: 'activity',
+      })
+    }
   }
 
   return {
@@ -182,6 +207,8 @@ function analyzeSymbol(symbol: string, name: string, market: Market, candles: Ca
     priceVsMA20,
     priceVsMA50,
     suggestions,
+    noData: false,
+    isFallback: !!isFallback,
   }
 }
 
@@ -228,11 +255,16 @@ export function ScreenerClient() {
   })
 
   const { data: scanResults = [], isLoading: scanLoading } = useQuery({
-    queryKey: ['screener-scan', category, scanSymbols.map(s => s.symbol)],
+    queryKey: ['screener-scan', category, scanSymbols.map(s => s.symbol), quotes],
     queryFn: async () => {
       const quoteMap = new Map()
       quotes.forEach((q: { symbol: string }) => {
-        if (q) quoteMap.set(q.symbol, q)
+        if (q && q.symbol) {
+          const upper = q.symbol.toUpperCase()
+          quoteMap.set(upper, q)
+          quoteMap.set(upper.replace('.', '-'), q)
+          quoteMap.set(upper.replace('-', '.'), q)
+        }
       })
 
       const results: ScanResult[] = []
@@ -241,8 +273,35 @@ export function ScreenerClient() {
         const chunk = scanSymbols.slice(i, i + concurrency)
         const analyzed = await Promise.all(chunk.map(async (s) => {
           const candles = await fetchCandles(s.symbol, s.market)
-          const quote = quoteMap.get(s.symbol) || { price: 0, changePercent: 0, volume: 0, name: s.name }
-          return analyzeSymbol(s.symbol, s.name, s.market, candles, quote)
+          const searchKey = s.symbol.toUpperCase()
+          const quote = quoteMap.get(searchKey) || quoteMap.get(searchKey.replace('.', '-')) || quoteMap.get(searchKey.replace('-', '.'))
+
+          let price: number | null = quote ? (quote.price || null) : null
+          let changePercent: number | null = quote ? (quote.changePercent ?? null) : null
+          let volume: number | null = quote ? (quote.volume ?? null) : null
+          let name = quote?.name || s.name
+          let isFallback = false
+          let noData = false
+
+          if (price === null || price === 0) {
+            if (candles && candles.length > 0) {
+              const lastCandle = candles[candles.length - 1]
+              price = lastCandle.close
+              if (candles.length > 1) {
+                const prevCandle = candles[candles.length - 2]
+                changePercent = ((price - prevCandle.close) / prevCandle.close) * 100
+              } else {
+                changePercent = 0
+              }
+              volume = lastCandle.volume || 0
+              isFallback = true
+            } else {
+              noData = true
+            }
+          }
+
+          const finalQuote = { price, changePercent, volume }
+          return analyzeSymbol(s.symbol, name, s.market, candles, finalQuote, noData, isFallback)
         }))
         results.push(...analyzed)
       }
@@ -257,9 +316,6 @@ export function ScreenerClient() {
     .flatMap(r => r.suggestions.map(s => ({ ...s, symbol: r.symbol, name: r.name, result: r })))
     .filter(s => s.type !== 'neutral')
 
-  const opportunities = allSuggestions.filter(s => s.type === 'opportunity')
-  const warnings = allSuggestions.filter(s => s.type === 'warning')
-
   const filtered = scanResults
     .filter(r => {
       if (filter === 'opportunities') return r.suggestions.some(s => s.type === 'opportunity')
@@ -273,7 +329,9 @@ export function ScreenerClient() {
     .sort((a, b) => {
       if (a.suggestions.length > b.suggestions.length) return -1
       if (b.suggestions.length > a.suggestions.length) return 1
-      return Math.abs(b.changePercent) - Math.abs(a.changePercent)
+      const aChange = a.changePercent ?? 0
+      const bChange = b.changePercent ?? 0
+      return Math.abs(bChange) - Math.abs(aChange)
     })
 
   const selectedResult = scanResults.find(r => r.symbol === selectedSymbol)
@@ -419,21 +477,42 @@ export function ScreenerClient() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="bg-gray-800/50 rounded-lg p-2">
               <p className="text-[10px] text-gray-500 uppercase">Precio</p>
-              <p className="text-sm font-mono font-semibold text-white">${selectedResult.price.toFixed(2)}</p>
+              {selectedResult.noData || selectedResult.price === null ? (
+                <p className="text-sm font-mono font-semibold text-gray-500">—</p>
+              ) : (
+                <div className="flex flex-col">
+                  <p className="text-sm font-mono font-semibold text-white">${selectedResult.price.toFixed(2)}</p>
+                  {selectedResult.isFallback && (
+                    <span className="text-[8px] text-amber-500 font-semibold uppercase tracking-wider leading-none mt-0.5">Cierre Anterior</span>
+                  )}
+                </div>
+              )}
             </div>
             <div className="bg-gray-800/50 rounded-lg p-2">
               <p className="text-[10px] text-gray-500 uppercase">Cambio</p>
-              <p className={cn('text-sm font-mono font-semibold', selectedResult.changePercent >= 0 ? 'text-emerald-400' : 'text-red-400')}>
-                {selectedResult.changePercent >= 0 ? '+' : ''}{selectedResult.changePercent.toFixed(2)}%
-              </p>
+              {selectedResult.noData || selectedResult.changePercent === null ? (
+                <p className="text-sm font-mono font-semibold text-gray-500">—</p>
+              ) : (
+                <p className={cn('text-sm font-mono font-semibold', selectedResult.changePercent >= 0 ? 'text-emerald-400' : 'text-red-400')}>
+                  {selectedResult.changePercent >= 0 ? '+' : ''}{selectedResult.changePercent.toFixed(2)}%
+                </p>
+              )}
             </div>
             <div className="bg-gray-800/50 rounded-lg p-2">
               <p className="text-[10px] text-gray-500 uppercase">RSI (14)</p>
-              <p className={cn('text-sm font-mono font-semibold', selectedResult.rsiColor)}>{selectedResult.rsi.toFixed(1)}</p>
+              {selectedResult.noData || selectedResult.rsi === null ? (
+                <p className="text-sm font-mono font-semibold text-gray-500">—</p>
+              ) : (
+                <p className={cn('text-sm font-mono font-semibold', selectedResult.rsiColor)}>{selectedResult.rsi.toFixed(1)}</p>
+              )}
             </div>
             <div className="bg-gray-800/50 rounded-lg p-2">
               <p className="text-[10px] text-gray-500 uppercase">MACD</p>
-              <p className={cn('text-sm font-mono font-semibold', selectedResult.macdColor)}>{selectedResult.macdSignal}</p>
+              {selectedResult.noData || selectedResult.macdSignal === 'Sin datos' ? (
+                <p className="text-sm font-mono font-semibold text-gray-500">—</p>
+              ) : (
+                <p className={cn('text-sm font-mono font-semibold', selectedResult.macdColor)}>{selectedResult.macdSignal}</p>
+              )}
             </div>
           </div>
           {selectedResult.suggestions.length > 0 && (
@@ -501,36 +580,69 @@ export function ScreenerClient() {
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-right font-mono text-white font-semibold">
-                    ${r.price.toFixed(2)}
+                  <td className="px-4 py-3 text-right font-mono font-semibold">
+                    {r.noData || r.price === null ? (
+                      <span className="text-gray-500">—</span>
+                    ) : (
+                      <div className="flex flex-col items-end">
+                        <span className="text-white">${r.price.toFixed(2)}</span>
+                        {r.isFallback && (
+                          <span className="text-[9px] text-amber-500 font-medium font-sans">Histórico</span>
+                        )}
+                      </div>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <span className={cn('flex items-center justify-end gap-0.5 font-mono font-semibold text-sm', r.changePercent >= 0 ? 'text-emerald-400' : 'text-red-400')}>
-                      {r.changePercent >= 0 ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
-                      {r.changePercent >= 0 ? '+' : ''}{r.changePercent.toFixed(2)}%
-                    </span>
+                    {r.noData || r.changePercent === null ? (
+                      <span className="text-gray-500">—</span>
+                    ) : (
+                      <span className={cn('flex items-center justify-end gap-0.5 font-mono font-semibold text-sm', r.changePercent >= 0 ? 'text-emerald-400' : 'text-red-400')}>
+                        {r.changePercent >= 0 ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
+                        {r.changePercent >= 0 ? '+' : ''}{r.changePercent.toFixed(2)}%
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <span className={cn('font-mono font-semibold text-sm', r.rsiColor)}>
-                      {r.rsi.toFixed(1)}
-                    </span>
-                    <span className={cn('text-[10px] ml-1', r.rsiColor)}>{r.rsiSignal}</span>
+                    {r.noData || r.rsi === null ? (
+                      <span className="text-gray-500">—</span>
+                    ) : (
+                      <div className="inline-flex items-center justify-end gap-1">
+                        <span className={cn('font-mono font-semibold text-sm', r.rsiColor)}>
+                          {r.rsi.toFixed(1)}
+                        </span>
+                        <span className={cn('text-[10px]', r.rsiColor)}>{r.rsiSignal}</span>
+                      </div>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <span className={cn('text-xs', r.macdColor)}>{r.macdSignal}</span>
+                    {r.noData || r.macdSignal === 'Sin datos' ? (
+                      <span className="text-gray-500">—</span>
+                    ) : (
+                      <span className={cn('text-xs font-semibold', r.macdColor)}>{r.macdSignal}</span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <span className={cn('text-xs', r.priceVsMA20 === 'above' ? 'text-emerald-400' : 'text-red-400')}>
-                      {r.priceVsMA20 === 'above' ? '↑' : '↓'} {r.ma20.toFixed(0)}
-                    </span>
+                    {r.noData || r.ma20 === null || r.priceVsMA20 === null ? (
+                      <span className="text-gray-500">—</span>
+                    ) : (
+                      <span className={cn('text-xs font-semibold', r.priceVsMA20 === 'above' ? 'text-emerald-400' : 'text-red-400')}>
+                        {r.priceVsMA20 === 'above' ? '↑' : '↓'} {r.ma20.toFixed(0)}
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <span className={cn('text-xs', r.priceVsMA50 === 'above' ? 'text-emerald-400' : 'text-red-400')}>
-                      {r.priceVsMA50 === 'above' ? '↑' : '↓'} {r.ma50.toFixed(0)}
-                    </span>
+                    {r.noData || r.ma50 === null || r.priceVsMA50 === null ? (
+                      <span className="text-gray-500">—</span>
+                    ) : (
+                      <span className={cn('text-xs font-semibold', r.priceVsMA50 === 'above' ? 'text-emerald-400' : 'text-red-400')}>
+                        {r.priceVsMA50 === 'above' ? '↑' : '↓'} {r.ma50.toFixed(0)}
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-center">
-                    {r.suggestions.length > 0 ? (
+                    {r.noData ? (
+                      <span className="text-gray-500">—</span>
+                    ) : r.suggestions.length > 0 ? (
                       <span className={cn(
                         'inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium rounded-full',
                         r.suggestions.some(s => s.type === 'warning')

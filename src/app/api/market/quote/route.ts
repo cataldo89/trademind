@@ -15,11 +15,11 @@ const QUOTE_TTL_MS = 30_000
 
 type YahooQuote = Record<string, unknown>
 
-function normalizeQuote(quote: YahooQuote, market: string) {
+function normalizeQuote(quote: YahooQuote, market: string, originalSymbol?: string) {
   return {
-    symbol: String(quote.symbol || ''),
+    symbol: originalSymbol || String(quote.symbol || ''),
     name: String(quote.longName || quote.shortName || quote.symbol || ''),
-    price: Number(quote.regularMarketPrice ?? 0),
+    price: Number(quote.regularMarketPrice ?? quote.regularMarketPreviousClose ?? 0),
     previousClose: Number(quote.regularMarketPreviousClose ?? 0),
     change: Number(quote.regularMarketChange ?? 0),
     changePercent: Number(quote.regularMarketChangePercent ?? 0),
@@ -41,18 +41,31 @@ async function fetchYahooQuotes(symbols: string[]) {
   const quotes: YahooQuote[] = []
 
   if (symbols.length === 1) {
-    const quote = await yahooFinance.quote(symbols[0]) as YahooQuote | null
-    return quote ? [quote] : []
+    try {
+      const quote = await yahooFinance.quote(symbols[0], {}, { validateResult: false }) as YahooQuote | null
+      return quote ? [quote] : []
+    } catch (error) {
+      console.error(`[Yahoo Finance] Error fetching single quote for ${symbols[0]}:`, error)
+      return []
+    }
   }
 
   for (let i = 0; i < symbols.length; i += MAX_SYMBOLS) {
     const chunk = symbols.slice(i, i + MAX_SYMBOLS)
     try {
-      const response = await yahooFinance.quote(chunk) as YahooQuote[] | YahooQuote | null
+      const response = await yahooFinance.quote(chunk, {}, { validateResult: false }) as YahooQuote[] | YahooQuote | null
       if (Array.isArray(response)) quotes.push(...response)
       else if (response) quotes.push(response)
-    } catch {
-      const settled = await Promise.allSettled(chunk.map((symbol) => yahooFinance.quote(symbol) as Promise<YahooQuote | null>))
+    } catch (error) {
+      console.error(`[Yahoo Finance] Error fetching batch quotes for chunk ${chunk.join(', ')}:`, error)
+      const settled = await Promise.allSettled(chunk.map(async (symbol) => {
+        try {
+          return await yahooFinance.quote(symbol, {}, { validateResult: false }) as YahooQuote | null
+        } catch (individualError) {
+          console.error(`[Yahoo Finance] Error fetching individual quote for ${symbol} as fallback:`, individualError)
+          return null
+        }
+      }))
       settled.forEach((result) => {
         if (result.status === 'fulfilled' && result.value) quotes.push(result.value)
       })
@@ -91,14 +104,25 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const cacheKey = `quotes:${market}:${symbols.slice().sort().join(',')}`
-    const quotes = await getCached(cacheKey, QUOTE_TTL_MS, () => fetchYahooQuotes(symbols))
+    const symbolMap = new Map<string, string>()
+    const yahooSymbols = symbols.map(s => {
+      const yahooSymbol = s.replace('.', '-')
+      symbolMap.set(yahooSymbol.toUpperCase(), s)
+      return yahooSymbol
+    })
+
+    const cacheKey = `quotes:${market}:${yahooSymbols.slice().sort().join(',')}`
+    const quotes = await getCached(cacheKey, QUOTE_TTL_MS, () => fetchYahooQuotes(yahooSymbols))
 
     if (!quotes || quotes.length === 0) {
       return NextResponse.json({ error: 'Symbol not found' }, { status: 404 })
     }
 
-    const results = quotes.map((quote) => normalizeQuote(quote, market))
+    const results = quotes.map((quote) => {
+      const qSymbol = String(quote.symbol || '').toUpperCase()
+      const originalSymbol = symbolMap.get(qSymbol)
+      return normalizeQuote(quote, market, originalSymbol)
+    })
 
     return NextResponse.json({
       data: symbols.length === 1 ? results[0] : results,

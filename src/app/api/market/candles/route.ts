@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Candles API Route — OHLCV data
  * Primary: Yahoo Finance (yahoo-finance2)
  * Supports: US stocks, ETFs, Crypto
@@ -254,7 +254,8 @@ export async function GET(request: NextRequest) {
   }
 
   const { searchParams } = new URL(request.url)
-  const symbol = normalizeSymbol(searchParams.get('symbol'))
+  const rawSymbol = normalizeSymbol(searchParams.get('symbol'))
+  const symbol = rawSymbol?.replace('.', '-')
   const rangeParam = searchParams.get('range')
   const timeframe = (searchParams.get('timeframe') || '1d') as Timeframe
 

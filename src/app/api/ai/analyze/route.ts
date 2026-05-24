@@ -176,12 +176,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Symbol is required' }, { status: 400 })
     }
 
-    const quote = (await yahooFinance.quote(symbol)) as YahooQuote | null
+    const yahooSymbol = symbol.replace('.', '-')
+    let quote: YahooQuote | null = null
+    try {
+      quote = (await yahooFinance.quote(yahooSymbol, {}, { validateResult: false })) as YahooQuote | null
+    } catch (error) {
+      console.error(`[Yahoo Finance] Error fetching quote for ${yahooSymbol} in AI analyze route:`, error)
+    }
+
     if (!quote) {
       return NextResponse.json({ error: 'Data not found for symbol' }, { status: 404 })
     }
 
-    const searchRes = (await yahooFinance.search(symbol)) as YahooSearchResult
+    const searchRes = (await yahooFinance.search(yahooSymbol)) as YahooSearchResult
     const newsHeadlines = buildNewsHeadlines(searchRes)
     const prompt = buildPrompt(symbol, market, quote, newsHeadlines)
     const model = process.env.OPENAI_MODEL || 'gpt-4o-mini'
