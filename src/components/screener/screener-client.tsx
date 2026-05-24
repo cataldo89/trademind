@@ -218,23 +218,115 @@ export function ScreenerClient() {
   const [category, setCategory] = useState('zesty-all')
   const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null)
 
-  const { data: quantAnalysis, isLoading: quantLoading, isError: quantError } = useQuery({
-    queryKey: ['quant-analysis', selectedSymbol],
-    queryFn: async () => {
-      if (!selectedSymbol) return null
+  const [verifyState, setVerifyState] = useState<{
+    status: 'idle' | 'consultando' | 'conectado' | 'error' | 'modo_basico'
+    symbol: string
+    timestamp: string
+    endpoint: string
+    latency: number | null
+    httpStatus: number | null
+    source: 'TypeScript frontend' | 'Python quant-engine' | 'Fallback básico'
+    data: any | null
+  }>({
+    status: 'idle',
+    symbol: '',
+    timestamp: '',
+    endpoint: '',
+    latency: null,
+    httpStatus: null,
+    source: 'TypeScript frontend',
+    data: null
+  })
+
+  const runVerification = async (symbol: string) => {
+    if (!symbol) return
+    const start = Date.now()
+    setVerifyState(prev => ({
+      ...prev,
+      status: 'consultando',
+      symbol,
+      endpoint: '/api/quant/analyze',
+      latency: null,
+      httpStatus: null,
+      data: null
+    }))
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[Quant Verification] Starting fetch for ${symbol}...`)
+    }
+
+    try {
       const res = await fetch('/api/quant/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ symbol: selectedSymbol }),
+        body: JSON.stringify({ symbol }),
       })
-      if (!res.ok) throw new Error('Quant analysis failed')
-      const data = await res.json()
-      return data.data?.workflow_result || null
-    },
-    enabled: !!selectedSymbol,
-    retry: false,
-    staleTime: 60 * 1000,
-  })
+      const latency = Date.now() - start
+      const httpStatus = res.status
+
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[Quant Verification] HTTP Status: ${httpStatus}, Latency: ${latency}ms`)
+      }
+
+      if (!res.ok) {
+        const errText = await res.text()
+        if (process.env.NODE_ENV === 'development') {
+          console.error(`[Quant Verification] Request failed: ${errText}`)
+        }
+        setVerifyState({
+          status: 'modo_basico',
+          symbol,
+          timestamp: new Date().toLocaleTimeString(),
+          endpoint: '/api/quant/analyze',
+          latency,
+          httpStatus,
+          source: 'Fallback básico',
+          data: null
+        })
+        return
+      }
+
+      const body = await res.json()
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[Quant Verification] Success:`, body)
+      }
+
+      setVerifyState({
+        status: 'conectado',
+        symbol,
+        timestamp: new Date().toLocaleTimeString(),
+        endpoint: '/api/quant/analyze',
+        latency,
+        httpStatus,
+        source: 'Python quant-engine',
+        data: body.data?.workflow_result || null
+      })
+    } catch (err: any) {
+      const latency = Date.now() - start
+      if (process.env.NODE_ENV === 'development') {
+        console.error(`[Quant Verification] Exception:`, err)
+      }
+      setVerifyState({
+        status: 'error',
+        symbol,
+        timestamp: new Date().toLocaleTimeString(),
+        endpoint: '/api/quant/analyze',
+        latency,
+        httpStatus: null,
+        source: 'Fallback básico',
+        data: null
+      })
+    }
+  }
+
+  const handleSelectSymbol = (symbol: string) => {
+    if (selectedSymbol === symbol) {
+      setSelectedSymbol(null)
+    } else {
+      setSelectedSymbol(symbol)
+      runVerification(symbol)
+    }
+  }
 
   const categories = useMemo(() => getCategorizedZestySymbols(), [])
   const selectedCategory = categories.find((cat) => cat.id === category) ?? categories[0]
@@ -354,6 +446,11 @@ export function ScreenerClient() {
 
   const selectedResult = scanResults.find(r => r.symbol === selectedSymbol)
 
+  const isSelectedSymbolVerifying = verifyState.symbol === selectedSymbol;
+  const quantLoading = isSelectedSymbolVerifying && verifyState.status === 'consultando';
+  const quantError = isSelectedSymbolVerifying && (verifyState.status === 'error' || verifyState.status === 'modo_basico');
+  const quantAnalysis = isSelectedSymbolVerifying ? verifyState.data : null;
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -411,6 +508,170 @@ export function ScreenerClient() {
           <p className="text-sm text-gray-500">Escaneando mercados...</p>
         </div>
       )}
+
+      {/* Estado del Motor Cuant (Panel de Diagnóstico) */}
+      <div className="bg-gray-900/40 border border-gray-800 rounded-xl p-5 space-y-4">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-2">
+            <Activity className="w-4 h-4 text-emerald-400" />
+            <h2 className="text-sm font-semibold text-white uppercase tracking-wider">
+              Estado del Motor Cuant
+            </h2>
+          </div>
+          <button
+            onClick={() => runVerification('AAPL')}
+            disabled={verifyState.status === 'consultando'}
+            className="px-3 py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-lg transition-all"
+          >
+            {verifyState.status === 'consultando' && verifyState.symbol === 'AAPL' ? 'Probando...' : 'Probar motor con AAPL'}
+          </button>
+        </div>
+
+        {/* Status Message based on action selection */}
+        {verifyState.symbol && (
+          <div className={cn(
+            "text-xs px-3 py-2 rounded-lg border font-medium flex items-center justify-between",
+            verifyState.status === 'conectado'
+              ? "bg-emerald-500/5 text-emerald-400 border-emerald-500/20"
+              : verifyState.status === 'consultando'
+              ? "bg-amber-500/5 text-amber-400 border-amber-500/20 animate-pulse"
+              : verifyState.status === 'modo_basico'
+              ? "bg-gray-800/40 text-gray-400 border-gray-700"
+              : "bg-red-500/5 text-red-400 border-red-500/20"
+          )}>
+            <span>
+              {verifyState.status === 'conectado'
+                ? `Python ejecutado para: ${verifyState.symbol}`
+                : verifyState.status === 'consultando'
+                ? `Consultando Python para: ${verifyState.symbol}...`
+                : verifyState.status === 'modo_basico'
+                ? `Python no disponible para ${verifyState.symbol}, usando modo básico`
+                : `Error en consulta para: ${verifyState.symbol}`
+              }
+            </span>
+            <span className="text-[10px] opacity-75 font-mono">
+              {verifyState.timestamp}
+            </span>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Col 1: Connection & Source */}
+          <div className="bg-gray-900/30 p-3 rounded-lg border border-gray-800/60 space-y-2.5">
+            <div>
+              <p className="text-[10px] text-gray-500 uppercase font-semibold">Estado de conexión</p>
+              <div className="flex items-center gap-2 mt-1">
+                <span className={cn(
+                  "w-2 h-2 rounded-full",
+                  verifyState.status === 'conectado' ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]" :
+                  verifyState.status === 'consultando' ? "bg-amber-400 animate-ping" :
+                  verifyState.status === 'error' ? "bg-red-400 shadow-[0_0_8px_rgba(248,113,113,0.5)]" :
+                  verifyState.status === 'modo_basico' ? "bg-amber-500" :
+                  "bg-gray-600"
+                )} />
+                <span className={cn(
+                  "text-xs font-bold font-mono",
+                  verifyState.status === 'conectado' ? "text-emerald-400" :
+                  verifyState.status === 'consultando' ? "text-amber-400" :
+                  verifyState.status === 'error' ? "text-red-400" :
+                  verifyState.status === 'modo_basico' ? "text-amber-500" :
+                  "text-gray-400"
+                )}>
+                  {verifyState.status === 'conectado' ? 'Conectado' :
+                   verifyState.status === 'consultando' ? 'Consultando' :
+                   verifyState.status === 'error' ? 'Error' :
+                   verifyState.status === 'modo_basico' ? 'Modo básico' :
+                   'Sin iniciar'}
+                </span>
+              </div>
+            </div>
+            <div>
+              <p className="text-[10px] text-gray-500 uppercase font-semibold">Fuente del análisis</p>
+              <p className="text-xs font-mono font-semibold text-white mt-1">
+                {verifyState.source}
+              </p>
+            </div>
+          </div>
+
+          {/* Col 2: Query Info */}
+          <div className="bg-gray-900/30 p-3 rounded-lg border border-gray-800/60 space-y-1">
+            <p className="text-[10px] text-gray-500 uppercase font-semibold mb-2">Última consulta realizada</p>
+            <div className="flex justify-between text-xs font-mono text-gray-400">
+              <span>Símbolo:</span>
+              <span className="text-white font-semibold">{verifyState.symbol || '—'}</span>
+            </div>
+            <div className="flex justify-between text-xs font-mono text-gray-400">
+              <span>Hora:</span>
+              <span className="text-white">{verifyState.timestamp || '—'}</span>
+            </div>
+            <div className="flex justify-between text-xs font-mono text-gray-400">
+              <span>Endpoint:</span>
+              <span className="text-white truncate max-w-[150px]">{verifyState.endpoint || '—'}</span>
+            </div>
+            <div className="flex justify-between text-xs font-mono text-gray-400">
+              <span>Latencia:</span>
+              <span className={cn(
+                "text-white",
+                verifyState.latency !== null && (verifyState.latency > 3000 ? "text-amber-400" : "text-emerald-400")
+              )}>
+                {verifyState.latency !== null ? `${verifyState.latency} ms` : '—'}
+              </span>
+            </div>
+            <div className="flex justify-between text-xs font-mono text-gray-400">
+              <span>Respuesta HTTP:</span>
+              <span className={cn(
+                "text-white font-semibold",
+                verifyState.httpStatus === 200 ? "text-emerald-400" : verifyState.httpStatus ? "text-red-400" : ""
+              )}>
+                {verifyState.httpStatus !== null ? `${verifyState.httpStatus}` : '—'}
+              </span>
+            </div>
+          </div>
+
+          {/* Col 3: Python Results */}
+          <div className="bg-gray-900/30 p-3 rounded-lg border border-gray-800/60 space-y-1">
+            <p className="text-[10px] text-gray-500 uppercase font-semibold mb-2">Resultado recibido desde Python</p>
+            {verifyState.status === 'conectado' && verifyState.data ? (
+              <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-[11px] font-mono">
+                <div className="text-gray-400">Acción:</div>
+                <div className={cn(
+                  "font-bold text-right",
+                  verifyState.data.action === 'BUY' ? 'text-emerald-400' :
+                  verifyState.data.action === 'SELL' ? 'text-red-400' :
+                  'text-amber-400'
+                )}>{verifyState.data.action || '—'}</div>
+
+                <div className="text-gray-400 text-ellipsis overflow-hidden whitespace-nowrap">Label:</div>
+                <div className="text-white text-right text-ellipsis overflow-hidden whitespace-nowrap" title={verifyState.data.label}>
+                  {verifyState.data.label || '—'}
+                </div>
+
+                <div className="text-gray-400">Confianza:</div>
+                <div className="text-white text-right">{verifyState.data.confidence !== undefined ? `${verifyState.data.confidence}%` : '—'}</div>
+
+                <div className="text-gray-400">Régimen:</div>
+                <div className="text-white text-right truncate" title={verifyState.data.market_regime}>{verifyState.data.market_regime || '—'}</div>
+
+                <div className="text-gray-400">VaR 95%:</div>
+                <div className="text-white text-right">{verifyState.data.var_95 !== undefined ? `${(verifyState.data.var_95 * 100).toFixed(2)}%` : '—'}</div>
+
+                <div className="text-gray-400">Predicción ML:</div>
+                <div className="text-white text-right">{verifyState.data.ml_prediction !== undefined ? `${(verifyState.data.ml_prediction * 100).toFixed(2)}%` : '—'}</div>
+
+                <div className="text-gray-400">Graham passed:</div>
+                <div className={cn(
+                  "font-semibold text-right",
+                  verifyState.data.graham_passed ? "text-emerald-400" : "text-red-400"
+                )}>{verifyState.data.graham_passed ? 'Sí' : 'No'}</div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-24 text-xs text-gray-500 font-mono italic">
+                {verifyState.status === 'consultando' ? 'Obteniendo resultados...' : 'Sin datos de Python'}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* Category tabs */}
       <div className="flex items-center gap-1 flex-wrap">
@@ -663,7 +924,7 @@ export function ScreenerClient() {
               {!scanLoading && !quotesLoading && filtered.map((r) => (
                 <tr
                   key={r.symbol}
-                  onClick={() => setSelectedSymbol(selectedSymbol === r.symbol ? null : r.symbol)}
+                  onClick={() => handleSelectSymbol(r.symbol)}
                   className={cn(
                     'hover:bg-gray-800/20 transition-colors cursor-pointer',
                     selectedSymbol === r.symbol ? 'bg-emerald-500/5' : ''
