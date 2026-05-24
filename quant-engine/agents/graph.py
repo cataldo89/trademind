@@ -45,6 +45,13 @@ def risk_manager(state: AgentState):
     return state
 
 def youtube_analyst(state: AgentState):
+    import os
+    enabled = os.getenv("QUANT_ENGINE_ENABLE_YT", "false").lower() == "true"
+    if not enabled:
+        state["youtube_signal"] = "NEUTRAL"
+        state["youtube_reason"] = "disabled"
+        return state
+
     try:
         from youtuber_strategies import aggregate_youtube_signals
         yt_data = aggregate_youtube_signals(state["symbol"])
@@ -65,10 +72,19 @@ def decision_node(state: AgentState):
     # Base confidence calculation
     confidence = 50
     
-    if not graham_passed:
+    # Detect data errors or missing/incomplete fetches
+    graham_reason = state.get('graham_reason', '')
+    is_error = "Error" in graham_reason or "Invalid" in graham_reason or "missing" in graham_reason or (var_95 == 1 and ml_pred == 0 and not graham_passed)
+
+    if is_error:
+        action = "HOLD"
+        label = "Sin conclusión / datos insuficientes"
+        explanation = f"Análisis incompleto por fallo al obtener datos: {graham_reason}"
+        confidence = 0
+    elif not graham_passed:
         action = "SELL"
         label = "EVITAR / VENDER"
-        explanation = f"Rechazado por filtro Graham: {state.get('graham_reason', 'Desconocido')}"
+        explanation = f"Rechazado por filtro Graham: {graham_reason}"
         # High confidence if var is also high or prediction is negative
         if var_95 > 0.05 or ml_pred < 0:
             confidence = 85
@@ -87,27 +103,28 @@ def decision_node(state: AgentState):
         confidence = 50
         
     # Apply Youtuber Strategy Modifiers
-    if action == "BUY" and yt_signal == "BULLISH":
-        label = "COMPRA FUERTE (Estrategias YT validadas)"
-        explanation += f" Además, las estrategias de YouTube confirman tendencia alcista: {yt_reason}."
-        confidence = min(confidence + 15, 99)
-    elif action == "SELL" and yt_signal == "BEARISH":
-        label = "VENTA FUERTE (Estrategias YT validadas)"
-        explanation += f" Además, estrategias de YouTube confirman venta: {yt_reason}."
-        confidence = min(confidence + 15, 99)
-    elif action == "SELL" and yt_signal == "BULLISH":
-        explanation += f" (Precaución: El análisis técnico de scalping/YT muestra una posible divergencia alcista a corto plazo: {yt_reason})."
-        confidence = max(confidence - 15, 10)
-    elif action == "BUY" and yt_signal == "BEARISH":
-        explanation += f" (Precaución: El análisis técnico de scalping/YT muestra una posible divergencia bajista a corto plazo: {yt_reason})."
-        confidence = max(confidence - 15, 10)
-    elif action == "HOLD" and yt_signal != "NEUTRAL":
-        explanation += f" Nota técnica YT: {yt_reason} ({yt_signal})."
-        
-    # Penalize confidence if regime is unknown or data is faulty
-    if state.get('market_regime') == "Desconocido" or var_95 == 1:
-        confidence = min(confidence, 30)
-        explanation += " (Datos incompletos, confianza reducida)."
+    if not is_error:
+        if action == "BUY" and yt_signal == "BULLISH":
+            label = "COMPRA FUERTE (Estrategias YT validadas)"
+            explanation += f" Además, las estrategias de YouTube confirman tendencia alcista: {yt_reason}."
+            confidence = min(confidence + 15, 99)
+        elif action == "SELL" and yt_signal == "BEARISH":
+            label = "VENTA FUERTE (Estrategias YT validadas)"
+            explanation += f" Además, estrategias de YouTube confirman venta: {yt_reason}."
+            confidence = min(confidence + 15, 99)
+        elif action == "SELL" and yt_signal == "BULLISH":
+            explanation += f" (Precaución: El análisis técnico de scalping/YT muestra una posible divergencia alcista a corto plazo: {yt_reason})."
+            confidence = max(confidence - 15, 10)
+        elif action == "BUY" and yt_signal == "BEARISH":
+            explanation += f" (Precaución: El análisis técnico de scalping/YT muestra una posible divergencia bajista a corto plazo: {yt_reason})."
+            confidence = max(confidence - 15, 10)
+        elif action == "HOLD" and yt_signal != "NEUTRAL":
+            explanation += f" Nota técnica YT: {yt_reason} ({yt_signal})."
+            
+        # Penalize confidence if regime is unknown or data is faulty
+        if state.get('market_regime') == "Desconocido" or var_95 == 1:
+            confidence = min(confidence, 30)
+            explanation += " (Datos incompletos, confianza reducida)."
 
     state["action"] = action
     state["label"] = label
@@ -135,4 +152,4 @@ def run_analysis_workflow(symbol: str):
     state = decision_node(state)
     
     return state
-
+
