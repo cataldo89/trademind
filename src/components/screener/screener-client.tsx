@@ -433,7 +433,7 @@ export function ScreenerClient() {
         <div className="flex items-center gap-1">
           {([
             { key: 'all', label: 'Todos' },
-            { key: 'opportunities', label: 'Oportunidades' },
+            { key: 'opportunities', label: 'Señales' },
             { key: 'warnings', label: 'Alertas' },
           ] as const).map(f => (
             <button
@@ -587,7 +587,7 @@ export function ScreenerClient() {
                       <div className="flex flex-col items-end">
                         <span className="text-white">${r.price.toFixed(2)}</span>
                         {r.isFallback && (
-                          <span className="text-[9px] text-amber-500 font-medium font-sans">Histórico</span>
+                          <span className="text-[9px] text-amber-500 font-medium font-sans">Último cierre</span>
                         )}
                       </div>
                     )}
