@@ -11,9 +11,13 @@ import {
   Loader2, Search, ChevronRight, Activity, Eye, Zap
 } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import type { FinalQuantScore, QuantResultData } from '@/lib/ranking'
 
+const SENTIMENT_SCAN_SYMBOL_LIMIT = 30
+
 export function ScreenerClient() {
+  const router = useRouter()
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<'all' | 'opportunities' | 'warnings'>('all')
   const [category, setCategory] = useState('zesty-all')
@@ -45,7 +49,6 @@ export function ScreenerClient() {
 
   const runVerification = async (symbol: string) => {
     if (!symbol) return
-    // eslint-disable-next-line react-hooks/purity
     const start = performance.now()
     setVerifyState(prev => ({
       ...prev,
@@ -64,7 +67,6 @@ export function ScreenerClient() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ symbol }),
       })
-      // eslint-disable-next-line react-hooks/purity
       const latency = Math.round(performance.now() - start)
       const httpStatus = res.status
 
@@ -106,7 +108,6 @@ export function ScreenerClient() {
         errorMessage: undefined
       })
     } catch (err: unknown) {
-      // eslint-disable-next-line react-hooks/purity
       const latency = Math.round(performance.now() - start)
       setVerifyState({
         status: 'error',
@@ -122,30 +123,39 @@ export function ScreenerClient() {
     }
   }
 
-  const handleSelectSymbol = (symbol: string) => {
-    if (selectedSymbol === symbol) {
-      setSelectedSymbol(null)
-    } else {
-      setSelectedSymbol(symbol)
-      runVerification(symbol)
-    }
+  const handleSelectSymbol = (symbol: string, market: string) => {
+    router.push(`/analysis?symbol=${encodeURIComponent(symbol)}&market=${encodeURIComponent(market)}`)
   }
 
   const triggerManualSentimentScan = async () => {
     setIsScanningSentiment(true)
-    toast.info('Iniciando lectura de noticias con FinBERT... Esto tomará un par de minutos.')
+    toast.info(`Iniciando lectura de noticias con FinBERT para hasta ${SENTIMENT_SCAN_SYMBOL_LIMIT} activos...`)
     try {
-      const symbols = Array.from(new Set(scanSymbols.map((s) => s.symbol).filter(Boolean)))
+      const rankedSymbols = scanResults
+        .filter((result) => !result.noData)
+        .map((result) => result.symbol)
+      const fallbackSymbols = scanSymbols.map((s) => s.symbol)
+      const symbols = Array.from(new Set((rankedSymbols.length ? rankedSymbols : fallbackSymbols).filter(Boolean)))
+        .slice(0, SENTIMENT_SCAN_SYMBOL_LIMIT)
       const res = await fetch('/api/quant/sentiment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ symbols }),
       })
-      if (!res.ok) throw new Error('Falló el escaneo de sentimiento')
-      toast.success('¡Noticias analizadas con éxito! Actualizando Screener...')
+      const body = await res.json().catch(() => null)
+      if (!res.ok) throw new Error(body?.error || 'Falló el escaneo de sentimiento')
+      const processed = Number(body?.processed || symbols.length)
+      const suffix = body?.truncated ? ` (lote limitado a ${body.limit})` : ''
+      toast.success(`Noticias analizadas para ${processed} activos${suffix}. Actualizando Screener...`)
       queryClient.invalidateQueries({ queryKey: ['screener-quant-scan', category] })
-    } catch (e: any) {
-      toast.error('Error al escanear noticias: ' + e.message)
+
+      // Si el usuario ya tenía el motor abierto para un símbolo, re-evaluarlo para mostrar las noticias frescas
+      if (verifyState.symbol) {
+        runVerification(verifyState.symbol)
+      }
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : String(e)
+      toast.error('Error al escanear noticias: ' + message)
     } finally {
       setIsScanningSentiment(false)
     }
@@ -153,7 +163,7 @@ export function ScreenerClient() {
 
   const categories = useMemo(() => getCategorizedZestySymbols(), [])
   const selectedCategory = categories.find((cat) => cat.id === category) ?? categories[0]
-  
+
   // Enviar todos los activos de la categoría (con un límite de 500)
   const scanSymbols = useMemo(() => {
     return (selectedCategory?.symbols ?? [])
@@ -190,6 +200,7 @@ export function ScreenerClient() {
   const topCards = scanResults.slice(0, 9).filter(r => !r.noData)
 
   const filtered = scanResults
+    .filter(r => !r.noData) // Filtrar acciones sin datos (N/A)
     .filter(r => {
       if (filter === 'opportunities') return r.suggestions.some(s => s.type === 'opportunity') || r.quant?.action === 'BUY'
       if (filter === 'warnings') return r.suggestions.some(s => s.type === 'warning') || r.quant?.action === 'SELL'
@@ -199,6 +210,7 @@ export function ScreenerClient() {
       if (!search) return true
       return r.symbol.toLowerCase().includes(search.toLowerCase()) || r.name.toLowerCase().includes(search.toLowerCase())
     })
+    .slice(0, 50) // Limitar la tabla a 50 resultados para evitar scroll infinito
 
   const getDisplayAction = (r: FinalQuantScore) => {
     if (r.quant?.action === 'BUY' || r.quant?.action === 'SELL') return r.quant.action
@@ -253,7 +265,7 @@ export function ScreenerClient() {
                   <div className="flex flex-col gap-1">
                     <span className={cn(
                       'text-[10px] font-bold px-1.5 py-0.5 rounded leading-none w-fit',
-                      isBullishCard(r) ? 'bg-emerald-500/20 text-emerald-400' 
+                      isBullishCard(r) ? 'bg-emerald-500/20 text-emerald-400'
                         : isBearishCard(r) ? 'bg-red-500/20 text-red-400'
                         : 'bg-gray-700 text-gray-300'
                     )}>
@@ -291,7 +303,7 @@ export function ScreenerClient() {
                     </span>
                   )}
                 </div>
-                
+
                 {r.quant && (
                    <div className="text-[10px] text-gray-400 mb-2 mt-1 space-y-1">
                      <div className="flex justify-between">
@@ -455,6 +467,28 @@ export function ScreenerClient() {
             )}
           </div>
         </div>
+
+        {/* Panel de Noticias Leídas por FinBERT */}
+        {verifyState.status === 'conectado' && verifyState.data?.news_articles && (
+          <div className="bg-gray-900/30 p-3 rounded-lg border border-gray-800/60 mt-4 space-y-2">
+            <p className="text-[10px] text-gray-500 uppercase font-semibold">
+              Titulares leídos por FinBERT <span className={cn('ml-1 px-1.5 py-0.5 rounded text-[9px]', verifyState.data.news_sentiment === 'POSITIVE' ? 'bg-emerald-500/20 text-emerald-400' : verifyState.data.news_sentiment === 'NEGATIVE' ? 'bg-red-500/20 text-red-400' : 'bg-gray-800 text-gray-400')}>{verifyState.data.news_sentiment}</span>
+            </p>
+            {verifyState.data.news_articles.length > 0 ? (
+              <ul className="text-[11px] text-gray-300 space-y-2 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
+                {verifyState.data.news_articles.map((news, idx) => (
+                  <li key={idx} className="border-b border-gray-800/50 pb-1.5 last:border-0 leading-relaxed font-mono">
+                    <span className="text-emerald-500 mr-2">›</span>{news}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="text-[11px] text-gray-500 font-mono italic py-2">
+                No se encontraron noticias recientes o Yahoo Finance bloqueó la consulta (Rate Limit).
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Category tabs */}
@@ -506,7 +540,7 @@ export function ScreenerClient() {
               {!scanLoading && filtered.map((r) => (
                 <tr
                   key={r.symbol}
-                  onClick={() => handleSelectSymbol(r.symbol)}
+                  onClick={() => handleSelectSymbol(r.symbol, r.market)}
                   className={cn(
                     'hover:bg-gray-800/20 transition-colors cursor-pointer',
                     selectedSymbol === r.symbol ? 'bg-emerald-500/5' : ''

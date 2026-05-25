@@ -1,4 +1,4 @@
-export type ChartRange = '1D' | '5D' | '1M' | '6M' | 'YTD' | '1Y' | '5Y' | 'ALL'
+export type ChartRange = '1D' | '5D' | '1M' | '3M' | '6M' | 'YTD' | '1Y' | '5Y' | 'ALL'
 
 export type YahooChartInterval = '1m' | '5m' | '15m' | '30m' | '1h' | '1d' | '1wk' | '1mo'
 
@@ -15,6 +15,7 @@ export const CHART_RANGES: Array<{ range: ChartRange; label: string }> = [
   { range: '1D', label: '1D' },
   { range: '5D', label: '5D' },
   { range: '1M', label: '1M' },
+  { range: '3M', label: '3M' },
   { range: '6M', label: '6M' },
   { range: 'YTD', label: 'YTD' },
   { range: '1Y', label: '1Y' },
@@ -64,6 +65,8 @@ export function getChartRangeConfig(range: ChartRange): ChartRangeConfig {
         return { interval: '5m', period1: subtractDays(now, 5), refetchMs: 60_000 }
       case '1M':
         return { interval: '1d', period1: subtractMonths(now, 1), refetchMs: 120_000 }
+      case '3M':
+        return { interval: '1d', period1: subtractMonths(now, 3), refetchMs: 180_000 }
       case '6M':
         return { interval: '1d', period1: subtractMonths(now, 6), refetchMs: 300_000 }
       case 'YTD':
@@ -87,9 +90,9 @@ export function getChartRangeConfig(range: ChartRange): ChartRangeConfig {
 
 export function getFallbackChartRanges(range: ChartRange): ChartRange[] {
   const fallbacks: ChartRange[] = ['1D', '5D', '1M'].includes(range)
-    ? [range, '5D', '1M', '6M', '1Y', '5Y']
-    : [range, '1Y', '5Y', 'ALL']
+    ? [range, '5D', '1M', '3M', '6M', '1Y', '5Y']
+    : [range, '3M', '1Y', '5Y', 'ALL']
 
   return Array.from(new Set(fallbacks))
 }
-
+

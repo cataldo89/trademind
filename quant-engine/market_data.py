@@ -21,8 +21,11 @@ def fetch_chart_dataframe(symbol: str, range_: str = "1y", interval: str = "1d")
         },
     )
 
-    with urllib.request.urlopen(request, timeout=15) as response:
-        payload = json.loads(response.read().decode("utf-8"))
+    try:
+        with urllib.request.urlopen(request, timeout=15) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except Exception:
+        return pd.DataFrame()
 
     result = (payload.get("chart", {}).get("result") or [None])[0]
     if not result:

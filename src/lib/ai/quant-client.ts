@@ -65,7 +65,18 @@ export class QuantClient {
       clearTimeout(timeoutId)
 
       if (!response.ok) {
-        return { success: false, data: null, status: 'request_failed', error: `Quant endpoint ${endpointPath} failed with status ${response.status}` }
+        const body = await response.json().catch(() => null)
+        const detail = typeof body?.detail === 'string'
+          ? body.detail
+          : typeof body?.error === 'string'
+            ? body.error
+            : null
+        return {
+          success: false,
+          data: null,
+          status: 'request_failed',
+          error: detail || `Quant endpoint ${endpointPath} failed with status ${response.status}`,
+        }
       }
 
       const data = await response.json() as T
@@ -102,7 +113,13 @@ export class QuantClient {
   }
 
   async triggerSentimentScan(symbols: string[]) {
-    return this.callEndpoint<{status: string, processed: number}>('/ml/trigger_sentiment_scan', { symbols }, 120000) // 2 min timeout
+    return this.callEndpoint<{
+      status: string
+      requested?: number
+      processed: number
+      truncated?: boolean
+      limit?: number
+    }>('/ml/trigger_sentiment_scan', { symbols }, 120000) // 2 min timeout
   }
 
   async getSentimentCache() {

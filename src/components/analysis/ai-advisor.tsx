@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useState } from 'react'
 import { Market } from '@/types'
@@ -15,6 +15,7 @@ interface AIAnalysisResponse {
     suggestion?: string
     provider?: string
     model?: string
+    promptContext?: string
   }
   error?: string
 }
@@ -22,13 +23,15 @@ interface AIAnalysisResponse {
 export function AIAdvisor({ symbol, market }: AIAdvisorProps) {
   const [analysis, setAnalysis] = useState<string | null>(null)
   const [engine, setEngine] = useState<{ provider?: string; model?: string } | null>(null)
+  const [promptContext, setPromptContext] = useState<string | null>(null)
+  const [showPrompt, setShowPrompt] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
   const handleAnalyze = async () => {
     setIsLoading(true)
     setAnalysis(null)
     setEngine(null)
-    
+
     try {
       const res = await fetch('/api/ai/analyze', {
         method: 'POST',
@@ -44,6 +47,7 @@ export function AIAdvisor({ symbol, market }: AIAdvisorProps) {
 
       setAnalysis(payload.data?.suggestion ?? '')
       setEngine({ provider: payload.data?.provider, model: payload.data?.model })
+      setPromptContext(payload.data?.promptContext ?? null)
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'No se pudo conectar con el asesor IA'
       toast.error(message || 'No se pudo conectar con el asesor IA')
@@ -147,10 +151,27 @@ export function AIAdvisor({ symbol, market }: AIAdvisorProps) {
               <RefreshCcw className="w-3.5 h-3.5" />
               Regenerar
             </button>
+            {promptContext && (
+              <button
+                onClick={() => setShowPrompt(!showPrompt)}
+                className="col-span-2 mt-2 py-1.5 text-[10px] font-medium border border-indigo-500/30 hover:bg-indigo-500/10 text-indigo-300 rounded-lg transition-colors"
+              >
+                {showPrompt ? 'Ocultar datos inyectados' : '¿Cómo sé que la IA usó mis datos? (Ver inyección)'}
+              </button>
+            )}
           </div>
+
+          {showPrompt && promptContext && (
+            <div className="mt-3 p-3 bg-black/40 border border-indigo-500/20 rounded-lg overflow-x-auto">
+              <p className="text-[10px] font-bold text-indigo-400 mb-2 uppercase">Prompt exacto enviado a Gemini/OpenAI:</p>
+              <pre className="text-[9px] text-gray-400 font-mono whitespace-pre-wrap">
+                {promptContext}
+              </pre>
+            </div>
+          )}
         </div>
       )}
     </div>
   )
 }
-
+

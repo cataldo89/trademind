@@ -62,16 +62,37 @@ def youtube_analyst(state: AgentState):
         state["youtube_reason"] = str(e)
     return state
 
+def news_analyst(state: AgentState):
+    try:
+        from sentiment_models import get_cached_sentiment, analyze_sentiment_batch
+        # Intentar desde cache primero
+        sent = get_cached_sentiment(state["symbol"])
+        if not sent:
+            # Forzar análisis en vivo para este símbolo
+            sent_dict = analyze_sentiment_batch([state["symbol"]])
+            sent = sent_dict.get(state["symbol"])
+
+        if sent:
+            state["news_sentiment"] = sent.get("sentiment", "NEUTRAL")
+            state["news_articles"] = sent.get("texts", [])
+        else:
+            state["news_sentiment"] = "NEUTRAL"
+            state["news_articles"] = []
+    except Exception as e:
+        state["news_sentiment"] = "ERROR"
+        state["news_articles"] = [f"Error leyendo noticias: {str(e)}"]
+    return state
+
 def decision_node(state: AgentState):
     var_95 = state.get("var_95", 1)
     ml_pred = state.get("ml_prediction", 0)
     graham_passed = state.get("graham_passed", False)
     yt_signal = state.get("youtube_signal", "NEUTRAL")
     yt_reason = state.get("youtube_reason", "")
-    
+
     # Base confidence calculation
     confidence = 50
-    
+
     # Detect data errors or missing/incomplete fetches
     graham_reason = state.get('graham_reason', '')
     technical_missing = var_95 in (0, 1) and ml_pred == 0 and state.get('market_regime') in ("Unknown", "Desconocido")
@@ -107,7 +128,7 @@ def decision_node(state: AgentState):
         if graham_inconclusive:
             explanation += f" Filtro Graham no concluyente: {graham_reason}."
         confidence = 50
-        
+
     # Apply Youtuber Strategy Modifiers
     if not is_error:
         if action == "BUY" and yt_signal == "BULLISH":
@@ -126,7 +147,7 @@ def decision_node(state: AgentState):
             confidence = max(confidence - 15, 10)
         elif action == "HOLD" and yt_signal != "NEUTRAL":
             explanation += f" Nota técnica YT: {yt_reason} ({yt_signal})."
-            
+
         # Penalize confidence if regime is unknown or data is faulty
         if state.get('market_regime') == "Desconocido" or var_95 == 1:
             confidence = min(confidence, 30)
@@ -142,22 +163,25 @@ def run_analysis_workflow(symbol: str):
     try:
         # Vanilla Python Workflow Execution
         state: AgentState = {"symbol": symbol}
-        
+
         # 1. Research Manager
         state = research_manager(state)
-        
+
         # 2. Technical Analyst
         state = technical_analyst(state)
-        
+
         # 3. Risk Manager
         state = risk_manager(state)
-        
+
         # 3.5 YouTuber Analyst
         state = youtube_analyst(state)
-        
+
+        # 3.8 News Analyst (FinBERT)
+        state = news_analyst(state)
+
         # 4. Decision Node
         state = decision_node(state)
-        
+
         return state
     except Exception as e:
         import traceback

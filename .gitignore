@@ -70,6 +70,10 @@ __pycache__/
 *.pyd
 .Python
 
+# Quant engine generated/local artifacts
+quant-engine/modelos_locales/
+quant-engine/sentiment_cache.json
+
 # Archivos temporales de trabajo
 v1.txt
 v2.txt

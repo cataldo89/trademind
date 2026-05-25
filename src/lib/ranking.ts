@@ -29,6 +29,8 @@ export interface QuantResultData {
   graham_passed?: boolean
   error_reason?: string
   weekend_sentiment?: { sentiment: string; score: number }
+  news_sentiment?: string
+  news_articles?: string[]
 }
 
 export interface FinalQuantScore extends PreliminaryTechData {
@@ -202,5 +204,20 @@ export function calculateFinalQuantScore(
 }
 
 export function rankScreenerResults(results: FinalQuantScore[]): FinalQuantScore[] {
-  return results.sort((a, b) => b.finalScore - a.finalScore)
+  return results.sort((a, b) => {
+    // 1. Principal: finalScore
+    if (b.finalScore !== a.finalScore) {
+      return b.finalScore - a.finalScore
+    }
+    // 2. Desempate: Momentum diario (changePercent)
+    const changeA = a.changePercent || 0
+    const changeB = b.changePercent || 0
+    if (changeB !== changeA) {
+      return changeB - changeA
+    }
+    // 3. Desempate: Volumen
+    const volA = a.volume || 0
+    const volB = b.volume || 0
+    return volB - volA
+  })
 }

@@ -8,11 +8,14 @@ from typing import Callable, Any
 import os
 import time
 
+from dotenv import load_dotenv
 from ml_pipeline import run_pca_autoencoder, run_lasso_ridge
 from risk_models import detect_regime, calculate_var_garch
 from time_series_models import predict_direction_arima, predict_direction_sarima
 from lean_integration import run_lean_backtest, export_to_lean
 from graham_filters import check_margin_of_safety
+
+load_dotenv()
 
 app = FastAPI(title="TradeMind Quant Engine")
 
@@ -20,6 +23,7 @@ app = FastAPI(title="TradeMind Quant Engine")
 AUTH_DISABLED = os.getenv("QUANT_ENGINE_AUTH_DISABLED", "false").lower() == "true"
 SECRET_KEY = os.getenv("QUANT_ENGINE_SECRET")
 CACHE_TTL_SECONDS = int(os.getenv("QUANT_ENGINE_CACHE_TTL_SECONDS", "300"))
+SENTIMENT_SCAN_MAX_SYMBOLS = int(os.getenv("SENTIMENT_SCAN_MAX_SYMBOLS", "30"))
 _CACHE: dict[str, tuple[float, Any]] = {}
 
 
@@ -186,8 +190,23 @@ def trigger_sentiment_scan(req: BatchSymbolRequest):
     
     # We run it synchronously here just for testing/triggering manually
     # In production this would be a true background task (e.g. celery/BackgroundTasks)
-    data = run_daily_sentiment_job(req.symbols)
-    return {"status": "completed", "processed": len(data)}
+    unique_symbols = []
+    seen_symbols = set()
+    for symbol in req.symbols:
+        normalized = symbol.strip().upper()
+        if normalized and normalized not in seen_symbols:
+            seen_symbols.add(normalized)
+            unique_symbols.append(normalized)
+
+    limited_symbols = unique_symbols[:SENTIMENT_SCAN_MAX_SYMBOLS]
+    data = run_daily_sentiment_job(limited_symbols)
+    return {
+        "status": "completed",
+        "requested": len(unique_symbols),
+        "processed": len(data),
+        "truncated": len(unique_symbols) > len(limited_symbols),
+        "limit": SENTIMENT_SCAN_MAX_SYMBOLS,
+    }
 
 @app.get("/ml/sentiment_cache")
 def get_sentiment_cache():

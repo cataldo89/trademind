@@ -224,6 +224,7 @@ export async function POST(request: NextRequest) {
             suggestion,
             provider: 'Google Gemini',
             model: geminiModelStr,
+            promptContext: prompt, // <-- Devuelve el prompt exacto
           },
         })
       }
@@ -236,6 +237,7 @@ export async function POST(request: NextRequest) {
             suggestion,
             provider: 'OpenAI',
             model,
+            promptContext: prompt, // <-- Devuelve el prompt exacto
           },
         })
       }

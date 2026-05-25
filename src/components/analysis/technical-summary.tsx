@@ -44,6 +44,7 @@ function getPerformanceLabel(range: ChartRange) {
     '1D': { title: 'RENDIMIENTO 1 DÍA', text: 'al inicio del día' },
     '5D': { title: 'RENDIMIENTO 5 DÍAS', text: 'hace 5 días' },
     '1M': { title: 'RENDIMIENTO 1 MES', text: 'hace 1 mes' },
+    '3M': { title: 'RENDIMIENTO 3 MESES', text: 'hace 3 meses' },
     '6M': { title: 'RENDIMIENTO 6 MESES', text: 'hace 6 meses' },
     'YTD': { title: 'RENDIMIENTO YTD', text: 'al inicio del año' },
     '1Y': { title: 'RENDIMIENTO 1 AÑO', text: 'hace 1 año' },
@@ -443,4 +444,4 @@ function IndicatorRow({
     </div>
   )
 }
-
+
