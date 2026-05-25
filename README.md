@@ -15,7 +15,7 @@ Antes de modificar el proyecto, leer:
 | Documento | Uso |
 |---|---|
 | `AGENTS.md` | Reglas operativas, GitHub oficial, Vercel y orden obligatorio |
-| `LLM_CONTEXT.md` | Fuente canonica para agentes IA |
+| `LLM_CONTEXT.md` | Fuente canonica para agentes IA; incluye rutas, URLs y puertos oficiales |
 | `ESTADO_ACTUAL_PROYECTO.md` | Estado tecnico auditado |
 | `ESTRUCTURA_PROYECTO.md` | Mapa del repositorio |
 | `soluciones_tecnicas.md` | Problemas resueltos y patrones obligatorios |
@@ -34,6 +34,8 @@ Antes de modificar el proyecto, leer:
 - Quant-engine: Python FastAPI, yfinance, scikit-learn, hmmlearn, arch, statsmodels.
 - Backtesting: QuantConnect LEAN en progreso.
 - Deploy: Vercel, proyecto oficial `trademind-cv`.
+
+Rutas y direcciones canonicas: ver `LLM_CONTEXT.md` seccion `0.0 Rutas y direcciones canonicas`. No copiar URLs efimeras de deploy ni `trycloudflare.com` a documentacion permanente.
 
 ## Estado actual resumido
 
@@ -186,7 +188,7 @@ QC_API_TOKEN=replace-with-quantconnect-api-token
 QUANT_ENGINE_SECRET=tu_secreto_interno
 QUANT_ENGINE_CACHE_TTL_SECONDS=300
 QUANT_ENGINE_AUTH_DISABLED=false
-QUANT_ENGINE_ALLOWED_ORIGINS=http://localhost:3000,https://trademind-cv.vercel.app
+QUANT_ENGINE_ALLOWED_ORIGINS=http://localhost:3000,https://trademind-cv-ten.vercel.app
 ```
 
 ## SDD

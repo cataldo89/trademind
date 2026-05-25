@@ -28,7 +28,8 @@ Este archivo no reemplaza la auditoria general. Complementa `ESTADO_ACTUAL_PROYE
 ## Cierres aplicados - 2026-05-25
 
 - Quant-engine local queda expuesto a Vercel mediante Cloudflare Tunnel iniciado desde `npm run quant:start:vercel`.
-- Se documento que el quick tunnel `trycloudflare.com` cambia al reiniciar si no existe tunel nombrado con credenciales Cloudflare.
+- Rutas, URLs, puertos y aliases canonicos viven en `LLM_CONTEXT.md` seccion `0.0 Rutas y direcciones canonicas`.
+- Se documento que el quick tunnel `trycloudflare.com` cambia al reiniciar si no existe tunel nombrado con credenciales Cloudflare; no guardar una URL concreta de quick tunnel como permanente.
 - HMM/GARCH/ARIMA dejan de depender primero de `yfinance.download`; usan `quant-engine/market_data.py` contra Yahoo Chart API.
 - El bloqueo `429` de Yahoo `quoteSummary` afecta Graham/fundamentales, pero no debe convertir todo el workflow en `HOLD 0% Unknown`.
 - El screener no prioriza un `HOLD` neutral de Python por sobre `BUY (Tech)`/`SELL (Tech)` cuando el score tecnico es fuerte.
@@ -213,24 +214,25 @@ Accion recomendada:
 
 ### P1.3 Quant-engine no escala como request sincrono
 
-Evidencia:
+Evidencia actual:
 
-- `src/lib/ai/mcp-client.ts:18` usa `QUANT_ENGINE_URL || 'http://127.0.0.1:8000'`.
-- `src/lib/ai/mcp-client.ts:88-90` usa timeout de 15 segundos para workflow.
+- `src/lib/ai/quant-client.ts` exige `QUANT_ENGINE_URL` y `QUANT_ENGINE_SECRET` en produccion.
+- `src/lib/ai/mcp-client.ts` queda como wrapper de compatibilidad hacia `quant-client`.
+- El workflow usa timeout de 15 segundos.
 - `quant-engine/risk_models.py` descarga datos y entrena HMM/GARCH/ARIMA bajo demanda.
 - `quant-engine/graham_filters.py` depende de `Ticker.info`.
 
 Impacto:
 
-- En Vercel, si falta `QUANT_ENGINE_URL`, se intenta conectar al localhost del runtime serverless.
+- En Vercel, si falta `QUANT_ENGINE_URL`, se devuelve error de configuracion explicito.
 - Analisis lentos devuelven 503 o timeout.
 - Yahoo/yfinance puede bloquear o degradar por volumen.
 
 Accion recomendada:
 
-- Declarar `QUANT_ENGINE_URL` y `QUANT_ENGINE_SECRET` como obligatorias en produccion.
-- Devolver error de configuracion antes de intentar localhost en Vercel.
-- Agregar cache por simbolo/rango.
+- Mantener `QUANT_ENGINE_URL` y `QUANT_ENGINE_SECRET` como obligatorias en produccion.
+- Mantener error de configuracion antes de intentar localhost en Vercel.
+- Mantener cache por simbolo/rango.
 - Agregar cola de jobs para modelos pesados.
 - Guardar resultados parciales y permitir respuesta asincrona.
 

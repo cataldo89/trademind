@@ -47,6 +47,7 @@ Backend llama RPC `execute_virtual_trade`, que bloquea el perfil del usuario, va
 
 ## Quant-engine
 
+- Rutas, URLs y puertos canonicos: `LLM_CONTEXT.md` seccion `0.0 Rutas y direcciones canonicas`.
 - Next.js no ejecuta ML pesado dentro de Vercel.
 - Next.js llama FastAPI externo/local via `QUANT_ENGINE_URL`.
 - Header interno: `X-TradeMind-Quant-Secret`.
@@ -56,7 +57,7 @@ Backend llama RPC `execute_virtual_trade`, que bloquea el perfil del usuario, va
 - Arranque facil: `npm run quant:start` para local y `npm run quant:start:vercel` para actualizar `QUANT_ENGINE_URL` en Vercel y desplegar.
 - Atajo manual: `START_QUANT_CLOUDFLARE.cmd`.
 - Arranque automatico: archivo de usuario instalado en Windows Startup.
-- Sin credenciales de Cloudflare (`cert.pem` o token de tunel nombrado), el proyecto usa quick tunnel `trycloudflare.com`; la URL puede cambiar al reiniciar.
+- Sin credenciales de Cloudflare (`cert.pem` o token de tunel nombrado), el proyecto usa quick tunnel `trycloudflare.com`; la URL puede cambiar al reiniciar y nunca debe guardarse como URL fija en documentacion permanente.
 - El motor Python usa `query1.finance.yahoo.com/v8/finance/chart` como fuente robusta de velas para HMM/GARCH/ARIMA cuando `yfinance` queda bloqueado por `429`.
 - El filtro Graham basado en fundamentales puede quedar no concluyente si Yahoo bloquea `quoteSummary`; ese fallo no debe anular senales tecnicas con datos de velas validos.
 

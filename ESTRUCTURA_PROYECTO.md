@@ -3,13 +3,14 @@
 Fecha de actualizacion: 2026-05-10  
 Rol: mapa del repositorio para agentes IA  
 Regla: inventario no equivale a funcionalidad. Para estado real leer `ESTADO_ACTUAL_PROYECTO.md` y para incidentes frontend/backend leer `docs/runbooks/problemas-escalamiento-errores-frontend-backend.md`.
+Rutas, URLs, puertos, GitHub, Vercel y Cloudflare canonicos viven en `LLM_CONTEXT.md` seccion `0.0 Rutas y direcciones canonicas`.
 
 ## 1. Documentacion maestra
 
 | Archivo | Rol |
 |---|---|
 | `AGENTS.md` | Reglas operativas, GitHub oficial, Vercel, orden de lectura obligatorio |
-| `LLM_CONTEXT.md` | Fuente operativa para agentes IA y separacion entre vision, realidad y gaps |
+| `LLM_CONTEXT.md` | Fuente operativa para agentes IA, rutas/URLs canonicas y separacion entre vision, realidad y gaps |
 | `ESTADO_ACTUAL_PROYECTO.md` | Auditoria tecnica actual del codigo, validaciones y brechas |
 | `ESTRUCTURA_PROYECTO.md` | Mapa de archivos y carpetas del repositorio |
 | `soluciones_tecnicas.md` | Problemas resueltos y patrones tecnicos obligatorios |
@@ -144,7 +145,8 @@ Si el error se manifiesta en UI, revisar este runbook antes de editar componente
 
 | Ruta | Descripcion |
 |---|---|
-| `src/lib/ai/mcp-client.ts` | Cliente hacia quant-engine. Usa `QUANT_ENGINE_URL` o localhost por defecto |
+| `src/lib/ai/quant-client.ts` | Cliente canonico hacia quant-engine. Usa `QUANT_ENGINE_URL` y `QUANT_ENGINE_SECRET`; en produccion no cae a localhost |
+| `src/lib/ai/mcp-client.ts` | Wrapper de compatibilidad que reexporta `quant-client` |
 | `src/lib/supabase/client.ts` | Cliente Supabase browser |
 | `src/lib/supabase/server.ts` | Cliente Supabase server y admin client |
 | `src/lib/yahoo-finance.ts` | Wrapper yahoo-finance2 |

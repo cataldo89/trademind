@@ -11,6 +11,8 @@ Para realidad tecnica actual leer:
 5. `soluciones_tecnicas.md`
 6. `SEGURIDAD.md`
 
+Para rutas, URLs, puertos, repositorios y Vercel, usar solo `LLM_CONTEXT.md` seccion `0.0 Rutas y direcciones canonicas`. Este roadmap no debe introducir rutas alternativas ni aliases nuevos.
+
 ## 1. Rol de este documento
 
 `LLM.md` define la direccion aspiracional para evolucionar TradeMind hacia una plataforma SaaS AI-native. No es auditoria del codigo actual ni depende de una marca, proveedor o agente especifico.

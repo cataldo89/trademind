@@ -88,8 +88,10 @@ La categorizacion de simbolos ocurre principalmente en `src/lib/market-data.ts`,
 
 ## 8. Memoria operativa 2026-05-25
 
+- Para rutas, URLs, puertos, repo oficial, Vercel y Cloudflare, la unica fuente canonica es `LLM_CONTEXT.md` seccion `0.0 Rutas y direcciones canonicas`.
 - El quant-engine funciona localmente en `http://127.0.0.1:8000` y se expone a Vercel por Cloudflare Tunnel.
 - Arranque recomendado: `npm run quant:start` para local; `npm run quant:start:vercel` para actualizar Vercel y desplegar.
 - Mientras no exista tunel nombrado de Cloudflare, `trycloudflare.com` puede cambiar al reiniciar.
+- No copiar una URL concreta de `trycloudflare.com` a archivos de memoria; solo usar `QUANT_ENGINE_URL` como variable canonica.
 - El motor Python no debe depender solo de `yfinance`; usa Yahoo Chart API para velas en modelos HMM/GARCH/ARIMA.
 - El proyecto esta parcialmente alineado con SDD, pero necesita carpeta formal `specs/` para completar la disciplina.

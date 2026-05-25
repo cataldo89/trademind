@@ -33,11 +33,12 @@ Cambios aplicados despues de la auditoria inicial:
 
 ## Actualizacion quant/tunel/SDD - 2026-05-25
 
+- Fuente canonica de rutas, URLs, puertos, repositorio, Vercel y Cloudflare: `LLM_CONTEXT.md` seccion `0.0 Rutas y direcciones canonicas`.
 - `QUANT_ENGINE_URL` en Vercel Production se actualizo para usar Cloudflare Tunnel hacia el FastAPI local.
 - Se agregaron `npm run quant:start`, `npm run quant:start:vercel` y `npm run quant:stop`.
 - `scripts/start-quant-cloudflare.ps1` levanta `quant-engine`, crea quick tunnel, valida `/health`, actualiza `.env.local` y opcionalmente actualiza Vercel + deploy.
 - Se agrego `START_QUANT_CLOUDFLARE.cmd` para doble clic y se instalo un arranque automatico de usuario en Windows Startup.
-- No hay `cert.pem` de Cloudflare ni token de tunel nombrado en la maquina; por eso la URL `trycloudflare.com` no es fija entre reinicios.
+- No hay `cert.pem` de Cloudflare ni token de tunel nombrado en la maquina; por eso la URL `trycloudflare.com` no es fija entre reinicios y no debe documentarse como URL permanente.
 - `quant-engine/market_data.py` usa Yahoo Chart API (`query1.finance.yahoo.com/v8/finance/chart`) para velas, evitando que `yfinance`/`quoteSummary` 429 bloquee HMM/GARCH/ARIMA.
 - Graham puede quedar no concluyente si Yahoo bloquea fundamentales; ese estado no invalida datos tecnicos de velas.
 - El screener muestra senal tecnica `BUY (Tech)`/`SELL (Tech)` cuando Python devuelve `HOLD` neutral y el score tecnico lo justifica.
@@ -233,13 +234,13 @@ Estado verificado:
 
 - FastAPI expone endpoints MCP/tools y `/workflow/analyze`.
 - HMM, GARCH, ARIMA, Graham y PCA/Lasso existen como implementacion inicial.
-- `MCPClient` de Next.js ya llama al workflow del quant-engine.
+- `QuantClient` de Next.js ya llama al workflow del quant-engine via `QUANT_ENGINE_URL`.
 
 Riesgos:
 
-- `QUANT_ENGINE_URL` cae por defecto a `http://127.0.0.1:8000`; en Vercel esto no sirve si no se configura URL real.
+- En produccion, `QUANT_ENGINE_URL` y `QUANT_ENGINE_SECRET` son obligatorios; no usar localhost en Vercel.
 - Modelos descargan datos y entrenan en request.
-- No hay cache central, cola de jobs ni respuesta asincrona.
+- Hay cache TTL en FastAPI; siguen pendientes cola de jobs y respuesta asincrona para calculos pesados.
 - `yfinance` puede degradar o limitar bajo carga.
 
 Accion recomendada:

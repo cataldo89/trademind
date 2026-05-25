@@ -3,7 +3,7 @@ title: "TradeMind - Contexto canonico para agentes IA"
 status: "operational-source-of-truth"
 owner: "Carlos / TradeMind"
 created_at: "2026-05-04"
-updated_at: "2026-05-10"
+updated_at: "2026-05-25"
 recommended_path: "LLM_CONTEXT.md"
 editable_by: "human-or-agent-with-evidence"
 purpose: "Orientar a cualquier IA para estabilizar TradeMind sin confundir vision futura con estado real del codigo."
@@ -12,6 +12,34 @@ purpose: "Orientar a cualquier IA para estabilizar TradeMind sin confundir visio
 # TradeMind - Contexto canonico para agentes IA
 
 El entorno operativo principal es VS Code. Las reglas de ejecución local, puertos fijos y pruebas visuales se encuentran en `AGENTS.md` y deben respetarse por cualquier agente IA.
+
+## 0.0 Rutas y direcciones canonicas
+
+Esta tabla es la unica fuente canonica para rutas, URLs, puertos, repositorios y proyectos externos. Si otro archivo contradice esta tabla, actualizar el otro archivo. No inventar rutas, aliases, puertos ni proyectos.
+
+| Concepto | Valor canonico | Regla |
+|---|---|---|
+| Workspace padre | `C:\Users\catal\Desktop\IA\SAASFACTORY\IA SAAS TRADE CV` | Solo contiene el repo y antecedentes. No ejecutar comandos de app desde aqui salvo que se indique. |
+| Repo local | `C:\Users\catal\Desktop\IA\SAASFACTORY\IA SAAS TRADE CV\trademind` | Este es el cwd correcto para Next.js, Git, Vercel y scripts npm. |
+| Repo GitHub oficial | `https://github.com/cataldo89/trademind.git` | Unico remoto permitido para push/pull. |
+| Repo prohibido | `cataldo89/trademind-push` | No usar, recrear, pushear ni referenciar. |
+| Rama principal | `main` | Push normal: `git push origin main`. |
+| Vercel project | `trademind-cv` | ID fijo: `prj_1Sqjg0370DyliHgMI0FcVe2jpG3I`. |
+| Vercel team/scope | `cataldo89-1519s-projects` | Usar siempre este scope. |
+| URL publica canonica | `https://trademind-cv-ten.vercel.app` | Usar este alias estable para validar produccion. No hardcodear URLs `trademind-*.vercel.app` de deploy puntual. |
+| Frontend local | `http://localhost:3000` | Unico puerto local permitido para Next.js salvo autorizacion explicita. |
+| Quant-engine local | `http://127.0.0.1:8000` | FastAPI Python separado del frontend. |
+| Quant-engine publico | `QUANT_ENGINE_URL` | En produccion apunta al tunel activo. No escribir un `trycloudflare.com` concreto en codigo/docs. |
+| Cloudflare actual | Quick Tunnel `trycloudflare.com` | Es efimero. Al reiniciar, ejecutar `npm run quant:start:vercel` para actualizar Vercel. |
+| Env Next local | `.env.local` | No subir a GitHub. |
+| Env quant local | `quant-engine/.env` | No subir a GitHub. |
+| Env produccion | Vercel Environment Variables | Gestionar con `vercel env ... --scope cataldo89-1519s-projects`. |
+| Arranque frontend | `npm run dev` | Ejecutar desde el repo local. |
+| Arranque quant local | `npm run quant:start` | Levanta FastAPI + quick tunnel y actualiza `.env.local`. |
+| Arranque quant + Vercel | `npm run quant:start:vercel` | Actualiza `QUANT_ENGINE_URL` en Vercel y despliega produccion. |
+| Deploy Vercel manual | `vercel deploy --prod --project trademind-cv --scope cataldo89-1519s-projects` | Antes verificar `.vercel/project.json`. |
+
+Aliases historicos o no canonicos que no deben usarse como fuente: `https://trademind-rose.vercel.app`, URLs de deploy tipo `https://trademind-<hash>-cataldo89-1519s-projects.vercel.app`, y cualquier `https://*.trycloudflare.com` pegado en documentacion permanente.
 
 ## 0. Regla principal
 

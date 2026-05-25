@@ -5,6 +5,7 @@
 - Repositorio GitHub oficial: `cataldo89/trademind`.
 - Solo subir cambios a `https://github.com/cataldo89/trademind.git`.
 - No usar, recrear, pushear ni referenciar `cataldo89/trademind-push`; es un duplicado que debe eliminarse.
+- Rutas, URLs y puertos canonicos viven en `LLM_CONTEXT.md` seccion `0.0 Rutas y direcciones canonicas`. Si este archivo u otro documento contradice esa tabla, corregir el documento que contradice.
 <!-- END:github-repository-rules -->
 <!-- BEGIN:nextjs-agent-rules -->
 # PUERTA DE ENTRADA UNIVERSAL PARA CUALQUIER AGENTE IA
@@ -85,7 +86,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 **PROYECTO VERCEL OFICIAL:** `trademind-cv` (ID: `prj_1Sqjg0370DyliHgMI0FcVe2jpG3I`)
 **EQUIPO:** `cataldo89-1519s-projects`
-**URL:** https://trademind-cv.vercel.app
+**URL canonica de produccion:** https://trademind-cv-ten.vercel.app
 
 ## REGLAS PARA DEPLOY
 

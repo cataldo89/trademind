@@ -4,7 +4,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const DEFAULT_BASE = 'https://trademind-rose.vercel.app'
+const DEFAULT_BASE = 'https://trademind-cv-ten.vercel.app'
 const DEFAULT_CONCURRENCY = 3
 const DEFAULT_OUT = 'reports/zesty-symbol-health.json'
 const REQUEST_TIMEOUT_MS = 20000
@@ -383,4 +383,4 @@ main().catch((error) => {
   console.error(error instanceof Error ? error.message : error)
   process.exitCode = 1
 })
-
+
