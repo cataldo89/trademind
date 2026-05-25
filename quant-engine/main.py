@@ -172,8 +172,10 @@ def run_workflow(req: SymbolRequest):
 
 # --- Sentiment Analysis Endpoints ---
 
+from typing import List
+
 class BatchSymbolRequest(BaseModel):
-    symbols: list[str]
+    symbols: List[str]
 
 @app.post("/ml/trigger_sentiment_scan")
 def trigger_sentiment_scan(req: BatchSymbolRequest):

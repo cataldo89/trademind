@@ -160,7 +160,6 @@ export async function POST(request: NextRequest) {
     console.log(`[Quant Scan] Running Python analysis for Top ${topCandidates.length} candidates with concurrency ${QUANT_CONCURRENCY}...`)
     
     // Step 5: Run Python Analysis Concurrently
-    const client = new QuantClient()
     let activeQuant = 0
     let quantIndex = 0
     await new Promise<void>((resolve) => {
