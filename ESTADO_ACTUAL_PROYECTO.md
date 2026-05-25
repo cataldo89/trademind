@@ -1,6 +1,6 @@
 ﻿# ESTADO ACTUAL DEL PROYECTO - TradeMind CV
 
-Fecha de auditoria: 2026-05-10  
+Fecha de auditoria: 2026-05-25  
 Rol: memoria tecnica maestra para agentes IA  
 Metodo: lectura de archivos, auditoria estatica de rutas frontend/backend y ejecucion de `npm run typecheck` + `npm run lint`.
 
@@ -30,6 +30,19 @@ Cambios aplicados despues de la auditoria inicial:
 - `/api/market/*` tiene validacion, limites, cache server-side y rate limit basico; pantallas principales agrupan quotes.
 - Quant-engine se consume via `QUANT_ENGINE_URL` + `QUANT_ENGINE_SECRET` sin localhost en produccion y FastAPI cachea resultados por TTL.
 - Validacion local: `npm run test:contracts`, `npm run typecheck` y `npm run lint` pasan; lint queda con warnings no bloqueantes.
+
+## Actualizacion quant/tunel/SDD - 2026-05-25
+
+- `QUANT_ENGINE_URL` en Vercel Production se actualizo para usar Cloudflare Tunnel hacia el FastAPI local.
+- Se agregaron `npm run quant:start`, `npm run quant:start:vercel` y `npm run quant:stop`.
+- `scripts/start-quant-cloudflare.ps1` levanta `quant-engine`, crea quick tunnel, valida `/health`, actualiza `.env.local` y opcionalmente actualiza Vercel + deploy.
+- Se agrego `START_QUANT_CLOUDFLARE.cmd` para doble clic y se instalo un arranque automatico de usuario en Windows Startup.
+- No hay `cert.pem` de Cloudflare ni token de tunel nombrado en la maquina; por eso la URL `trycloudflare.com` no es fija entre reinicios.
+- `quant-engine/market_data.py` usa Yahoo Chart API (`query1.finance.yahoo.com/v8/finance/chart`) para velas, evitando que `yfinance`/`quoteSummary` 429 bloquee HMM/GARCH/ARIMA.
+- Graham puede quedar no concluyente si Yahoo bloquea fundamentales; ese estado no invalida datos tecnicos de velas.
+- El screener muestra senal tecnica `BUY (Tech)`/`SELL (Tech)` cuando Python devuelve `HOLD` neutral y el score tecnico lo justifica.
+- Limpieza: se eliminaron archivos temporales versionados `_*.js/_*.txt/_*.ps1` y `scratch_test_*.js`.
+- SDD: el proyecto esta parcialmente alineado mediante contratos/runbooks/tests, pero falta estructura formal `specs/`. Ver `docs/sdd-status.md`.
 ## 1. Stack verificado
 
 | Area | Estado actual |

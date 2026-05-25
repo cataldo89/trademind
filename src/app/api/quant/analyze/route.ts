@@ -16,10 +16,16 @@ export async function POST(request: NextRequest) {
 
     if (!result.success) {
       console.error(`[API Quant Analyze] QuantClient returned failure:`, result.error)
+      const statusCode =
+        result.status === 'configuration_error' ? 503 :
+        result.status === 'timeout' ? 504 :
+        result.status === 'request_failed' ? 503 :
+        500
+
       return NextResponse.json({ 
         error: result.error || 'Quant workflow failed', 
         status: result.status 
-      }, { status: 500 })
+      }, { status: statusCode })
     }
 
     return NextResponse.json({ success: true, data: result.data })

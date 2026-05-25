@@ -52,3 +52,16 @@ Backend llama RPC `execute_virtual_trade`, que bloquea el perfil del usuario, va
 - Header interno: `X-TradeMind-Quant-Secret`.
 - En produccion faltas de `QUANT_ENGINE_URL` o `QUANT_ENGINE_SECRET` son errores de configuracion explicitos.
 - FastAPI mantiene cache TTL por simbolo/endpoint con `QUANT_ENGINE_CACHE_TTL_SECONDS`.
+- En local/Vercel actual, el FastAPI se expone con Cloudflare Tunnel hacia `http://127.0.0.1:8000`.
+- Arranque facil: `npm run quant:start` para local y `npm run quant:start:vercel` para actualizar `QUANT_ENGINE_URL` en Vercel y desplegar.
+- Atajo manual: `START_QUANT_CLOUDFLARE.cmd`.
+- Arranque automatico: archivo de usuario instalado en Windows Startup.
+- Sin credenciales de Cloudflare (`cert.pem` o token de tunel nombrado), el proyecto usa quick tunnel `trycloudflare.com`; la URL puede cambiar al reiniciar.
+- El motor Python usa `query1.finance.yahoo.com/v8/finance/chart` como fuente robusta de velas para HMM/GARCH/ARIMA cuando `yfinance` queda bloqueado por `429`.
+- El filtro Graham basado en fundamentales puede quedar no concluyente si Yahoo bloquea `quoteSummary`; ese fallo no debe anular senales tecnicas con datos de velas validos.
+
+## SDD
+
+- Estado actual: SDD parcial, no formal completo.
+- Fuente de contratos actual: este archivo, `LLM_CONTEXT.md`, `ESTADO_ACTUAL_PROYECTO.md` y runbooks.
+- Diagnostico y brecha formal: `docs/sdd-status.md`.

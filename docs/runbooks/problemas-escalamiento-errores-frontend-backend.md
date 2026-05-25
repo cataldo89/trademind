@@ -24,6 +24,15 @@ Este archivo no reemplaza la auditoria general. Complementa `ESTADO_ACTUAL_PROYE
 - P0 alertas cron: cerrado con `CRON_SECRET`, service role protegido, batch de quotes y metricas.
 - P1 market data: mitigado con limite de simbolos, cache server-side, rate limit y batching en pantallas principales.
 - P1 quant-engine: mitigado con cliente TS configurado por URL/secreto, sin localhost en produccion, y cache TTL en FastAPI.
+
+## Cierres aplicados - 2026-05-25
+
+- Quant-engine local queda expuesto a Vercel mediante Cloudflare Tunnel iniciado desde `npm run quant:start:vercel`.
+- Se documento que el quick tunnel `trycloudflare.com` cambia al reiniciar si no existe tunel nombrado con credenciales Cloudflare.
+- HMM/GARCH/ARIMA dejan de depender primero de `yfinance.download`; usan `quant-engine/market_data.py` contra Yahoo Chart API.
+- El bloqueo `429` de Yahoo `quoteSummary` afecta Graham/fundamentales, pero no debe convertir todo el workflow en `HOLD 0% Unknown`.
+- El screener no prioriza un `HOLD` neutral de Python por sobre `BUY (Tech)`/`SELL (Tech)` cuando el score tecnico es fuerte.
+- Se registro estado SDD parcial en `docs/sdd-status.md`.
 ## 2. Resumen ejecutivo
 
 Los problemas mas importantes detectados son:

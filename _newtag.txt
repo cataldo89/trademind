@@ -1,1 +1,0 @@
-<p className="text-xs font-mono text-white">${sig.price.toFixed(2)}</p>

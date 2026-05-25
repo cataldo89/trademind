@@ -34,22 +34,24 @@ test('Yahoo Finance calls use validateResult: false and log failures', () => {
 
 test('Screener client implements candles fallback and noData handling', () => {
   const client = read('src/components/screener/screener-client.tsx')
+  const scanRoute = read('src/app/api/quant/scan/route.ts')
+  const ranking = read('src/lib/ranking.ts')
 
-  // ScanResult interface update
-  assert.match(client, /price:\s*number\s*\|\s*null/)
-  assert.match(client, /changePercent:\s*number\s*\|\s*null/)
-  assert.match(client, /noData\?:/)
-  assert.match(client, /isFallback\?:/)
+  // Current scan contract keeps nullable market data and fallback flags in shared ranking types.
+  assert.match(ranking, /price:\s*number\s*\|\s*null/)
+  assert.match(ranking, /changePercent:\s*number\s*\|\s*null/)
+  assert.match(ranking, /noData:\s*boolean/)
+  assert.match(ranking, /isFallback:\s*boolean/)
 
-  // analyzeSymbol fallback and noData check
-  assert.match(client, /function analyzeSymbol\(/)
-  assert.match(client, /noData\s*\|\|\s*!candles\s*\|\|\s*candles\.length\s*===\s*0/)
-  assert.match(client, /suggestions:\s*\[\]/)
+  // /api/quant/scan marks incomplete candles as noData through calculatePreliminaryScore.
+  assert.match(scanRoute, /calculatePreliminaryScore\(/)
+  assert.match(ranking, /!\s*candles\s*\|\|\s*candles\.length\s*<\s*10/)
+  assert.match(ranking, /noData\s*=\s*true/)
 
-  // scanResults candles fallback checks
-  assert.match(client, /price\s*===\s*null\s*\|\|\s*price\s*===\s*0/)
-  assert.match(client, /isFallback\s*=\s*true/)
-  assert.match(client, /noData\s*=\s*true/)
+  // Python failures are represented as fallback results instead of breaking the whole screener.
+  assert.match(scanRoute, /pythonResults\.set\(candidate\.symbol,\s*null\)/)
+  assert.match(scanRoute, /const isFallback = isTopCandidate \? \(quantData === null\) : true/)
+  assert.match(scanRoute, /calculateFinalQuantScore\(p,\s*quantData,\s*isFallback\)/)
 
   // Render Checks
   assert.match(client, /r\.noData\s*\|\|\s*r\.price\s*===\s*null/)

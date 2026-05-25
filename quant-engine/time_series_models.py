@@ -2,12 +2,15 @@ import pandas as pd
 import yfinance as yf
 from statsmodels.tsa.arima.model import ARIMA
 from statsmodels.tsa.statespace.sarimax import SARIMAX
+from market_data import fetch_chart_dataframe
 import warnings
 warnings.filterwarnings("ignore")
 
 def predict_direction_arima(symbol: str):
     try:
-        df = yf.download(symbol, period="1y", progress=False)
+        df = fetch_chart_dataframe(symbol, range_="1y", interval="1d")
+        if df.empty:
+            df = yf.download(symbol, period="1y", progress=False)
         if df.empty:
             return {"expected_return": 0.0, "confidence": 0.0, "status": "error"}
             
@@ -48,7 +51,9 @@ def predict_direction_arima(symbol: str):
 
 def predict_direction_sarima(symbol: str):
     try:
-        df = yf.download(symbol, period="2y", progress=False)
+        df = fetch_chart_dataframe(symbol, range_="2y", interval="1d")
+        if df.empty:
+            df = yf.download(symbol, period="2y", progress=False)
         if df.empty:
             return {"expected_return": 0.0, "confidence": 0.0, "status": "error"}
             

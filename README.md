@@ -76,6 +76,32 @@ http://localhost:3000
 
 ### 3. Iniciar quant-engine
 
+Modo recomendado con Cloudflare:
+
+```bash
+npm run quant:start
+```
+
+Este comando levanta el FastAPI en `http://127.0.0.1:8000`, abre un Cloudflare quick tunnel, valida `/health` y actualiza `QUANT_ENGINE_URL` en `.env.local`.
+
+Para actualizar Vercel Production con la URL del tunel y desplegar:
+
+```bash
+npm run quant:start:vercel
+```
+
+Tambien puedes usar doble clic en:
+
+```text
+START_QUANT_CLOUDFLARE.cmd
+```
+
+Quedo instalado un arranque automatico de usuario en la carpeta Startup de Windows para iniciar el tunel al iniciar sesion.
+
+Nota: mientras no exista `cert.pem` o token de tunel nombrado de Cloudflare, el proyecto usa `trycloudflare.com`. Es facil de iniciar, pero la URL puede cambiar al reiniciar el tunel.
+
+Modo manual:
+
 ```bash
 cd quant-engine
 python -m venv venv
@@ -161,6 +187,14 @@ QUANT_ENGINE_SECRET=tu_secreto_interno
 QUANT_ENGINE_CACHE_TTL_SECONDS=300
 QUANT_ENGINE_AUTH_DISABLED=false
 QUANT_ENGINE_ALLOWED_ORIGINS=http://localhost:3000,https://trademind-cv.vercel.app
+```
+
+## SDD
+
+TradeMind esta parcialmente alineado con SDD: mantiene contratos, runbooks y memoria tecnica verificable, pero todavia no tiene una carpeta formal `specs/` por feature. Ver:
+
+```text
+docs/sdd-status.md
 ```
 
 ## Seguridad

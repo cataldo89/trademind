@@ -85,3 +85,11 @@ La categorizacion de simbolos ocurre principalmente en `src/lib/market-data.ts`,
 | Escalamiento frontend/backend | `docs/runbooks/problemas-escalamiento-errores-frontend-backend.md` |
 | Seguridad | `SEGURIDAD.md` |
 | Roadmap aspiracional | `LLM.md` |
+
+## 8. Memoria operativa 2026-05-25
+
+- El quant-engine funciona localmente en `http://127.0.0.1:8000` y se expone a Vercel por Cloudflare Tunnel.
+- Arranque recomendado: `npm run quant:start` para local; `npm run quant:start:vercel` para actualizar Vercel y desplegar.
+- Mientras no exista tunel nombrado de Cloudflare, `trycloudflare.com` puede cambiar al reiniciar.
+- El motor Python no debe depender solo de `yfinance`; usa Yahoo Chart API para velas en modelos HMM/GARCH/ARIMA.
+- El proyecto esta parcialmente alineado con SDD, pero necesita carpeta formal `specs/` para completar la disciplina.

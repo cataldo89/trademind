@@ -76,48 +76,41 @@ La prioridad inmediata no es agregar mas capas aspiracionales de IA. La priorida
 - Backtesting LEAN real antes de afirmar eficacia.
 - Tests y verificacion verde.
 
-## 4. Estado real resumido al 2026-05-10
+## 4. Estado real resumido al 2026-05-25
 
 | Area | Estado |
 |---|---|
 | Next.js | 16.2.4 con React 19.2.4 |
-| TypeScript | `npm run typecheck` pasa |
-| ESLint | `npm run lint` falla con 21 errores y 865 warnings |
-| `/api/trading` | Conectado a `mcpClient.runWorkflow`, pero tiene P0 de persistencia por `market: 'EQUITY'` |
-| `/api/signals` | Node.js, JWT fallback, Supabase; riesgo por service role |
-| `/api/market/*` | Yahoo Finance real, sin rate limit robusto |
-| `/api/alerts/check` | Sin contrato seguro de cron y N+1 quotes |
-| Supabase | Schema/RLS presentes, pero migraciones incompletas y `schema.sql` tiene comentario invalido `#` |
-| Quant-engine | FastAPI y modelos iniciales reales, pero no escala como request sincrono bajo demanda |
+| TypeScript | `npm run typecheck` pasa al 2026-05-25 |
+| Build | `npm run build` pasa al 2026-05-25 |
+| Contratos | `npm run test:contracts` pasa al 2026-05-25 |
+| `/api/trading` | Normaliza mercado y reporta persistencia real |
+| `/api/signals` | Node.js, JWT fallback, Supabase; riesgo por service role documentado |
+| `/api/market/*` | Yahoo Finance real con cache/rate limit basico |
+| `/api/alerts/check` | Protegido por secreto de cron y batch de quotes |
+| Supabase | Migracion inicial consolidada y RPCs financieras |
+| Quant-engine | FastAPI local expuesto por Cloudflare Tunnel, con fallback de velas por Yahoo chart para HMM/GARCH/ARIMA |
 | QuantConnect | Estructura presente, sin backtest end-to-end confirmado |
-| Documentacion | Actualizada para enlazar runbook de escalamiento y errores frontend/backend |
+| SDD | Parcial: contratos/runbooks/memoria tecnica, sin `specs/` formal aun |
 
-## 5. Problema tecnico actual mas importante
+## 5. Estado operativo reciente
 
-El error principal detectado es:
-
-```text
-/api/trading intenta guardar signals.market = EQUITY
-pero Supabase signals.market solo acepta US o CL.
-```
-
-Evidencia:
-
-- `src/app/api/trading/route.ts` inserta `market: 'EQUITY'`.
-- `supabase/schema.sql` define `CHECK (market IN ('US', 'CL'))`.
-- El catch de persistencia solo hace `console.error` y la API igualmente devuelve `success: true`.
-
-Impacto:
-
-- El frontend puede mostrar exito aunque la senal no quede guardada.
-- El usuario refresca `/signals` y no ve la senal.
-- Otra IA podria culpar al frontend, React Query o cache cuando la causa real es backend/DB.
-
-Registro completo:
+El problema reciente del screener/quant era doble:
 
 ```text
-docs/runbooks/problemas-escalamiento-errores-frontend-backend.md
+1. QUANT_ENGINE_URL apuntaba a un quick tunnel expirado.
+2. yfinance recibia 429 en Python, por lo que Graham/ARIMA/HMM/GARCH quedaban en HOLD/0/Unknown.
 ```
+
+Estado aplicado:
+
+- `scripts/start-quant-cloudflare.ps1` levanta FastAPI + Cloudflare quick tunnel y puede actualizar Vercel.
+- `quant-engine/market_data.py` obtiene velas desde `query1.finance.yahoo.com/v8/finance/chart`.
+- HMM/GARCH/ARIMA usan ese helper antes de caer a `yfinance`.
+- Graham puede quedar no concluyente sin anular el analisis tecnico.
+- El screener no deja que un HOLD neutral de Python tape un BUY/SELL tecnico por score.
+
+Limitacion vigente: sin credenciales de Cloudflare para tunel nombrado, `trycloudflare.com` no garantiza URL fija. Usar `npm run quant:start:vercel` al reiniciar para actualizar Vercel.
 
 ## 6. Reglas de implementacion
 

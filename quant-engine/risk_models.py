@@ -2,10 +2,13 @@ import numpy as np
 import pandas as pd
 import yfinance as yf
 from hmmlearn.hmm import GaussianHMM
+from market_data import fetch_chart_dataframe
 
 def detect_regime(symbol: str):
     # Descargar últimos 5 años de datos
-    df = yf.download(symbol, period="5y", progress=False)
+    df = fetch_chart_dataframe(symbol, range_="5y", interval="1d")
+    if df.empty:
+        df = yf.download(symbol, period="5y", progress=False)
     if df.empty:
         return "Unknown"
         
@@ -40,7 +43,9 @@ from statsmodels.tsa.arima.model import ARIMA
 from arch import arch_model
 
 def calculate_var_garch(symbol: str, timeframe: str):
-    df = yf.download(symbol, period="2y", progress=False)
+    df = fetch_chart_dataframe(symbol, range_="2y", interval="1d")
+    if df.empty:
+        df = yf.download(symbol, period="2y", progress=False)
     if df.empty:
         return {"var_1d_95": 0.0, "annualized_vol": 0.0}
         
@@ -74,6 +79,5 @@ except Exception:
 
     def predict_direction_marima(symbols: list):
         return {"status": "error", "message": "time_series_models unavailable"}
-
 
 

@@ -14,6 +14,7 @@ Regla: inventario no equivale a funcionalidad. Para estado real leer `ESTADO_ACT
 | `ESTRUCTURA_PROYECTO.md` | Mapa de archivos y carpetas del repositorio |
 | `soluciones_tecnicas.md` | Problemas resueltos y patrones tecnicos obligatorios |
 | `docs/runbooks/problemas-escalamiento-errores-frontend-backend.md` | Runbook de fallas frontend/backend y riesgos de escalamiento SaaS |
+| `docs/sdd-status.md` | Diagnostico SDD: alineacion parcial, brechas y proxima estructura `specs/` |
 | `SEGURIDAD.md` | Reglas de secretos, service role, scripts y checklist pre-push |
 | `MEMORY.md` | Memoria historica y filosofia del producto |
 | `LLM.md` | Vision futura y roadmap aspiracional AI-native |
@@ -43,6 +44,9 @@ Regla: inventario no equivale a funcionalidad. Para estado real leer `ESTADO_ACT
 | `lean-workspace/` | Workspace adicional relacionado a LEAN |
 | `reports/` | Reportes generados, por ejemplo auditorias Zesty |
 | `scripts/` | Scripts de mantenimiento/auditoria |
+| `scripts/start-quant-cloudflare.ps1` | Arranque local del quant-engine + Cloudflare quick tunnel; puede actualizar Vercel |
+| `scripts/stop-quant-cloudflare.ps1` | Detiene cloudflared y el proceso que escucha en puerto 8000 |
+| `START_QUANT_CLOUDFLARE.cmd` | Atajo de doble clic para iniciar quant-engine + Cloudflare + Vercel deploy |
 | `docs/` | Runbooks y documentacion operativa adicional |
 | `apply-schema.ps1` | Script para aplicar schema usando variables de entorno |
 | `check-tables.ps1` | Script para verificar tablas Supabase usando variables de entorno |
@@ -178,6 +182,7 @@ Tablas principales descritas por el schema:
 | `quant-engine/main.py` | FastAPI con endpoints MCP/tools, ML y workflow |
 | `quant-engine/risk_models.py` | HMM, GARCH/VaR y ARIMA |
 | `quant-engine/time_series_models.py` | Modelos de series temporales |
+| `quant-engine/market_data.py` | Cliente liviano Yahoo Chart API para velas usadas por modelos Python |
 | `quant-engine/graham_filters.py` | Filtros Benjamin Graham |
 | `quant-engine/ml_pipeline.py` | PCA/Lasso/Ridge iniciales |
 | `quant-engine/lean_integration.py` | Integracion LEAN pendiente end-to-end |
@@ -238,3 +243,7 @@ Actualizar este archivo cuando:
 - Se agregue una migracion Supabase real.
 - Cambie el contrato entre frontend, API routes, Supabase o quant-engine.
 - Se cierre alguno de los P0 del runbook de escalamiento.
+
+## 15. Estado SDD
+
+TradeMind usa practicas SDD parciales: contratos versionados, runbooks, estado tecnico y tests de contrato. No existe aun una estructura formal `specs/` por feature. La fuente de verdad de esta evaluacion es `docs/sdd-status.md`.

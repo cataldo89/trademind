@@ -177,6 +177,23 @@ export function ScreenerClient() {
 
   const selectedResult = scanResults.find(r => r.symbol === selectedSymbol)
 
+  const getDisplayAction = (r: FinalQuantScore) => {
+    if (r.quant?.action === 'BUY' || r.quant?.action === 'SELL') return r.quant.action
+    if (r.finalScore >= 60) return 'BUY (Tech)'
+    if (r.finalScore <= 40) return 'SELL (Tech)'
+    return 'HOLD'
+  }
+
+  const isBullishCard = (r: FinalQuantScore) => {
+    const action = getDisplayAction(r)
+    return action === 'BUY' || action === 'BUY (Tech)'
+  }
+
+  const isBearishCard = (r: FinalQuantScore) => {
+    const action = getDisplayAction(r)
+    return action === 'SELL' || action === 'SELL (Tech)'
+  }
+
   const isSelectedSymbolVerifying = verifyState.symbol === selectedSymbol;
   const quantLoading = isSelectedSymbolVerifying && verifyState.status === 'consultando';
   const quantError = isSelectedSymbolVerifying && (verifyState.status === 'error' || verifyState.status === 'modo_basico');
@@ -207,9 +224,9 @@ export function ScreenerClient() {
                 href={`/analysis?symbol=${r.symbol}&market=${r.market}`}
                 className={cn(
                   'p-4 rounded-xl border transition-all hover:scale-[1.02]',
-                  r.quant?.action === 'BUY' || (!r.quant && r.finalScore >= 60)
+                  isBullishCard(r)
                     ? 'bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/15'
-                    : r.quant?.action === 'SELL' || (!r.quant && r.finalScore <= 40)
+                    : isBearishCard(r)
                     ? 'bg-red-500/10 border-red-500/30 hover:bg-red-500/15'
                     : 'bg-gray-800/40 border-gray-700 hover:bg-gray-800'
                 )}
@@ -218,11 +235,11 @@ export function ScreenerClient() {
                   <div className="flex flex-col gap-1">
                     <span className={cn(
                       'text-[10px] font-bold px-1.5 py-0.5 rounded leading-none w-fit',
-                      r.quant?.action === 'BUY' ? 'bg-emerald-500/20 text-emerald-400' 
-                        : r.quant?.action === 'SELL' ? 'bg-red-500/20 text-red-400'
+                      isBullishCard(r) ? 'bg-emerald-500/20 text-emerald-400' 
+                        : isBearishCard(r) ? 'bg-red-500/20 text-red-400'
                         : 'bg-gray-700 text-gray-300'
                     )}>
-                      {r.quant?.action || (r.finalScore > 60 ? 'BUY (Tech)' : r.finalScore < 40 ? 'SELL (Tech)' : 'HOLD')}
+                      {getDisplayAction(r)}
                     </span>
                     <span className="text-xs font-semibold text-white truncate max-w-[150px]" title={r.name}>{r.name}</span>
                   </div>

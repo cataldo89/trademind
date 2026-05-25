@@ -74,14 +74,16 @@ def decision_node(state: AgentState):
     
     # Detect data errors or missing/incomplete fetches
     graham_reason = state.get('graham_reason', '')
-    is_error = "Error" in graham_reason or "Invalid" in graham_reason or "missing" in graham_reason or (var_95 == 1 and ml_pred == 0 and not graham_passed)
+    technical_missing = var_95 in (0, 1) and ml_pred == 0 and state.get('market_regime') in ("Unknown", "Desconocido")
+    graham_inconclusive = "Error" in graham_reason or "Invalid" in graham_reason or "missing" in graham_reason
+    is_error = technical_missing
 
     if is_error:
         action = "HOLD"
         label = "Sin conclusión / datos insuficientes"
         explanation = f"Análisis incompleto por fallo al obtener datos: {graham_reason}"
         confidence = 0
-    elif not graham_passed:
+    elif not graham_passed and not graham_inconclusive:
         action = "SELL"
         label = "EVITAR / VENDER"
         explanation = f"Rechazado por filtro Graham: {graham_reason}"
@@ -94,12 +96,16 @@ def decision_node(state: AgentState):
         action = "BUY"
         label = "COMPRAR CON CAUTELA"
         explanation = f"Señal alcista validada. Régimen: {state.get('market_regime', 'Desconocido')}. Riesgo VaR 1D: {var_95*100:.2f}%."
+        if graham_inconclusive:
+            explanation += f" Filtro Graham no concluyente: {graham_reason}."
         confidence = 75 + int((0.05 - var_95) * 200) # Boost confidence based on low risk
         confidence = min(confidence, 95)
     else:
         action = "HOLD"
         label = "MANTENER"
         explanation = "Las condiciones no justifican aumentar la exposición según el umbral de riesgo GARCH o modelos ML."
+        if graham_inconclusive:
+            explanation += f" Filtro Graham no concluyente: {graham_reason}."
         confidence = 50
         
     # Apply Youtuber Strategy Modifiers
@@ -174,5 +180,3 @@ def run_analysis_workflow(symbol: str):
             "error_reason": err_msg,
             "data_status": "incomplete"
         }
-
-
