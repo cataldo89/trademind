@@ -1,3 +1,13 @@
 {
-  "workbench.sideBar.location": "right"
+  "workbench.sideBar.location": "right",
+  "python.defaultInterpreterPath": "C:\\ETAP 2101\\ThirdParty\\Python\\Python384\\python.exe",
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}/quant-engine"
+  ],
+  "python.testing.cwd": "${workspaceFolder}/quant-engine",
+  "python.testing.pytestArgs": [
+    "."
+  ],
+  "python.testing.pytestEnabled": true,
+  "python.testing.unittestEnabled": false
 }
