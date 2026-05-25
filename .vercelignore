@@ -1,0 +1,12 @@
+# Local/generated quant-engine artifacts are not needed by the Next.js deploy.
+quant-engine/modelos_locales/
+quant-engine/sentiment_cache.json
+quant-engine/venv/
+quant-engine/.venv/
+quant-engine/**/__pycache__/
+quant-engine/**/*.pyc
+
+# Local tooling/output
+.playwright-mcp/
+reports/
+*.log
