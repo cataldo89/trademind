@@ -1,4 +1,4 @@
-﻿export interface QuantToolResponse<T = unknown> {
+export interface QuantToolResponse<T = unknown> {
   success: boolean
   data: T | null
   error?: string
@@ -99,6 +99,26 @@ export class QuantClient {
 
   async runWorkflow(symbol: string) {
     return this.callEndpoint<QuantWorkflowResponse>('/workflow/analyze', { symbol }, 15000)
+  }
+
+  async triggerSentimentScan(symbols: string[]) {
+    return this.callEndpoint<{status: string, processed: number}>('/ml/trigger_sentiment_scan', { symbols }, 120000) // 2 min timeout
+  }
+
+  async getSentimentCache() {
+    if (this.configurationError || !this.serverUrl) {
+      return { success: false, data: null, error: this.configurationError }
+    }
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+    if (this.secret) headers['X-TradeMind-Quant-Secret'] = this.secret
+    try {
+      const res = await fetch(`${this.serverUrl}/ml/sentiment_cache`, { headers })
+      if (!res.ok) return { success: false, data: null }
+      const data = await res.json()
+      return { success: true, data }
+    } catch {
+      return { success: false, data: null }
+    }
   }
 }
 

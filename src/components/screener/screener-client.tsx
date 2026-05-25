@@ -1,22 +1,25 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { getCategorizedZestySymbols } from '@/lib/market-data'
 import { Market } from '@/types'
 import { cn } from '@/lib/utils'
 import {
-  ArrowUp, ArrowDown, ArrowRightLeft,
-  AlertCircle, Loader2, Search, ChevronRight, Activity, Eye, Zap
+  ArrowRightLeft,
+  Loader2, Search, ChevronRight, Activity, Eye, Zap
 } from 'lucide-react'
 import Link from 'next/link'
-import { FinalQuantScore } from '@/lib/ranking'
+import type { FinalQuantScore, QuantResultData } from '@/lib/ranking'
 
 export function ScreenerClient() {
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<'all' | 'opportunities' | 'warnings'>('all')
   const [category, setCategory] = useState('zesty-all')
   const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null)
+  const [isScanningSentiment, setIsScanningSentiment] = useState(false)
+  const queryClient = useQueryClient()
 
   const [verifyState, setVerifyState] = useState<{
     status: 'idle' | 'consultando' | 'conectado' | 'error' | 'modo_basico'
@@ -26,7 +29,7 @@ export function ScreenerClient() {
     latency: number | null
     httpStatus: number | null
     source: 'TypeScript frontend' | 'Python quant-engine' | 'Fallback básico'
-    data: any | null
+    data: QuantResultData | null
     errorMessage?: string
   }>({
     status: 'idle',
@@ -42,7 +45,8 @@ export function ScreenerClient() {
 
   const runVerification = async (symbol: string) => {
     if (!symbol) return
-    const start = Date.now()
+    // eslint-disable-next-line react-hooks/purity
+    const start = performance.now()
     setVerifyState(prev => ({
       ...prev,
       status: 'consultando',
@@ -60,7 +64,8 @@ export function ScreenerClient() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ symbol }),
       })
-      const latency = Date.now() - start
+      // eslint-disable-next-line react-hooks/purity
+      const latency = Math.round(performance.now() - start)
       const httpStatus = res.status
 
       if (!res.ok) {
@@ -88,6 +93,7 @@ export function ScreenerClient() {
       }
 
       const body = await res.json()
+      const workflowResult = body.data?.workflow_result as QuantResultData | undefined
       setVerifyState({
         status: 'conectado',
         symbol,
@@ -96,11 +102,12 @@ export function ScreenerClient() {
         latency,
         httpStatus,
         source: 'Python quant-engine',
-        data: body.data?.workflow_result || null,
+        data: workflowResult || null,
         errorMessage: undefined
       })
-    } catch (err: any) {
-      const latency = Date.now() - start
+    } catch (err: unknown) {
+      // eslint-disable-next-line react-hooks/purity
+      const latency = Math.round(performance.now() - start)
       setVerifyState({
         status: 'error',
         symbol,
@@ -110,7 +117,7 @@ export function ScreenerClient() {
         httpStatus: null,
         source: 'Fallback básico',
         data: null,
-        errorMessage: err.message || String(err)
+        errorMessage: err instanceof Error ? err.message : String(err)
       })
     }
   }
@@ -124,6 +131,26 @@ export function ScreenerClient() {
     }
   }
 
+  const triggerManualSentimentScan = async () => {
+    setIsScanningSentiment(true)
+    toast.info('Iniciando lectura de noticias con FinBERT... Esto tomará un par de minutos.')
+    try {
+      const symbols = Array.from(new Set(scanSymbols.map((s) => s.symbol).filter(Boolean)))
+      const res = await fetch('/api/quant/sentiment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ symbols }),
+      })
+      if (!res.ok) throw new Error('Falló el escaneo de sentimiento')
+      toast.success('¡Noticias analizadas con éxito! Actualizando Screener...')
+      queryClient.invalidateQueries({ queryKey: ['screener-quant-scan', category] })
+    } catch (e: any) {
+      toast.error('Error al escanear noticias: ' + e.message)
+    } finally {
+      setIsScanningSentiment(false)
+    }
+  }
+
   const categories = useMemo(() => getCategorizedZestySymbols(), [])
   const selectedCategory = categories.find((cat) => cat.id === category) ?? categories[0]
   
@@ -133,8 +160,6 @@ export function ScreenerClient() {
       .slice(0, 500)
       .map((s) => ({ ...s, market: 'US' as Market }))
   }, [selectedCategory])
-
-  const categoryTotal = selectedCategory?.symbols.length ?? 0
 
   const { data: scanResponse, isLoading: scanLoading } = useQuery({
     queryKey: ['screener-quant-scan', category],
@@ -175,8 +200,6 @@ export function ScreenerClient() {
       return r.symbol.toLowerCase().includes(search.toLowerCase()) || r.name.toLowerCase().includes(search.toLowerCase())
     })
 
-  const selectedResult = scanResults.find(r => r.symbol === selectedSymbol)
-
   const getDisplayAction = (r: FinalQuantScore) => {
     if (r.quant?.action === 'BUY' || r.quant?.action === 'SELL') return r.quant.action
     if (r.finalScore >= 60) return 'BUY (Tech)'
@@ -193,11 +216,6 @@ export function ScreenerClient() {
     const action = getDisplayAction(r)
     return action === 'SELL' || action === 'SELL (Tech)'
   }
-
-  const isSelectedSymbolVerifying = verifyState.symbol === selectedSymbol;
-  const quantLoading = isSelectedSymbolVerifying && verifyState.status === 'consultando';
-  const quantError = isSelectedSymbolVerifying && (verifyState.status === 'error' || verifyState.status === 'modo_basico');
-  const quantAnalysis = isSelectedSymbolVerifying ? verifyState.data : null;
 
   return (
     <div className="p-6 space-y-6">
@@ -250,6 +268,29 @@ export function ScreenerClient() {
                     <span className="text-[10px] text-gray-500">Score: {r.finalScore.toFixed(0)}</span>
                   </div>
                 </div>
+
+                {/* Transparency Badges */}
+                <div className="flex flex-wrap gap-1 mb-3">
+                  {r.quant ? (
+                    <span className="px-1.5 py-0.5 bg-indigo-500/20 text-indigo-300 text-[9px] font-bold rounded">
+                      [ARIMA/HMM]
+                    </span>
+                  ) : (
+                    <span className="px-1.5 py-0.5 bg-gray-800 text-gray-400 text-[9px] font-bold rounded">
+                      [Filtro Rápido]
+                    </span>
+                  )}
+                  {r.quant?.weekend_sentiment?.sentiment === 'POSITIVE' && (
+                    <span className="px-1.5 py-0.5 bg-emerald-500/20 text-emerald-400 text-[9px] font-bold rounded">
+                      [FinBERT Positivo]
+                    </span>
+                  )}
+                  {r.quant?.weekend_sentiment?.sentiment === 'NEGATIVE' && (
+                    <span className="px-1.5 py-0.5 bg-red-500/20 text-red-400 text-[9px] font-bold rounded">
+                      [FinBERT Negativo]
+                    </span>
+                  )}
+                </div>
                 
                 {r.quant && (
                    <div className="text-[10px] text-gray-400 mb-2 mt-1 space-y-1">
@@ -296,13 +337,22 @@ export function ScreenerClient() {
               Estado del Motor Cuant
             </h2>
           </div>
-          <button
-            onClick={() => runVerification('AAPL')}
-            disabled={verifyState.status === 'consultando'}
-            className="px-3 py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-lg transition-all"
-          >
-            {verifyState.status === 'consultando' && verifyState.symbol === 'AAPL' ? 'Probando...' : 'Probar motor con AAPL'}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={triggerManualSentimentScan}
+              disabled={isScanningSentiment}
+              className="px-3 py-1.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-lg transition-all"
+            >
+              {isScanningSentiment ? 'Leyendo Noticias...' : 'Escanear Noticias (FinBERT)'}
+            </button>
+            <button
+              onClick={() => runVerification('AAPL')}
+              disabled={verifyState.status === 'consultando'}
+              className="px-3 py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-lg transition-all"
+            >
+              {verifyState.status === 'consultando' && verifyState.symbol === 'AAPL' ? 'Probando...' : 'Probar motor con AAPL'}
+            </button>
+          </div>
         </div>
 
         {/* Status Message */}

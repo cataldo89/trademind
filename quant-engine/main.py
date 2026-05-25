@@ -168,3 +168,38 @@ def run_workflow(req: SymbolRequest):
         lambda: run_analysis_workflow(req.symbol),
     )
     return {"workflow_result": result}
+
+
+# --- Sentiment Analysis Endpoints ---
+
+class BatchSymbolRequest(BaseModel):
+    symbols: list[str]
+
+@app.post("/ml/trigger_sentiment_scan")
+def trigger_sentiment_scan(req: BatchSymbolRequest):
+    import sys
+    import os
+    sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+    from sentiment_models import run_daily_sentiment_job
+    
+    # We run it synchronously here just for testing/triggering manually
+    # In production this would be a true background task (e.g. celery/BackgroundTasks)
+    data = run_daily_sentiment_job(req.symbols)
+    return {"status": "completed", "processed": len(data)}
+
+@app.get("/ml/sentiment_cache")
+def get_sentiment_cache():
+    import sys
+    import os
+    sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+    from sentiment_models import get_cached_sentiment
+    
+    # We read the whole cache by passing a dummy or just reading the file
+    import json
+    try:
+        if os.path.exists("sentiment_cache.json"):
+            with open("sentiment_cache.json", "r") as f:
+                return json.load(f)
+    except Exception:
+        pass
+    return {}

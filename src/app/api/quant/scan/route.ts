@@ -115,6 +115,11 @@ export async function POST(request: NextRequest) {
     // Step 3: Preliminary Scoring
     const preliminaryResults: PreliminaryTechData[] = []
     
+    // Step 3.5: Fetch Sentiment Cache
+    const client = new QuantClient()
+    const sentimentRes = await client.getSentimentCache()
+    const sentimentCache = sentimentRes.success && sentimentRes.data ? (sentimentRes.data as Record<string, any>) : {}
+
     for (const ySym of yahooSymbols) {
       const original = yahooToOriginal.get(ySym.toUpperCase()) || ySym
       const q = quotesMap.get(ySym) || quotesMap.get(ySym.toUpperCase())
@@ -129,6 +134,21 @@ export async function POST(request: NextRequest) {
       const name = symbolMap[original] || q?.shortName || q?.longName || original
 
       const prelim = calculatePreliminaryScore(original, name, market, category, c, quoteData)
+      
+      // Inject Sentiment
+      const sent = sentimentCache[original]
+      if (sent) {
+        prelim.score += (sent.score * 5) // +5 per sentiment score unit
+        prelim.score = Math.max(0, Math.min(100, prelim.score))
+        // We attach it to prelim or wait for final? 
+        // We'll attach it to prelim as suggestions
+        if (sent.sentiment === 'POSITIVE') prelim.suggestions.push({ type: 'opportunity', label: 'Noticias Positivas (FinBERT)' })
+        if (sent.sentiment === 'NEGATIVE') prelim.suggestions.push({ type: 'warning', label: 'Noticias Negativas (FinBERT)' })
+        
+        // Also store it for later
+        ;(prelim as any)._sentiment = sent
+      }
+
       preliminaryResults.push(prelim)
     }
 
@@ -173,7 +193,14 @@ export async function POST(request: NextRequest) {
       const quantData = isTopCandidate ? (pythonResults.get(p.symbol) || null) : null
       const isFallback = isTopCandidate ? (quantData === null) : true
       
-      return calculateFinalQuantScore(p, quantData, isFallback)
+      const finalScore = calculateFinalQuantScore(p, quantData, isFallback)
+      
+      const sent = (p as any)._sentiment
+      if (sent) {
+        if (!finalScore.quant) finalScore.quant = {} as any
+        (finalScore.quant as any).weekend_sentiment = sent
+      }
+      return finalScore
     })
 
     const ranked = rankScreenerResults(finalResults)

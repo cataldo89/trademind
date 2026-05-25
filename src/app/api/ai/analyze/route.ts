@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { yahooFinance } from '@/lib/yahoo-finance'
 import { GoogleGenerativeAI } from '@google/generative-ai'
+import { quantClient } from '@/lib/ai/quant-client'
 
 interface AnalyzeRequestBody {
   symbol?: unknown
@@ -50,8 +51,8 @@ function buildNewsHeadlines(searchRes: YahooSearchResult) {
     : 'Sin noticias recientes.'
 }
 
-function buildPrompt(symbol: string, market: string | undefined, quote: YahooQuote, newsHeadlines: string) {
-  return `Actúa como un analista financiero senior experto en mercados bursátiles.
+function buildPrompt(symbol: string, market: string | undefined, quote: YahooQuote, newsHeadlines: string, quantData?: any, sentimentData?: any) {
+  let prompt = `Actúa como un analista financiero senior experto en mercados bursátiles.
 Analiza el siguiente activo y entrega una sugerencia de inversión clara en español: COMPRAR CON CAUTELA, EVITAR / VENDER o MANTENER.
 Usa datos de mercado, titulares recientes y contexto técnico simple. Sé conciso, profesional y evita encabezados grandes.
 
@@ -63,9 +64,21 @@ Cambio del día: ${formatPercent(quote.regularMarketChangePercent)}
 Rango del día: ${formatCurrency(quote.regularMarketDayLow)} - ${formatCurrency(quote.regularMarketDayHigh)}
 
 Últimas noticias:
-${newsHeadlines}
+${newsHeadlines}`
 
-Empieza la respuesta con la recomendación principal en negrita.`
+  if (quantData) {
+    prompt += `\n\nIMPORTANTE - Nuestro motor Quant Local analizó esto:
+    - Acción sugerida por ML: ${quantData.action || 'HOLD'}
+    - Confianza del modelo: ${quantData.confidence || 0}%
+    - Régimen de Mercado (HMM): ${quantData.market_regime || 'Desconocido'}`
+  }
+
+  if (sentimentData) {
+    prompt += `\n\n- Análisis de Sentimiento Local (FinBERT): El sentimiento general de las noticias en la base de datos es ${sentimentData.sentiment} (Score: ${sentimentData.score}).`
+  }
+
+  prompt += `\n\nUsa estos datos cuantitativos y de sentimiento para justificar tu respuesta. Empieza la respuesta con la recomendación principal en negrita.`
+  return prompt
 }
 
 
@@ -190,7 +203,15 @@ export async function POST(request: NextRequest) {
 
     const searchRes = (await yahooFinance.search(yahooSymbol)) as YahooSearchResult
     const newsHeadlines = buildNewsHeadlines(searchRes)
-    const prompt = buildPrompt(symbol, market, quote, newsHeadlines)
+
+    // Fetch Quant & Sentiment data from local engine
+    const quantRes = await quantClient.runWorkflow(symbol)
+    const quantData = quantRes.success ? quantRes.data?.workflow_result : null
+
+    const sentRes = await quantClient.getSentimentCache()
+    const sentimentData = sentRes.success && sentRes.data ? (sentRes.data as any)[symbol] : null
+
+    const prompt = buildPrompt(symbol, market, quote, newsHeadlines, quantData, sentimentData)
     const model = process.env.OPENAI_MODEL || 'gpt-4o-mini'
 
     if (process.env.GEMINI_API_KEY) {
