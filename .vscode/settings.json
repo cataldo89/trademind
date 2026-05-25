@@ -1,6 +1,6 @@
 {
   "workbench.sideBar.location": "right",
-  "python.defaultInterpreterPath": "C:\\ETAP 2101\\ThirdParty\\Python\\Python384\\python.exe",
+  "python.defaultInterpreterPath": "${workspaceFolder}\\quant-engine\\venv\\Scripts\\python.exe",
   "python.analysis.extraPaths": [
     "${workspaceFolder}/quant-engine"
   ],
