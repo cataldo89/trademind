@@ -28,6 +28,7 @@ export interface QuantResultData {
   ml_prediction?: number
   graham_passed?: boolean
   error_reason?: string
+  weekend_sentiment?: { sentiment: string; score: number }
 }
 
 export interface FinalQuantScore extends PreliminaryTechData {
