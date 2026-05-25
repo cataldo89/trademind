@@ -1,6 +1,8 @@
 fastapi
 uvicorn
 pydantic
+httpx
+pytest
 scikit-learn
 statsmodels
 arch

@@ -1,16 +1,26 @@
+import importlib
 import pandas as pd
-import yfinance as yf
 from statsmodels.tsa.arima.model import ARIMA
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 from market_data import fetch_chart_dataframe
 import warnings
 warnings.filterwarnings("ignore")
 
+def _get_yfinance_module():
+    try:
+        return importlib.import_module("yfinance")
+    except ImportError:
+        return None
+
 def predict_direction_arima(symbol: str):
     try:
         df = fetch_chart_dataframe(symbol, range_="1y", interval="1d")
         if df.empty:
-            df = yf.download(symbol, period="1y", progress=False)
+            yf = _get_yfinance_module()
+            if yf is not None:
+                df = yf.download(symbol, period="1y", progress=False)
+            else:
+                return {"expected_return": 0.0, "confidence": 0.0, "status": "error", "message": "yfinance not installed"}
         if df.empty:
             return {"expected_return": 0.0, "confidence": 0.0, "status": "error"}
             
@@ -53,7 +63,11 @@ def predict_direction_sarima(symbol: str):
     try:
         df = fetch_chart_dataframe(symbol, range_="2y", interval="1d")
         if df.empty:
-            df = yf.download(symbol, period="2y", progress=False)
+            yf = _get_yfinance_module()
+            if yf is not None:
+                df = yf.download(symbol, period="2y", progress=False)
+            else:
+                return {"expected_return": 0.0, "confidence": 0.0, "status": "error", "message": "yfinance not installed"}
         if df.empty:
             return {"expected_return": 0.0, "confidence": 0.0, "status": "error"}
             

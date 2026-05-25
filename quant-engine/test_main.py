@@ -1,7 +1,7 @@
-import pytest
-from fastapi.testclient import TestClient
-from unittest.mock import patch
 import os
+from unittest.mock import patch
+
+from fastapi.testclient import TestClient
 
 # Set env before importing main to ensure defaults don't mess up
 os.environ["QUANT_ENGINE_SECRET"] = "test-secret"
@@ -74,4 +74,3 @@ def test_workflow_analyze(mock_risk, mock_tech, mock_research):
     assert res["action"] == "BUY"
     assert res["label"] == "COMPRAR CON CAUTELA"
     assert res["confidence"] >= 75
-

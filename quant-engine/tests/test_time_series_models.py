@@ -1,4 +1,3 @@
-import pytest
 from time_series_models import predict_direction_arima, predict_direction_sarima, predict_direction_marima
 
 def test_predict_arima_invalid():

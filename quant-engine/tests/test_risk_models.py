@@ -1,4 +1,3 @@
-import pytest
 from risk_models import detect_regime, calculate_var_garch
 
 def test_detect_regime_valid():

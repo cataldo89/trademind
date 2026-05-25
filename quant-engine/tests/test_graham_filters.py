@@ -1,4 +1,3 @@
-import pytest
 from graham_filters import check_margin_of_safety
 
 def test_graham_invalid_ticker():

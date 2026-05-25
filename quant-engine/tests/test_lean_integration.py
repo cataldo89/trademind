@@ -1,4 +1,3 @@
-import pytest
 from lean_integration import run_lean_backtest, export_to_lean
 import os
 
