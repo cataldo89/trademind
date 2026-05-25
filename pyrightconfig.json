@@ -1,0 +1,22 @@
+{
+  "include": [
+    "quant-engine"
+  ],
+  "exclude": [
+    "**/node_modules",
+    "**/.next",
+    "quant-engine/venv",
+    "quant-engine/modelos_locales"
+  ],
+  "venvPath": "quant-engine",
+  "venv": "venv",
+  "pythonVersion": "3.8",
+  "executionEnvironments": [
+    {
+      "root": "quant-engine",
+      "extraPaths": [
+        "quant-engine"
+      ]
+    }
+  ]
+}
