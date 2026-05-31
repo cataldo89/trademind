@@ -15,6 +15,7 @@ Rutas, URLs, puertos, GitHub, Vercel y Cloudflare canonicos viven en `LLM_CONTEX
 | `ESTRUCTURA_PROYECTO.md` | Mapa de archivos y carpetas del repositorio |
 | `soluciones_tecnicas.md` | Problemas resueltos y patrones tecnicos obligatorios |
 | `docs/runbooks/problemas-escalamiento-errores-frontend-backend.md` | Runbook de fallas frontend/backend y riesgos de escalamiento SaaS |
+| `docs/architecture/fase-7-escalabilidad-distribuida.md` | Plan vivo de jobs asincronos, BFF estable y cache de series temporales |
 | `docs/sdd-status.md` | Diagnostico SDD: alineacion parcial, brechas y proxima estructura `specs/` |
 | `SEGURIDAD.md` | Reglas de secretos, service role, scripts y checklist pre-push |
 | `MEMORY.md` | Memoria historica y filosofia del producto |
@@ -62,6 +63,7 @@ Rutas, URLs, puertos, GitHub, Vercel y Cloudflare canonicos viven en `LLM_CONTEX
 | Ruta | Descripcion |
 |---|---|
 | `docs/runbooks/problemas-escalamiento-errores-frontend-backend.md` | Registro de errores actuales, sintomas de frontend causados por backend, riesgos futuros de escalamiento y contratos recomendados |
+| `docs/architecture/fase-7-escalabilidad-distribuida.md` | Fase 7 para desacoplar quant-engine con Supabase jobs, BFF y cache auditable |
 
 Regla para agentes:
 
@@ -110,6 +112,7 @@ Si el error se manifiesta en UI, revisar este runbook antes de editar componente
 | `src/app/api/market/quote/route.ts` | Proxy Yahoo Finance para una o multiples cotizaciones |
 | `src/app/api/market/candles/route.ts` | OHLCV desde Yahoo Finance |
 | `src/app/api/market/movers/route.ts` | Market movers desde Yahoo Finance |
+| `src/app/api/quant/jobs/route.ts` | BFF asincrono para encolar y consultar trabajos cuantitativos durables |
 | `src/app/api/signals/route.ts` | CRUD de senales con JWT fallback y Supabase |
 | `src/app/api/trading/route.ts` | Orquestador hacia quant-engine. Tiene P0 de persistencia por `market: 'EQUITY'` |
 | `src/app/api/profile/virtual-balance/route.ts` | Actualizacion server-side de balance virtual |

@@ -34,6 +34,12 @@ Este archivo no reemplaza la auditoria general. Complementa `ESTADO_ACTUAL_PROYE
 - El bloqueo `429` de Yahoo `quoteSummary` afecta Graham/fundamentales, pero no debe convertir todo el workflow en `HOLD 0% Unknown`.
 - El screener no prioriza un `HOLD` neutral de Python por sobre `BUY (Tech)`/`SELL (Tech)` cuando el score tecnico es fuerte.
 - Se registro estado SDD parcial en `docs/sdd-status.md`.
+
+## Cierres aplicados - 2026-05-31
+
+- Se inicio Fase 7 con `quant_jobs` como cola durable en Supabase, `quant_job_events` como telemetria auditable y `market_data_cache` para series temporales.
+- Se agrego `/api/quant/jobs` como BFF asincrono: devuelve `202 Accepted`, mantiene contrato estable para polling/Realtime y evita acoplar el cliente a timeouts del `quant-engine`.
+- La ejecucion worker queda preparada para Fase 0 local mediante `claim_next_quant_job` y para Fase 1 cloud mediante el mismo contrato SQL.
 ## 2. Resumen ejecutivo
 
 Los problemas mas importantes detectados son:

@@ -405,6 +405,7 @@ export function CandlestickChart({ symbol, market, range, onMetadataChange }: Ca
         areaSeriesRef.current.setData([])
         volumeSeriesRef.current.setData([])
         candlesByTimeRef.current = new Map()
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setHoverData(null)
       } catch (e) {
         console.error('[Chart] Data clear error:', e)
@@ -579,4 +580,4 @@ export function CandlestickChart({ symbol, market, range, onMetadataChange }: Ca
     </div>
   )
 }
-
+

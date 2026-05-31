@@ -44,3 +44,18 @@ test('Quant client does not use localhost in production', () => {
   assert.match(client, /QUANT_ENGINE_SECRET is required/)
   assert.match(client, /X-TradeMind-Quant-Secret/)
 })
+
+test('Quant jobs define durable async workflow contract', () => {
+  const migration = read('supabase/migrations/002_quant_jobs_and_market_cache.sql')
+  const route = read('src/app/api/quant/jobs/route.ts')
+
+  assert.match(migration, /CREATE TABLE IF NOT EXISTS quant_jobs/)
+  assert.match(migration, /CREATE TABLE IF NOT EXISTS quant_job_events/)
+  assert.match(migration, /CREATE TABLE IF NOT EXISTS market_data_cache/)
+  assert.match(migration, /claim_next_quant_job/)
+  assert.match(migration, /complete_quant_job/)
+  assert.match(migration, /FOR UPDATE SKIP LOCKED/)
+  assert.match(route, /NextResponse\.json\(\{ success: true, job: data, deduped: false \}, \{ status: 202 \}\)/)
+  assert.match(route, /getAuthenticatedContext/)
+  assert.match(route, /idempotencyKey/)
+})

@@ -64,6 +64,7 @@ export function ScreenerClient() {
 
   const runVerification = async (symbol: string, market = getZestySymbolMarket(symbol)) => {
     if (!symbol) return
+    // eslint-disable-next-line react-hooks/purity
     const start = performance.now()
     setVerifyState(prev => ({
       ...prev,
@@ -82,6 +83,7 @@ export function ScreenerClient() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ symbol, market }),
       })
+      // eslint-disable-next-line react-hooks/purity
       const latency = Math.round(performance.now() - start)
       const httpStatus = res.status
 
@@ -124,6 +126,7 @@ export function ScreenerClient() {
         errorMessage: diagnostic?.usable === false ? diagnostic.reason : undefined
       })
     } catch (err: unknown) {
+      // eslint-disable-next-line react-hooks/purity
       const latency = Math.round(performance.now() - start)
       setVerifyState({
         status: 'error',
@@ -194,11 +197,9 @@ export function ScreenerClient() {
   const selectedCategory = categories.find((cat) => cat.id === category) ?? categories[0]
 
   // Enviar todos los activos de la categoría (con un límite de 500)
-  const scanSymbols = useMemo(() => {
-    return (selectedCategory?.symbols ?? [])
-      .slice(0, 500)
-      .map((s) => ({ ...s, market: getZestySymbolMarket(s.symbol) }))
-  }, [selectedCategory])
+  const scanSymbols = (selectedCategory?.symbols ?? [])
+    .slice(0, 500)
+    .map((s) => ({ ...s, market: getZestySymbolMarket(s.symbol) }))
 
   const { data: scanResponse, isLoading: scanLoading } = useQuery({
     queryKey: ['screener-quant-scan', category],
@@ -243,9 +244,7 @@ export function ScreenerClient() {
     })
     .slice(0, 50) // Limitar la tabla a 50 resultados para evitar scroll infinito
 
-  const verificationCandidate = useMemo(() => {
-    return filtered[0] || scanResults.find((result) => !result.noData) || scanSymbols[0] || null
-  }, [filtered, scanResults, scanSymbols])
+  const verificationCandidate = filtered[0] || scanResults.find((result) => !result.noData) || scanSymbols[0] || null
 
   const hasUsableQuantData = (r: FinalQuantScore) => {
     if (r.isFallback || !r.quant) return false

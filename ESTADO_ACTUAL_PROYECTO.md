@@ -45,6 +45,14 @@ Cambios aplicados despues de la auditoria inicial:
 - El screener muestra senal tecnica `BUY (Tech)`/`SELL (Tech)` cuando Python devuelve `HOLD` neutral y el score tecnico lo justifica.
 - Limpieza: se eliminaron archivos temporales versionados `_*.js/_*.txt/_*.ps1` y `scratch_test_*.js`.
 - SDD: el proyecto esta parcialmente alineado mediante contratos/runbooks/tests, pero falta estructura formal `specs/`. Ver `docs/sdd-status.md`.
+
+## Actualizacion Fase 7 - 2026-05-31
+
+- Se agrego `supabase/migrations/002_quant_jobs_and_market_cache.sql` con `quant_jobs`, `quant_job_events`, funciones `claim_next_quant_job` / `complete_quant_job` y `market_data_cache`.
+- Se agrego el BFF `/api/quant/jobs` para encolar y consultar trabajos cuantitativos por usuario sin bloquear el ciclo HTTP del dashboard.
+- Se documento `docs/architecture/fase-7-escalabilidad-distribuida.md` con mejoras TM-001 a TM-004: cola durable, BFF estable, cache de series temporales y contrato de errores.
+- `FASES_CHECKLIST.md` no existe en la raiz actual; si reaparece, debe archivarse en `docs/archive/` o sustituirse por la Fase 7 viva.
+- `SKILL.md` y `SECURITY.md` asociados a dotenv/dotenvx solo existen dentro de `node_modules/`, no estan versionados y no deben copiarse a la raiz.
 ## 1. Stack verificado
 
 | Area | Estado actual |
