@@ -5,7 +5,7 @@ import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import date, timedelta
+from datetime import date, datetime, timezone, timedelta
 from typing import Callable, Dict, List, Optional
 
 os.environ["HF_HOME"] = "./modelos_locales"
@@ -46,6 +46,65 @@ MACRO_RSS_FEEDS = [
     ("BLS Productivity", "https://www.bls.gov/feed/lpc_latest.rss"),
     ("BEA Releases", "https://apps.bea.gov/rss/rss.xml"),
 ]
+
+SYMBOL_NEWS_NAMES = {
+    "CHILE": "Banco de Chile",
+    "CHILE.SN": "Banco de Chile",
+    "BCH": "Banco de Chile ADR",
+    "BSAC": "Banco Santander Chile ADR",
+    "BSANTANDER": "Banco Santander Chile",
+    "BSANTANDER.SN": "Banco Santander Chile",
+    "CAMPOS": "Sociedad de Inversiones Campos Chilenos",
+    "CAMPOS.SN": "Sociedad de Inversiones Campos Chilenos",
+    "CFIBPDCCHA": "BTG Deuda Corporativa Chile",
+    "CFIBPDCCHA.SN": "BTG Deuda Corporativa Chile",
+    "CFIBTETFMP": "BTG ETF Renta Fija Chile Mediano Plazo",
+    "CFIBTETFMP.SN": "BTG ETF Renta Fija Chile Mediano Plazo",
+    "CFIETFCC": "Singular Chile Corporativo",
+    "CFIETFCC.SN": "Singular Chile Corporativo",
+    "CFIETFCD": "Singular Chile Corta Duracion",
+    "CFIETFCD.SN": "Singular Chile Corta Duracion",
+    "CFIETFLP": "Singular Chile Largo Plazo",
+    "CFIETFLP.SN": "Singular Chile Largo Plazo",
+    "CFIETFRFLP": "BTG ETF Renta Fija Chile Largo Plazo",
+    "CFIETFRFLP.SN": "BTG ETF Renta Fija Chile Largo Plazo",
+    "CFIFALCDCG": "Falcom Deuda Corporativa Chile",
+    "CFIFALCDCG.SN": "Falcom Deuda Corporativa Chile",
+    "CFIFALCDCW": "Falcom Deuda Corporativa Chile",
+    "CFIFALCDCW.SN": "Falcom Deuda Corporativa Chile",
+    "CFIFALCFIW": "Falcom Chilean Fixed Income",
+    "CFIFALCFIW.SN": "Falcom Chilean Fixed Income",
+    "CFIFALCTAC": "Falcom Tactical Chilean Equities",
+    "CFIFALCTAC.SN": "Falcom Tactical Chilean Equities",
+    "CFIFYNSADB": "Fynsa Deuda Chile",
+    "CFIFYNSADB.SN": "Fynsa Deuda Chile",
+    "CFIMDCHA": "Moneda Deuda Chile",
+    "CFIMDCHA.SN": "Moneda Deuda Chile",
+    "CFMTOEEQUB": "Toesca Chile Equities",
+    "CFMTOEEQUB.SN": "Toesca Chile Equities",
+    "CHW.AX": "Chilwa Minerals",
+    "CHWAF": "Chilwa Minerals",
+    "CHYM": "Chime Financial",
+}
+
+
+def _base_symbol(symbol: str) -> str:
+    return symbol.strip().upper().split(".")[0]
+
+
+def _news_name(symbol: str) -> str:
+    normalized = symbol.strip().upper()
+    return SYMBOL_NEWS_NAMES.get(normalized) or SYMBOL_NEWS_NAMES.get(_base_symbol(normalized)) or normalized
+
+
+def _company_query(symbol: str) -> str:
+    normalized = symbol.strip().upper()
+    name = _news_name(normalized)
+    if normalized.endswith(".SN") or _base_symbol(normalized) in SYMBOL_NEWS_NAMES:
+        return f'"{name}" OR "{_base_symbol(normalized)}" Chile bolsa acciones inversion'
+    if normalized.endswith(".AX"):
+        return f'"{name}" OR "{_base_symbol(normalized)}" ASX shares'
+    return f'"{name}" OR "{_base_symbol(normalized)}" stock shares'
 
 
 def _json_get(url: str, headers: Optional[Dict[str, str]] = None, timeout: float = SOURCE_TIMEOUT_SECONDS) -> Dict:
@@ -88,11 +147,15 @@ def _rss_get(url: str, source: str, timeout: float = SOURCE_TIMEOUT_SECONDS) -> 
 def _is_relevant(title: str, symbol: str) -> bool:
     text = title.lower()
     normalized_symbol = symbol.strip().lower()
+    base_symbol = _base_symbol(symbol).lower()
+    name = _news_name(symbol).lower()
     return (
         f"${normalized_symbol}" in text
         or f" {normalized_symbol} " in f" {text} "
         or f"({normalized_symbol})" in text
         or f":{normalized_symbol}" in text
+        or f" {base_symbol} " in f" {text} "
+        or name in text
     )
 
 
@@ -162,7 +225,7 @@ def get_pipeline():
 
 
 def fetch_google_news(symbol: str) -> List[dict]:
-    query = urllib.parse.quote(f"{symbol} stock OR shares")
+    query = urllib.parse.quote(_company_query(symbol))
     url = f"https://news.google.com/rss/search?q={query}&hl=en-US&gl=US&ceid=US:en"
     try:
         return _rss_get(url, "Google News")
@@ -172,7 +235,7 @@ def fetch_google_news(symbol: str) -> List[dict]:
 
 
 def fetch_gdelt_news(symbol: str) -> List[dict]:
-    query = urllib.parse.quote(f'("{symbol}" stock OR "{symbol}" shares)')
+    query = urllib.parse.quote(_company_query(symbol))
     url = (
         "https://api.gdeltproject.org/api/v2/doc/doc"
         f"?query={query}&mode=ArtList&format=json&maxrecords=10&sort=HybridRel"
@@ -244,7 +307,7 @@ def fetch_newsapi_news(symbol: str) -> List[dict]:
 
     params = urllib.parse.urlencode(
         {
-            "q": f'"{symbol}" AND (stock OR shares OR earnings OR acquisition)',
+            "q": _company_query(symbol),
             "language": "en",
             "sortBy": "publishedAt",
             "pageSize": 10,
@@ -427,12 +490,18 @@ def run_daily_sentiment_job(symbols: List[str]):
     except Exception as e:
         logger.warning(f"No se pudo leer sentiment_cache.json previo: {e}")
 
-    cache.update(data)
+    now_iso = datetime.now(timezone.utc).isoformat()
+    stamped_data = {
+        symbol: {**payload, "timestamp": now_iso}
+        for symbol, payload in data.items()
+    }
+
+    cache.update(stamped_data)
     with open("sentiment_cache.json", "w") as f:
         json.dump(cache, f)
 
     logger.info("Escaneo finalizado y cache actualizado.")
-    return data
+    return stamped_data
 
 
 def get_cached_sentiment(symbol: str) -> dict:

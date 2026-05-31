@@ -13,6 +13,9 @@ type PositionRow = {
   market: 'US' | 'CL'
   quantity: number
   entry_price: number
+  entry_date: string
+  created_at: string
+  openedAt: number
   currency: string
   currentPrice: number
   value: number
@@ -23,6 +26,7 @@ type PositionRow = {
 }
 
 type PortfolioSnapshot = {
+  userId: string
   timestamp: number
   positions: PositionRow[]
   totalValue: number
@@ -36,6 +40,179 @@ type HistoryPoint = {
   timestamp: number
   value: number
   pnl: number
+}
+
+type CandlePoint = {
+  time: number
+  close: number
+}
+
+type StoredHistory = {
+  version: number
+  key: string
+  points: HistoryPoint[]
+}
+
+const HISTORY_VERSION = 2
+const HISTORY_LIMIT = 520
+const NEW_YORK_TIMEZONE = 'America/New_York'
+const EMPTY_CHART_POINT: HistoryPoint = { timestamp: 0, value: 0, pnl: 0 }
+
+const newYorkDateFormatter = new Intl.DateTimeFormat('en-CA', {
+  timeZone: NEW_YORK_TIMEZONE,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+})
+
+function getNewYorkDateKey(date = new Date()) {
+  return newYorkDateFormatter.format(date)
+}
+
+function isTodayInNewYork(timestamp: number) {
+  if (!Number.isFinite(timestamp)) return false
+  return getNewYorkDateKey(new Date(timestamp)) === getNewYorkDateKey()
+}
+
+function getPortfolioHistoryKey(userId: string, positions: PositionRow[]) {
+  const signature = positions
+    .map((position) => [
+      position.id,
+      position.symbol,
+      position.quantity,
+      position.entry_price,
+      position.created_at,
+    ].join(':'))
+    .sort()
+    .join('|')
+
+  return `trademind:portfolio-history:${userId}:${getNewYorkDateKey()}:${signature}`
+}
+
+function mergeHistoryPoints(...groups: HistoryPoint[][]) {
+  const byTimestamp = new Map<number, HistoryPoint>()
+
+  groups.flat().forEach((point) => {
+    if (!Number.isFinite(point.timestamp) || !Number.isFinite(point.value) || !Number.isFinite(point.pnl)) return
+    byTimestamp.set(Math.round(point.timestamp / 1000) * 1000, point)
+  })
+
+  return Array.from(byTimestamp.values())
+    .sort((a, b) => a.timestamp - b.timestamp)
+    .slice(-HISTORY_LIMIT)
+}
+
+function loadStoredHistory(key: string): HistoryPoint[] {
+  if (typeof window === 'undefined') return []
+
+  try {
+    const raw = window.localStorage.getItem(key)
+    if (!raw) return []
+    const stored = JSON.parse(raw) as StoredHistory
+    if (stored.version !== HISTORY_VERSION || stored.key !== key || !Array.isArray(stored.points)) return []
+    return stored.points.filter((point) => (
+      Number.isFinite(point.timestamp) &&
+      Number.isFinite(point.value) &&
+      Number.isFinite(point.pnl)
+    ))
+  } catch {
+    return []
+  }
+}
+
+function saveStoredHistory(key: string, points: HistoryPoint[]) {
+  if (typeof window === 'undefined') return
+
+  const stored: StoredHistory = {
+    version: HISTORY_VERSION,
+    key,
+    points: points.slice(-HISTORY_LIMIT),
+  }
+
+  try {
+    window.localStorage.setItem(key, JSON.stringify(stored))
+  } catch {
+    // localStorage can be unavailable or full; the live chart still works in memory.
+  }
+}
+
+function clearStoredHistoryForUserDay(userId: string) {
+  if (typeof window === 'undefined') return
+
+  const prefix = `trademind:portfolio-history:${userId}:${getNewYorkDateKey()}:`
+
+  try {
+    Object.keys(window.localStorage)
+      .filter((key) => key.startsWith(prefix))
+      .forEach((key) => window.localStorage.removeItem(key))
+  } catch {
+    // History cleanup is best-effort; live data still comes from Supabase and quotes.
+  }
+}
+
+async function fetchCandlesForPosition(position: PositionRow): Promise<CandlePoint[]> {
+  try {
+    const response = await fetch(`/api/market/candles?symbol=${encodeURIComponent(position.symbol)}&range=1D&market=${position.market}`)
+    if (!response.ok) return []
+    const body = await response.json()
+    const candles = Array.isArray(body.data) ? body.data : []
+
+    return candles
+      .map((candle: { time?: number; close?: number }) => ({
+        time: Number(candle.time) * 1000,
+        close: Number(candle.close),
+      }))
+      .filter((candle: CandlePoint) => Number.isFinite(candle.time) && candle.time > 0 && Number.isFinite(candle.close) && candle.close > 0)
+      .sort((a: CandlePoint, b: CandlePoint) => a.time - b.time)
+  } catch {
+    return []
+  }
+}
+
+async function recoverIntradayPortfolioHistory(positions: PositionRow[]): Promise<HistoryPoint[]> {
+  if (positions.length === 0) return []
+
+  const candlesBySymbol = new Map<string, CandlePoint[]>()
+  const timestampSet = new Set<number>()
+
+  await Promise.all(positions.map(async (position) => {
+    const candles = await fetchCandlesForPosition(position)
+    candlesBySymbol.set(position.symbol, candles)
+    candles.forEach((candle) => timestampSet.add(candle.time))
+  }))
+
+  const timestamps = Array.from(timestampSet).sort((a, b) => a - b)
+  if (timestamps.length === 0) return []
+
+  const totalCost = positions.reduce((sum, position) => sum + position.cost, 0)
+  const cursorBySymbol = new Map<string, number>()
+
+  return timestamps.map((timestamp) => {
+    const totalPnl = positions.reduce((sum, position) => {
+      const openedToday = isTodayInNewYork(position.openedAt)
+      if (openedToday && timestamp < position.openedAt) {
+        return sum
+      }
+
+      const candles = candlesBySymbol.get(position.symbol) || []
+      let cursor = cursorBySymbol.get(position.symbol) ?? -1
+
+      while (cursor + 1 < candles.length && candles[cursor + 1].time <= timestamp) {
+        cursor += 1
+      }
+
+      cursorBySymbol.set(position.symbol, cursor)
+      const price = cursor >= 0 ? candles[cursor].close : position.currentPrice || position.entry_price
+
+      return sum + (price - position.entry_price) * position.quantity
+    }, 0)
+
+    return {
+      timestamp,
+      value: totalCost + totalPnl,
+      pnl: totalPnl,
+    }
+  })
 }
 
 async function fetchLivePortfolio(): Promise<PortfolioSnapshot | null> {
@@ -52,6 +229,7 @@ async function fetchLivePortfolio(): Promise<PortfolioSnapshot | null> {
 
   if (!positions || positions.length === 0) {
     return {
+      userId: user.id,
       timestamp: Date.now(),
       positions: [],
       totalValue: 0,
@@ -91,12 +269,16 @@ async function fetchLivePortfolio(): Promise<PortfolioSnapshot | null> {
     const quote = quoteBySymbol.get(symbol)
     const quantity = Number(position.quantity) || 0
     const entryPrice = Number(position.entry_price) || 0
+    const createdAt = String(position.created_at || '')
+    const entryDate = String(position.entry_date || '')
+    const openedAtValue = new Date(createdAt || entryDate || Date.now()).getTime()
+    const openedAt = Number.isFinite(openedAtValue) ? openedAtValue : Date.now()
     const currentPrice = quote?.price || entryPrice
     const value = currentPrice * quantity
     const cost = entryPrice * quantity
     const pnl = value - cost
     const pnlPercent = cost > 0 ? (pnl / cost) * 100 : 0
-    const dayPnL = Number(quote?.change || 0) * quantity
+    const dayPnL = isTodayInNewYork(openedAt) ? pnl : Number(quote?.change || 0) * quantity
 
     return {
       id: String(position.id),
@@ -105,6 +287,9 @@ async function fetchLivePortfolio(): Promise<PortfolioSnapshot | null> {
       market: position.market || 'US',
       quantity,
       entry_price: entryPrice,
+      entry_date: entryDate,
+      created_at: createdAt,
+      openedAt,
       currency: String(position.currency || 'USD'),
       currentPrice,
       value,
@@ -122,6 +307,7 @@ async function fetchLivePortfolio(): Promise<PortfolioSnapshot | null> {
   const dayPnL = enriched.reduce((sum, position) => sum + position.dayPnL, 0)
 
   return {
+    userId: user.id,
     timestamp: Date.now(),
     positions: enriched,
     totalValue,
@@ -134,6 +320,8 @@ async function fetchLivePortfolio(): Promise<PortfolioSnapshot | null> {
 
 export function LivePortfolioSimulation() {
   const [history, setHistory] = useState<HistoryPoint[]>([])
+  const [recoveredKey, setRecoveredKey] = useState<string | null>(null)
+  const [isRecovering, setIsRecovering] = useState(false)
 
   const { data, isLoading, isFetching } = useQuery({
     queryKey: ['live-portfolio-simulation'],
@@ -144,25 +332,65 @@ export function LivePortfolioSimulation() {
     staleTime: 0,
   })
 
+  const historyKey = useMemo(() => {
+    if (!data || data.positions.length === 0) return null
+    return getPortfolioHistoryKey(data.userId, data.positions)
+  }, [data])
+  const recoverablePositions = useMemo(() => data?.positions ?? [], [data?.positions])
+
+  useEffect(() => {
+    if (!historyKey) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setHistory([])
+      if (data?.userId && data.positions.length === 0) {
+        clearStoredHistoryForUserDay(data.userId)
+      }
+      return
+    }
+
+    setHistory(loadStoredHistory(historyKey))
+  }, [historyKey, data])
+
+  useEffect(() => {
+    if (recoverablePositions.length === 0 || !historyKey || recoveredKey === historyKey) return
+
+    let cancelled = false
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsRecovering(true)
+
+    recoverIntradayPortfolioHistory(recoverablePositions)
+      .then((recovered) => {
+        if (cancelled) return
+        setHistory((current) => mergeHistoryPoints(recovered, current))
+        setRecoveredKey(historyKey)
+      })
+      .finally(() => {
+        if (!cancelled) setIsRecovering(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [historyKey, recoveredKey, recoverablePositions])
+
   useEffect(() => {
     if (!data || data.positions.length === 0) return
 
-    setHistory((current) => {
-      const next = [
-        ...current,
-        {
-          timestamp: data.timestamp,
-          value: data.totalValue,
-          pnl: data.totalPnL,
-        },
-      ]
-
-      return next.slice(-80)
-    })
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setHistory((current) => mergeHistoryPoints(current, [{
+      timestamp: data.timestamp,
+      value: data.totalValue,
+      pnl: data.totalPnL,
+    }]))
   }, [data])
 
+  useEffect(() => {
+    if (!historyKey || history.length === 0) return
+    saveStoredHistory(historyKey, history)
+  }, [history, historyKey])
+
   const isPositive = (data?.totalPnL ?? 0) >= 0
-  const primaryPosition = data?.positions[0]
+  const positionsCount = data?.positions.length ?? 0
 
   return (
     <div className="glass rounded-xl overflow-hidden">
@@ -173,12 +401,12 @@ export function LivePortfolioSimulation() {
             Simulacion en vivo
           </h2>
           <p className="mt-1 text-xs text-gray-500">
-            Rendimiento de tus posiciones abiertas con capital ficticio. Actualiza cada 5s.
+            P&L total no realizado de tus posiciones abiertas con capital ficticio. Actualiza cada 5s.
           </p>
         </div>
         <div className="flex items-center gap-2 text-xs text-gray-400">
-          <span className={cn('h-2 w-2 rounded-full', isFetching ? 'bg-emerald-400 animate-pulse' : 'bg-gray-600')} />
-          {isFetching ? 'Actualizando precio' : 'Esperando siguiente tick'}
+          <span className={cn('h-2 w-2 rounded-full', isFetching || isRecovering ? 'bg-emerald-400 animate-pulse' : 'bg-gray-600')} />
+          {isRecovering ? 'Recuperando apertura' : isFetching ? 'Actualizando precio' : 'Esperando siguiente tick'}
         </div>
       </div>
 
@@ -196,10 +424,10 @@ export function LivePortfolioSimulation() {
         <div className="grid grid-cols-1 gap-0 lg:grid-cols-[minmax(0,1.7fr)_minmax(360px,1fr)]">
           <div className="border-b border-gray-800 p-5 lg:border-b-0 lg:border-r">
             <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
-              <Metric label="Valor actual" value={formatCurrency(data.totalValue)} />
+              <Metric label="Valor posiciones" value={formatCurrency(data.totalValue)} />
               <Metric label="Invertido" value={formatCurrency(data.totalCost)} />
               <Metric
-                label="Ganancia / perdida"
+                label="Ganancia / perdida total"
                 value={`${isPositive ? '+' : '-'}${formatCurrency(Math.abs(data.totalPnL))}`}
                 sub={formatPercent(data.totalPnLPercent)}
                 positive={isPositive}
@@ -214,7 +442,7 @@ export function LivePortfolioSimulation() {
             <PortfolioLineChart history={history} positive={isPositive} />
 
             <div className="mt-3 flex items-center justify-between text-xs text-gray-500">
-              <span>{primaryPosition ? `${primaryPosition.symbol}: ${primaryPosition.quantity.toLocaleString('en-US', { maximumFractionDigits: 6 })} acciones simuladas` : 'Posiciones abiertas'}</span>
+              <span>{positionsCount === 1 ? '1 posicion abierta en el grafico' : `${positionsCount} posiciones abiertas agregadas en el grafico`}</span>
               <span>{new Date(data.timestamp).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
             </div>
           </div>
@@ -255,29 +483,53 @@ function Metric({
   )
 }
 
+function formatChartTime(timestamp?: number) {
+  if (!timestamp) return '--:--'
+
+  return new Date(timestamp).toLocaleTimeString('es-CL', {
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
 function PortfolioLineChart({ history, positive }: { history: HistoryPoint[]; positive: boolean }) {
   const chart = useMemo(() => {
     const width = 920
     const height = 260
-    const padding = { top: 18, right: 18, bottom: 28, left: 58 }
-    const points = history.length > 0 ? history : [{ timestamp: Date.now(), value: 0, pnl: 0 }]
-    const values = points.map((point) => point.value)
-    const min = Math.min(...values)
-    const max = Math.max(...values)
-    const range = max - min || Math.max(1, max * 0.01)
+    const padding = { top: 18, right: 18, bottom: 40, left: 18 }
+    const points = history.length > 0 ? history : [EMPTY_CHART_POINT]
+    const values = points.map((point) => point.pnl)
+    const rawMin = Math.min(...values, 0)
+    const rawMax = Math.max(...values, 0)
+    const buffer = Math.max((rawMax - rawMin) * 0.15, 1)
+    const min = rawMin - buffer
+    const max = rawMax + buffer
+    const range = max - min || 1
     const innerWidth = width - padding.left - padding.right
     const innerHeight = height - padding.top - padding.bottom
 
     const coords = points.map((point, index) => {
       const x = padding.left + (points.length === 1 ? innerWidth : (index / (points.length - 1)) * innerWidth)
-      const y = padding.top + innerHeight - ((point.value - min) / range) * innerHeight
+      const y = padding.top + innerHeight - ((point.pnl - min) / range) * innerHeight
       return { x, y, point }
     })
 
+    const zeroY = padding.top + innerHeight - ((0 - min) / range) * innerHeight
     const line = coords.map((coord, index) => `${index === 0 ? 'M' : 'L'} ${coord.x.toFixed(2)} ${coord.y.toFixed(2)}`).join(' ')
-    const area = `${line} L ${coords[coords.length - 1].x.toFixed(2)} ${height - padding.bottom} L ${coords[0].x.toFixed(2)} ${height - padding.bottom} Z`
+    const area = `${line} L ${coords[coords.length - 1].x.toFixed(2)} ${zeroY.toFixed(2)} L ${coords[0].x.toFixed(2)} ${zeroY.toFixed(2)} Z`
+    const tickCount = Math.min(7, points.length)
+    const xTicks = Array.from({ length: tickCount }, (_, index) => {
+      const pointIndex = tickCount === 1 ? 0 : Math.round((index / (tickCount - 1)) * (points.length - 1))
+      const coord = coords[pointIndex]
+      return {
+        x: coord.x,
+        timestamp: coord.point.timestamp,
+      }
+    })
+    const firstTimestamp = points[0]?.timestamp
+    const lastTimestamp = points[points.length - 1]?.timestamp
 
-    return { width, height, padding, min, max, coords, line, area }
+    return { width, height, padding, min, max, coords, line, area, zeroY, xTicks, firstTimestamp, lastTimestamp }
   }, [history])
 
   const color = positive ? '#34d399' : '#fb7185'
@@ -286,19 +538,52 @@ function PortfolioLineChart({ history, positive }: { history: HistoryPoint[]; po
 
   return (
     <div className="h-[300px] rounded-lg border border-gray-800 bg-gray-950/40 p-3">
-      <svg viewBox={`0 0 ${chart.width} ${chart.height}`} className="h-full w-full" role="img" aria-label="Grafico de rendimiento en vivo">
+      <svg viewBox={`0 0 ${chart.width} ${chart.height}`} className="h-full w-full" role="img" aria-label="Grafico de P&L total del portafolio en vivo">
+        <text x={chart.padding.left} y="12" className="fill-gray-500 text-[10px]">
+          P&L total simulado
+        </text>
+        <text x={chart.width - chart.padding.right} y="12" textAnchor="end" className="fill-gray-500 text-[10px]">
+          {formatChartTime(chart.firstTimestamp)} - {formatChartTime(chart.lastTimestamp)}
+        </text>
         {[0, 0.25, 0.5, 0.75, 1].map((tick) => {
           const y = chart.padding.top + tick * (chart.height - chart.padding.top - chart.padding.bottom)
           const value = chart.max - tick * (chart.max - chart.min)
           return (
             <g key={tick}>
               <line x1={chart.padding.left} x2={chart.width - chart.padding.right} y1={y} y2={y} stroke="rgba(148, 163, 184, 0.12)" />
-              <text x={chart.padding.left - 10} y={y + 4} textAnchor="end" className="fill-gray-500 text-[11px]">
+              <text x={chart.padding.left + 6} y={y - 6} textAnchor="start" className="fill-gray-500 text-[10px]">
                 {formatCurrency(value).replace('US$', '$')}
               </text>
             </g>
           )
         })}
+        <line
+          x1={chart.padding.left}
+          x2={chart.width - chart.padding.right}
+          y1={chart.zeroY}
+          y2={chart.zeroY}
+          stroke="rgba(148, 163, 184, 0.28)"
+          strokeDasharray="4 6"
+        />
+        {chart.xTicks.map((tick, index) => (
+          <g key={`${tick.timestamp}-${index}`}>
+            <line
+              x1={tick.x}
+              x2={tick.x}
+              y1={chart.height - chart.padding.bottom}
+              y2={chart.height - chart.padding.bottom + 5}
+              stroke="rgba(148, 163, 184, 0.28)"
+            />
+            <text
+              x={tick.x}
+              y={chart.height - 14}
+              textAnchor={index === 0 ? 'start' : index === chart.xTicks.length - 1 ? 'end' : 'middle'}
+              className="fill-gray-500 text-[10px]"
+            >
+              {formatChartTime(tick.timestamp)}
+            </text>
+          </g>
+        ))}
 
         <path d={chart.area} fill={fill} />
         <path d={chart.line} fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />

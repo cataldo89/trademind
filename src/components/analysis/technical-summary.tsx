@@ -14,11 +14,13 @@ import { toast } from 'sonner'
 import { useState } from 'react'
 import { AIAdvisor } from './ai-advisor'
 import { fetchVirtualBalanceProfile } from '@/lib/virtual-balance'
+import type { AdvisorScreenerContext } from '@/lib/ai-advisor-context'
 
 interface TechnicalSummaryProps {
   symbol: string
   market: Market
   range: ChartRange
+  screenerContext?: AdvisorScreenerContext
 }
 
 async function fetchCandles(symbol: string, market: Market, range: ChartRange): Promise<Candle[]> {
@@ -56,6 +58,45 @@ function getPerformanceLabel(range: ChartRange) {
 }
 
 const ACTIONABLE_SIGNAL_RANGES = new Set<ChartRange>(['1D', '5D', '1M'])
+type TradingSignal = ReturnType<typeof generateSignal>
+
+function screenerActionToSignalType(action?: string, quantAction?: string): TradingSignal['type'] | null {
+  const value = `${action || ''} ${quantAction || ''}`.toUpperCase()
+  if (value.includes('BUY')) return 'BUY'
+  if (value.includes('SELL')) return 'SELL'
+  if (value.includes('HOLD')) return 'HOLD'
+  return null
+}
+
+function formatSignedPercent(value?: number) {
+  if (typeof value !== 'number') return null
+  return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`
+}
+
+function buildAdvisorSignal(baseSignal: TradingSignal, context?: AdvisorScreenerContext): TradingSignal {
+  const contextType = screenerActionToSignalType(context?.displayAction, context?.quantAction)
+  if (!context || !contextType) return baseSignal
+
+  const contextStrength = Math.round(Math.min(100, Math.max(50, context.finalScore ?? context.decisionScore ?? baseSignal.strength)))
+  const contextReasons = [
+    context.displayAction ? `Screener: ${context.displayAction}` : null,
+    typeof context.decisionScore === 'number' ? `Decision screener ${context.decisionScore.toFixed(0)}` : null,
+    typeof context.finalScore === 'number' ? `Score tecnico ${context.finalScore.toFixed(0)}/100` : null,
+    context.macd ? `MACD: ${context.macd}` : null,
+    typeof context.rsi === 'number' ? `RSI ${context.rsi.toFixed(1)}` : null,
+    formatSignedPercent(context.changePercent) ? `Cambio diario ${formatSignedPercent(context.changePercent)}` : null,
+    context.sentiment ? `FinBERT ${context.sentiment}${typeof context.sentimentScore === 'number' ? ` (score ${context.sentimentScore})` : ''}` : null,
+    context.regime ? `Regimen ${context.regime}` : null,
+    context.quantAction ? `Quant local ${context.quantAction}${typeof context.confidence === 'number' ? ` ${context.confidence}%` : ''}` : null,
+    baseSignal.type !== contextType ? `Senal local actual: ${baseSignal.type}` : null,
+  ].filter(Boolean) as string[]
+
+  return {
+    type: contextType,
+    strength: contextStrength,
+    reasons: [...contextReasons, ...baseSignal.reasons].slice(0, 8),
+  }
+}
 
 function getSignalWindowHelp(range: ChartRange) {
   if (range === '1D') return 'Señal intradía: válida para seguimiento durante la sesión actual.'
@@ -64,7 +105,7 @@ function getSignalWindowHelp(range: ChartRange) {
   return 'Este rango es retrospectivo/contextual. Para guardar una señal activa usa 1D, 5D o 1M.'
 }
 
-export function TechnicalSummary({ symbol, market, range }: TechnicalSummaryProps) {
+export function TechnicalSummary({ symbol, market, range, screenerContext }: TechnicalSummaryProps) {
   const [isSaving, setIsSaving] = useState(false)
   const queryClient = useQueryClient()
 
@@ -117,6 +158,7 @@ export function TechnicalSummary({ symbol, market, range }: TechnicalSummaryProp
   const lastVWAP = vwap[vwap.length - 1]?.value
 
   const signal = generateSignal(signalCandles)
+  const advisorSignal = buildAdvisorSignal(signal, screenerContext)
   const rsiInterpret = lastRSI !== undefined ? interpretRSI(lastRSI) : null
 
   const performanceLabel = getPerformanceLabel(range)
@@ -299,7 +341,7 @@ export function TechnicalSummary({ symbol, market, range }: TechnicalSummaryProp
       </div>
 
       {/* AI Advisor Native Integration */}
-      <AIAdvisor symbol={symbol} market={market} />
+      <AIAdvisor symbol={symbol} market={market} technicalSignal={advisorSignal} range={range} screenerContext={screenerContext} />
 
       {/* Save Signal Button */}
       <div className="rounded-lg border border-gray-800 bg-gray-900/30 px-3 py-2 text-[11px] text-gray-400">
@@ -395,6 +437,7 @@ export function TechnicalSummary({ symbol, market, range }: TechnicalSummaryProp
             queryClient.invalidateQueries({ queryKey: ['positions'] })
             queryClient.invalidateQueries({ queryKey: ['profile'] })
             queryClient.invalidateQueries({ queryKey: ['portfolio-summary'] })
+            queryClient.invalidateQueries({ queryKey: ['live-portfolio-simulation'] })
           } catch (err) {
             console.warn('[analysis fractional buy]', err)
             toast.error(err instanceof Error ? err.message : 'Error al ejecutar operacion simulada')

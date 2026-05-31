@@ -37,7 +37,8 @@ Cambios aplicados despues de la auditoria inicial:
 - `QUANT_ENGINE_URL` en Vercel Production se actualizo para usar Cloudflare Tunnel hacia el FastAPI local.
 - Se agregaron `npm run quant:start`, `npm run quant:start:vercel` y `npm run quant:stop`.
 - `scripts/start-quant-cloudflare.ps1` levanta `quant-engine`, crea quick tunnel, valida `/health`, actualiza `.env.local` y opcionalmente actualiza Vercel + deploy.
-- Se agrego `START_QUANT_CLOUDFLARE.cmd` para doble clic y se instalo un arranque automatico de usuario en Windows Startup.
+- Se agrego `START_QUANT_CLOUDFLARE.cmd` para doble clic. El arranque automatico de usuario en Windows Startup solo actualiza el tunel/`QUANT_ENGINE_URL`; el deploy de produccion queda reservado para el arranque manual.
+- `npm run quant:audit` audita Startup, procesos, puerto 8000, health local/publico, URL activa y errores recientes de Cloudflare.
 - No hay `cert.pem` de Cloudflare ni token de tunel nombrado en la maquina; por eso la URL `trycloudflare.com` no es fija entre reinicios y no debe documentarse como URL permanente.
 - `quant-engine/market_data.py` usa Yahoo Chart API (`query1.finance.yahoo.com/v8/finance/chart`) para velas, evitando que `yfinance`/`quoteSummary` 429 bloquee HMM/GARCH/ARIMA.
 - Graham puede quedar no concluyente si Yahoo bloquea fundamentales; ese estado no invalida datos tecnicos de velas.

@@ -43,12 +43,12 @@ function formatNextOpen(timezone: string, open: { h: number; m: number }): strin
   const now = getTimeInZone(timezone)
   const next = new Date(now)
   next.setHours(open.h, open.m, 0, 0)
-  if (now >= next) {
+  if (now >= next || US_HOLIDAYS_2026.includes(next.toISOString().split('T')[0])) {
     next.setDate(next.getDate() + 1)
-    // Skip weekends
-    while (next.getDay() === 0 || next.getDay() === 6) {
-      next.setDate(next.getDate() + 1)
-    }
+  }
+
+  while (next.getDay() === 0 || next.getDay() === 6 || US_HOLIDAYS_2026.includes(next.toISOString().split('T')[0])) {
+    next.setDate(next.getDate() + 1)
   }
   return next.toISOString()
 }
@@ -137,4 +137,3 @@ export function getMarketCurrentTime(market: Market): string {
   const now = getTimeInZone(tz)
   return formatTimeHHMM(now)
 }
-

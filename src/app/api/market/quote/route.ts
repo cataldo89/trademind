@@ -4,6 +4,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { yahooFinance } from '@/lib/yahoo-finance'
+import { getYahooSymbol } from '@/lib/market-data'
 import { normalizeSymbol, parseMarketOrLegacy } from '@/lib/domain/market'
 import { checkRateLimit, getClientIp } from '@/lib/api/rate-limit'
 import { getCached } from '@/lib/api/memory-cache'
@@ -83,7 +84,8 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url)
   const symbolParam = searchParams.get('symbol') || searchParams.get('symbols')
-  const market = parseMarketOrLegacy(searchParams.get('market'))
+  const firstSymbol = symbolParam?.split(',')[0]
+  const market = parseMarketOrLegacy(searchParams.get('market'), firstSymbol)
 
   if (!symbolParam) {
     return NextResponse.json({ error: 'Symbol is required' }, { status: 400 })
@@ -106,7 +108,7 @@ export async function GET(request: NextRequest) {
   try {
     const symbolMap = new Map<string, string>()
     const yahooSymbols = symbols.map(s => {
-      const yahooSymbol = s.replace('.', '-')
+      const yahooSymbol = getYahooSymbol(s, market)
       symbolMap.set(yahooSymbol.toUpperCase(), s)
       return yahooSymbol
     })

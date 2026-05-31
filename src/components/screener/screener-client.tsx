@@ -1,20 +1,26 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { getCategorizedZestySymbols } from '@/lib/market-data'
+import { getCategorizedZestySymbols, getZestySymbolMarket } from '@/lib/market-data'
 import { Market } from '@/types'
 import { cn } from '@/lib/utils'
 import {
   ArrowRightLeft,
-  Loader2, Search, ChevronRight, Activity, Eye, Zap
+  Loader2, Search, ChevronRight, Activity, Eye, Zap, ShieldCheck, AlertTriangle, Target
 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import type { FinalQuantScore, QuantResultData } from '@/lib/ranking'
+import { getUSMarketStatus } from '@/lib/market-schedule'
 
 const SENTIMENT_SCAN_SYMBOL_LIMIT = 30
+const TOP_SENTIMENT_FRESHNESS_MS = 60 * 60 * 1000
+
+function toMarket(value: string | Market | undefined): Market {
+  return value === 'CL' ? 'CL' : 'US'
+}
 
 export function ScreenerClient() {
   const router = useRouter()
@@ -23,10 +29,19 @@ export function ScreenerClient() {
   const [category, setCategory] = useState('zesty-all')
   const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null)
   const [isScanningSentiment, setIsScanningSentiment] = useState(false)
+  const [marketStatus, setMarketStatus] = useState(() => getUSMarketStatus())
   const queryClient = useQueryClient()
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setMarketStatus(getUSMarketStatus())
+    }, 30000)
+
+    return () => clearInterval(interval)
+  }, [])
+
   const [verifyState, setVerifyState] = useState<{
-    status: 'idle' | 'consultando' | 'conectado' | 'error' | 'modo_basico'
+    status: 'idle' | 'consultando' | 'conectado' | 'parcial' | 'error' | 'modo_basico'
     symbol: string
     timestamp: string
     endpoint: string
@@ -47,7 +62,7 @@ export function ScreenerClient() {
     errorMessage: undefined
   })
 
-  const runVerification = async (symbol: string) => {
+  const runVerification = async (symbol: string, market = getZestySymbolMarket(symbol)) => {
     if (!symbol) return
     const start = performance.now()
     setVerifyState(prev => ({
@@ -65,7 +80,7 @@ export function ScreenerClient() {
       const res = await fetch('/api/quant/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ symbol }),
+        body: JSON.stringify({ symbol, market }),
       })
       const latency = Math.round(performance.now() - start)
       const httpStatus = res.status
@@ -96,8 +111,9 @@ export function ScreenerClient() {
 
       const body = await res.json()
       const workflowResult = body.data?.workflow_result as QuantResultData | undefined
+      const diagnostic = body.diagnostic as { usable?: boolean; status?: string; reason?: string } | undefined
       setVerifyState({
-        status: 'conectado',
+        status: diagnostic?.usable === false ? 'parcial' : 'conectado',
         symbol,
         timestamp: new Date().toLocaleTimeString(),
         endpoint: '/api/quant/analyze',
@@ -105,7 +121,7 @@ export function ScreenerClient() {
         httpStatus,
         source: 'Python quant-engine',
         data: workflowResult || null,
-        errorMessage: undefined
+        errorMessage: diagnostic?.usable === false ? diagnostic.reason : undefined
       })
     } catch (err: unknown) {
       const latency = Math.round(performance.now() - start)
@@ -123,13 +139,18 @@ export function ScreenerClient() {
     }
   }
 
-  const handleSelectSymbol = (symbol: string, market: string) => {
+  const handleSelectSymbol = (symbol: string, market: string, result?: FinalQuantScore) => {
+    if (result) {
+      router.push(buildAnalysisHref(result))
+      return
+    }
+
     router.push(`/analysis?symbol=${encodeURIComponent(symbol)}&market=${encodeURIComponent(market)}`)
   }
 
   const triggerManualSentimentScan = async () => {
     setIsScanningSentiment(true)
-    toast.info(`Iniciando lectura de noticias con FinBERT para hasta ${SENTIMENT_SCAN_SYMBOL_LIMIT} activos...`)
+    toast.info(`Revisando cache y noticias para hasta ${SENTIMENT_SCAN_SYMBOL_LIMIT} activos...`)
     try {
       const rankedSymbols = scanResults
         .filter((result) => !result.noData)
@@ -140,18 +161,26 @@ export function ScreenerClient() {
       const res = await fetch('/api/quant/sentiment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ symbols }),
+        body: JSON.stringify({ symbols, freshnessMs: TOP_SENTIMENT_FRESHNESS_MS }),
       })
       const body = await res.json().catch(() => null)
       if (!res.ok) throw new Error(body?.error || 'Falló el escaneo de sentimiento')
-      const processed = Number(body?.processed || symbols.length)
+      const processed = Number(body?.processed || 0)
+      const skippedCached = Number(body?.skippedCached || 0)
       const suffix = body?.truncated ? ` (lote limitado a ${body.limit})` : ''
-      toast.success(`Noticias analizadas para ${processed} activos${suffix}. Actualizando Screener...`)
-      queryClient.invalidateQueries({ queryKey: ['screener-quant-scan', category] })
+      const scanMessage = processed > 0
+        ? `FinBERT actualizÃ³ ${processed} activo(s); ${skippedCached} ya tenÃ­an cache fresco${suffix}.`
+        : `${skippedCached} activo(s) ya tenÃ­an sentimiento fresco.`
+      toast.success(`${scanMessage} Recalculando ranking...`)
+      await queryClient.invalidateQueries({ queryKey: ['screener-quant-scan', category] })
+      await queryClient.refetchQueries({ queryKey: ['screener-quant-scan', category], type: 'active' })
+      toast.success('Top Activos recalculado con el sentimiento vigente.')
 
       // Si el usuario ya tenía el motor abierto para un símbolo, re-evaluarlo para mostrar las noticias frescas
-      if (verifyState.symbol) {
-        runVerification(verifyState.symbol)
+      const candidate = bestRecommendation?.result || verificationCandidate
+
+      if (candidate?.symbol) {
+        runVerification(candidate.symbol, toMarket(candidate.market))
       }
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : String(e)
@@ -168,7 +197,7 @@ export function ScreenerClient() {
   const scanSymbols = useMemo(() => {
     return (selectedCategory?.symbols ?? [])
       .slice(0, 500)
-      .map((s) => ({ ...s, market: 'US' as Market }))
+      .map((s) => ({ ...s, market: getZestySymbolMarket(s.symbol) }))
   }, [selectedCategory])
 
   const { data: scanResponse, isLoading: scanLoading } = useQuery({
@@ -178,13 +207,14 @@ export function ScreenerClient() {
       if (symbols.length === 0) return null
 
       const symbolMap: Record<string, string> = {}
+      const symbolMarkets: Record<string, Market> = {}
       scanSymbols.forEach(s => { symbolMap[s.symbol] = s.name })
+      scanSymbols.forEach(s => { symbolMarkets[s.symbol] = s.market })
 
-      const market = scanSymbols[0]?.market || 'US'
       const res = await fetch('/api/quant/scan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ symbols, category, market, symbolMap })
+        body: JSON.stringify({ symbols, category, market: 'US', symbolMap, symbolMarkets })
       })
 
       if (!res.ok) throw new Error('Failed to fetch scan results')
@@ -195,6 +225,7 @@ export function ScreenerClient() {
   })
 
   const scanResults: FinalQuantScore[] = scanResponse?.results || []
+  const isRegularMarketOpen = marketStatus.isOpen && marketStatus.session === 'regular'
 
   // Top candidates para las tarjetas
   const topCards = scanResults.slice(0, 9).filter(r => !r.noData)
@@ -212,12 +243,128 @@ export function ScreenerClient() {
     })
     .slice(0, 50) // Limitar la tabla a 50 resultados para evitar scroll infinito
 
+  const verificationCandidate = useMemo(() => {
+    return filtered[0] || scanResults.find((result) => !result.noData) || scanSymbols[0] || null
+  }, [filtered, scanResults, scanSymbols])
+
+  const hasUsableQuantData = (r: FinalQuantScore) => {
+    if (r.isFallback || !r.quant) return false
+    if (r.quant.engine_status && r.quant.engine_status !== 'ok') return false
+    if (r.quant.data_quality && r.quant.data_quality !== 'complete') return false
+    return Number(r.quant.confidence ?? 0) > 0
+  }
+
+  const hasIncompleteQuantData = (r: FinalQuantScore) => {
+    if (r.isFallback) return true
+    return r.quant?.engine_status === 'partial' ||
+      r.quant?.engine_status === 'failed' ||
+      r.quant?.data_quality === 'partial' ||
+      r.quant?.data_quality === 'insufficient'
+  }
+
+  const hasCleanBuySetup = (r: FinalQuantScore) => {
+    const sentiment = r.quant?.weekend_sentiment?.sentiment
+    const regime = String(r.quant?.market_regime || '').toLowerCase()
+    const hasMomentum = r.macdSignal === 'Cruce alcista' || r.macdSignal === 'Positivo'
+    const rsiOk = r.rsi !== null && r.rsi >= 45 && r.rsi < 70
+    const priceOk = r.changePercent !== null && r.changePercent >= 0 && r.changePercent <= 6
+
+    return hasUsableQuantData(r) &&
+      r.finalScore >= 70 &&
+      hasMomentum &&
+      rsiOk &&
+      priceOk &&
+      sentiment !== 'NEGATIVE' &&
+      !regime.includes('bear') &&
+      regime !== 'unknown' &&
+      !r.isLeveragedOrInverse
+  }
+
   const getDisplayAction = (r: FinalQuantScore) => {
-    if (r.quant?.action === 'BUY' || r.quant?.action === 'SELL') return r.quant.action
-    if (r.finalScore >= 60) return 'BUY (Tech)'
-    if (r.finalScore <= 40) return 'SELL (Tech)'
+    if (hasUsableQuantData(r) && (r.quant?.action === 'BUY' || r.quant?.action === 'SELL')) return r.quant.action
+    if (hasCleanBuySetup(r)) return 'BUY (Tech)'
+    if (r.finalScore <= 40 || r.macdSignal.includes('bajista')) return 'SELL (Tech)'
     return 'HOLD'
   }
+
+  const getDecisionScore = (r: FinalQuantScore) => {
+    let score = r.finalScore
+    const action = getDisplayAction(r)
+    const sentiment = r.quant?.weekend_sentiment?.sentiment
+    const regime = String(r.quant?.market_regime || '').toLowerCase()
+
+    if (action === 'BUY') score += 8
+    if (action === 'BUY (Tech)') score += 4
+    if (action === 'SELL' || action === 'SELL (Tech)' || action === 'HOLD') score -= 40
+    if (regime.includes('bear')) score -= 20
+    if (regime === 'unknown') score -= 25
+    if (sentiment === 'POSITIVE') score += 8
+    if (sentiment === 'NEGATIVE') score -= 18
+    if (r.macdSignal === 'Cruce alcista') score += 10
+    else if (r.macdSignal === 'Positivo') score += 4
+    else if (r.macdSignal.includes('bajista') || r.macdSignal === 'Negativo') score -= 8
+    if (r.rsi !== null && r.rsi >= 70) score -= 18
+    else if (r.rsi !== null && r.rsi >= 55 && r.rsi < 70) score += 6
+    else if (r.rsi !== null && r.rsi < 35) score -= 4
+    if (r.changePercent !== null && r.changePercent > 6) score -= 12
+    if (r.changePercent !== null && r.changePercent < 0) score -= 10
+    if (r.isLeveragedOrInverse) score -= 15
+    if (r.noData) score -= 60
+
+    return score
+  }
+
+  const buildAnalysisHref = (r: FinalQuantScore) => {
+    const params = new URLSearchParams()
+    const sentiment = r.quant?.weekend_sentiment
+
+    params.set('symbol', r.symbol)
+    params.set('market', toMarket(r.market))
+    params.set('from', 'screener')
+    params.set('screenerAction', getDisplayAction(r))
+    params.set('screenerScore', r.finalScore.toFixed(0))
+    params.set('decisionScore', getDecisionScore(r).toFixed(0))
+
+    if (r.changePercent !== null) params.set('change', r.changePercent.toFixed(2))
+    if (r.rsi !== null) params.set('rsi', r.rsi.toFixed(1))
+    if (r.macdSignal && r.macdSignal !== 'Sin datos') params.set('macd', r.macdSignal)
+    if (sentiment?.sentiment) params.set('sentiment', sentiment.sentiment)
+    if (typeof sentiment?.score === 'number') params.set('sentimentScore', String(sentiment.score))
+    if (r.quant?.market_regime) params.set('regime', String(r.quant.market_regime))
+    if (r.quant?.action) params.set('quantAction', String(r.quant.action))
+    if (typeof r.quant?.confidence === 'number') params.set('confidence', String(r.quant.confidence))
+
+    return `/analysis?${params.toString()}`
+  }
+
+  const bestRecommendation = useMemo(() => {
+    const candidates = scanResults
+      .filter((r) => !r.noData)
+      .filter((r) => {
+        const action = getDisplayAction(r)
+        return (action === 'BUY' || action === 'BUY (Tech)') && hasCleanBuySetup(r)
+      })
+      .map((r) => ({ result: r, decisionScore: getDecisionScore(r) }))
+      .filter((candidate) => candidate.decisionScore >= 75)
+      .sort((a, b) => b.decisionScore - a.decisionScore)
+
+    return candidates[0] || null
+  }, [scanResults])
+
+  const recommendationReasons = bestRecommendation ? [
+    `Score ${bestRecommendation.result.finalScore.toFixed(0)} / decision ${bestRecommendation.decisionScore.toFixed(0)}`,
+    bestRecommendation.result.macdSignal !== 'Sin datos' ? bestRecommendation.result.macdSignal : null,
+    bestRecommendation.result.rsi !== null ? `RSI ${bestRecommendation.result.rsi.toFixed(1)}` : null,
+    bestRecommendation.result.quant?.weekend_sentiment?.sentiment === 'POSITIVE' ? 'FinBERT positivo' : null,
+    bestRecommendation.result.quant?.weekend_sentiment?.sentiment === 'NEGATIVE' ? 'FinBERT negativo penalizado' : null,
+  ].filter(Boolean) : []
+
+  const recommendationWarnings = bestRecommendation ? [
+    bestRecommendation.result.rsi !== null && bestRecommendation.result.rsi >= 70 ? 'RSI sobrecomprado' : null,
+    bestRecommendation.result.changePercent !== null && bestRecommendation.result.changePercent > 6 ? 'Subida diaria muy extendida' : null,
+    bestRecommendation.result.isLeveragedOrInverse ? 'Activo apalancado/inverso' : null,
+    bestRecommendation.result.quant?.weekend_sentiment?.sentiment === 'NEGATIVE' ? 'Sentimiento negativo' : null,
+  ].filter(Boolean) : []
 
   const isBullishCard = (r: FinalQuantScore) => {
     const action = getDisplayAction(r)
@@ -237,8 +384,119 @@ export function ScreenerClient() {
         <p className="text-sm text-gray-400 mt-1">
           Escaneo Quant de {scanSymbols.length} activos en {selectedCategory?.name ?? 'Zesty'}
           {scanResponse && ` · Python top ${scanResponse.quant_processed}`}
+          {scanResponse && ` · usable ${scanResponse.quant_usable ?? 0} / parcial ${scanResponse.quant_partial ?? 0} / fallo ${scanResponse.quant_failed ?? 0}`}
         </p>
       </div>
+
+      {!isRegularMarketOpen && (
+        <div className="border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+          Mercado US cerrado
+          {marketStatus.session === 'pre' ? ' en pre-market' : marketStatus.session === 'after' ? ' en after-hours' : ''}
+          . Las señales del screener quedan como candidatos para revisar; espera confirmacion con volumen real al abrir la sesion regular.
+        </div>
+      )}
+
+      {/* Automatic recommendation */}
+      {!scanLoading && scanResults.length > 0 && (
+        <div className={cn(
+          'border p-5 space-y-4',
+          bestRecommendation
+            ? 'bg-emerald-500/10 border-emerald-500/30'
+            : 'bg-amber-500/10 border-amber-500/30'
+        )}>
+          {bestRecommendation ? (
+            <>
+              <div className="flex items-start justify-between gap-4 flex-wrap">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-emerald-500/20 text-emerald-300 flex items-center justify-center flex-shrink-0">
+                    <Target className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-emerald-300 uppercase font-bold tracking-wider">Recomendacion automatica</p>
+                    <h2 className="text-xl font-bold text-white mt-1">
+                      {bestRecommendation.result.symbol}
+                      <span className="ml-2 text-sm font-medium text-gray-400">{bestRecommendation.result.name}</span>
+                    </h2>
+                    <p className="text-sm text-gray-300 mt-1">
+                      {isRegularMarketOpen
+                        ? 'Mejor oportunidad actual del screener por decision cuantitativa ajustada por riesgo.'
+                        : 'Mejor candidato para revisar al abrir mercado regular; no se marca como entrada confirmada mientras el mercado este cerrado.'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="text-right">
+                    <p className="text-[10px] text-gray-500 uppercase font-semibold">Decision</p>
+                    <p className="text-2xl font-mono font-bold text-emerald-300">
+                      {bestRecommendation.decisionScore.toFixed(0)}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleSelectSymbol(bestRecommendation.result.symbol, bestRecommendation.result.market, bestRecommendation.result)}
+                    className="px-4 py-2 text-sm font-semibold bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-colors"
+                  >
+                    {isRegularMarketOpen ? 'Analizar' : 'Revisar'}
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="bg-gray-950/30 border border-gray-800/70 rounded-lg p-3">
+                  <p className="text-[10px] text-gray-500 uppercase font-semibold">Senal</p>
+                  <p className="text-sm font-bold text-emerald-300 mt-1">{getDisplayAction(bestRecommendation.result)}</p>
+                </div>
+                <div className="bg-gray-950/30 border border-gray-800/70 rounded-lg p-3">
+                  <p className="text-[10px] text-gray-500 uppercase font-semibold">Precio</p>
+                  <p className="text-sm font-mono font-bold text-white mt-1">
+                    {bestRecommendation.result.price === null ? 'N/A' : `$${bestRecommendation.result.price.toFixed(2)}`}
+                  </p>
+                </div>
+                <div className="bg-gray-950/30 border border-gray-800/70 rounded-lg p-3">
+                  <p className="text-[10px] text-gray-500 uppercase font-semibold">Cambio</p>
+                  <p className={cn('text-sm font-mono font-bold mt-1', (bestRecommendation.result.changePercent ?? 0) >= 0 ? 'text-emerald-300' : 'text-red-300')}>
+                    {bestRecommendation.result.changePercent === null ? 'N/A' : `${bestRecommendation.result.changePercent >= 0 ? '+' : ''}${bestRecommendation.result.changePercent.toFixed(2)}%`}
+                  </p>
+                </div>
+                <div className="bg-gray-950/30 border border-gray-800/70 rounded-lg p-3">
+                  <p className="text-[10px] text-gray-500 uppercase font-semibold">RSI</p>
+                  <p className="text-sm font-mono font-bold text-white mt-1">
+                    {bestRecommendation.result.rsi === null ? 'N/A' : bestRecommendation.result.rsi.toFixed(1)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {recommendationReasons.map((reason) => (
+                  <span key={reason} className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-lg bg-emerald-500/10 text-emerald-200 border border-emerald-500/20">
+                    <ShieldCheck className="w-3 h-3" />
+                    {reason}
+                  </span>
+                ))}
+                {recommendationWarnings.map((warning) => (
+                  <span key={warning} className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-lg bg-amber-500/10 text-amber-200 border border-amber-500/20">
+                    <AlertTriangle className="w-3 h-3" />
+                    {warning}
+                  </span>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-lg bg-amber-500/20 text-amber-300 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-[10px] text-amber-300 uppercase font-bold tracking-wider">Recomendacion automatica</p>
+                <h2 className="text-lg font-bold text-white mt-1">No hay compra clara ahora</h2>
+                <p className="text-sm text-gray-300 mt-1">
+                  El screener no encontro una oportunidad BUY con datos suficientes y riesgo aceptable en esta categoria.
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Top Cards Panel */}
       {topCards.length > 0 && (
@@ -251,7 +509,7 @@ export function ScreenerClient() {
             {topCards.map((r, i) => (
               <Link
                 key={`${r.symbol}-${i}`}
-                href={`/analysis?symbol=${r.symbol}&market=${r.market}`}
+                href={buildAnalysisHref(r)}
                 className={cn(
                   'p-4 rounded-xl border transition-all hover:scale-[1.02]',
                   isBullishCard(r)
@@ -283,9 +541,13 @@ export function ScreenerClient() {
 
                 {/* Transparency Badges */}
                 <div className="flex flex-wrap gap-1 mb-3">
-                  {r.quant ? (
+                  {hasUsableQuantData(r) ? (
                     <span className="px-1.5 py-0.5 bg-indigo-500/20 text-indigo-300 text-[9px] font-bold rounded">
-                      [ARIMA/HMM]
+                      [Python OK]
+                    </span>
+                  ) : hasIncompleteQuantData(r) ? (
+                    <span className="px-1.5 py-0.5 bg-amber-500/20 text-amber-300 text-[9px] font-bold rounded">
+                      [Python parcial]
                     </span>
                   ) : (
                     <span className="px-1.5 py-0.5 bg-gray-800 text-gray-400 text-[9px] font-bold rounded">
@@ -312,7 +574,9 @@ export function ScreenerClient() {
                      </div>
                      <div className="flex justify-between">
                        <span>Régimen:</span>
-                       <span className="text-white truncate max-w-[100px]">{r.quant.market_regime}</span>
+                       <span className="text-white truncate max-w-[100px]">
+                         {String(r.quant.market_regime || '').toLowerCase() === 'unknown' ? 'Sin datos HMM' : r.quant.market_regime}
+                       </span>
                      </div>
                    </div>
                 )}
@@ -355,14 +619,18 @@ export function ScreenerClient() {
               disabled={isScanningSentiment}
               className="px-3 py-1.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-lg transition-all"
             >
-              {isScanningSentiment ? 'Leyendo Noticias...' : 'Escanear Noticias (FinBERT)'}
+              {isScanningSentiment ? 'Actualizando sentimiento...' : 'Escanear Noticias (FinBERT)'}
             </button>
             <button
-              onClick={() => runVerification('AAPL')}
+              onClick={() => verificationCandidate?.symbol && runVerification(verificationCandidate.symbol, toMarket(verificationCandidate.market))}
               disabled={verifyState.status === 'consultando'}
               className="px-3 py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-lg transition-all"
             >
-              {verifyState.status === 'consultando' && verifyState.symbol === 'AAPL' ? 'Probando...' : 'Probar motor con AAPL'}
+              {verifyState.status === 'consultando'
+                ? 'Probando...'
+                : verificationCandidate?.symbol
+                  ? `Probar motor con ${verificationCandidate.symbol}`
+                  : 'Probar motor'}
             </button>
           </div>
         </div>
@@ -375,14 +643,17 @@ export function ScreenerClient() {
               ? "bg-emerald-500/5 text-emerald-400 border-emerald-500/20"
               : verifyState.status === 'consultando'
               ? "bg-amber-500/5 text-amber-400 border-amber-500/20 animate-pulse"
+              : verifyState.status === 'parcial'
+              ? "bg-amber-500/5 text-amber-300 border-amber-500/20"
               : verifyState.status === 'modo_basico'
               ? "bg-gray-800/40 text-gray-400 border-gray-700"
               : "bg-red-500/5 text-red-400 border-red-500/20"
           )}>
             <div className="flex flex-col gap-0.5">
               <span>
-                {verifyState.status === 'conectado' ? `Motor Cuántico Conectado para: ${verifyState.symbol}`
+                {verifyState.status === 'conectado' ? `Motor Quant conectado con datos utiles para: ${verifyState.symbol}`
                   : verifyState.status === 'consultando' ? `Consultando Python para: ${verifyState.symbol}...`
+                  : verifyState.status === 'parcial' ? `Motor respondio para ${verifyState.symbol}, pero el analisis es parcial`
                   : verifyState.status === 'modo_basico' ? `Python no disponible para ${verifyState.symbol}, usando modo básico`
                   : `Error en consulta para: ${verifyState.symbol}`}
               </span>
@@ -405,6 +676,7 @@ export function ScreenerClient() {
                   "w-2 h-2 rounded-full",
                   verifyState.status === 'conectado' ? "bg-emerald-400" :
                   verifyState.status === 'consultando' ? "bg-amber-400 animate-ping" :
+                  verifyState.status === 'parcial' ? "bg-amber-400" :
                   verifyState.status === 'error' ? "bg-red-400" :
                   verifyState.status === 'modo_basico' ? "bg-amber-500" : "bg-gray-600"
                 )} />
@@ -412,11 +684,13 @@ export function ScreenerClient() {
                   "text-xs font-bold font-mono",
                   verifyState.status === 'conectado' ? "text-emerald-400" :
                   verifyState.status === 'consultando' ? "text-amber-400" :
+                  verifyState.status === 'parcial' ? "text-amber-400" :
                   verifyState.status === 'error' ? "text-red-400" :
                   verifyState.status === 'modo_basico' ? "text-amber-500" : "text-gray-400"
                 )}>
-                  {verifyState.status === 'conectado' ? 'Motor Cuántico Conectado' :
+                  {verifyState.status === 'conectado' ? 'Motor Quant OK' :
                    verifyState.status === 'consultando' ? 'Consultando' :
+                   verifyState.status === 'parcial' ? 'Motor parcial' :
                    verifyState.status === 'error' ? 'Error' :
                    verifyState.status === 'modo_basico' ? 'Modo básico' : 'Sin iniciar'}
                 </span>
@@ -450,7 +724,7 @@ export function ScreenerClient() {
 
           <div className="bg-gray-900/30 p-3 rounded-lg border border-gray-800/60 space-y-1">
             <p className="text-[10px] text-gray-500 uppercase font-semibold mb-2">Resultado Python</p>
-            {verifyState.status === 'conectado' && verifyState.data ? (
+            {(verifyState.status === 'conectado' || verifyState.status === 'parcial') && verifyState.data ? (
               <div className="space-y-1 text-[11px] font-mono">
                 <div className="grid grid-cols-2 gap-x-2 gap-y-0.5">
                   <div className="text-gray-400">Acción:</div>
@@ -458,8 +732,13 @@ export function ScreenerClient() {
                   <div className="text-gray-400">Confianza:</div>
                   <div className="text-white text-right">{verifyState.data.confidence}%</div>
                 </div>
-                <div className="text-[9px] text-emerald-400 text-center font-bold mt-1 bg-emerald-950/20 border border-emerald-900/30 rounded py-0.5">
-                  Resultado recibido desde Python
+                <div className={cn(
+                  "text-[9px] text-center font-bold mt-1 border rounded py-0.5",
+                  verifyState.status === 'conectado'
+                    ? "text-emerald-400 bg-emerald-950/20 border-emerald-900/30"
+                    : "text-amber-300 bg-amber-950/20 border-amber-900/30"
+                )}>
+                  {verifyState.status === 'conectado' ? 'Resultado util desde Python' : 'Respuesta parcial desde Python'}
                 </div>
               </div>
             ) : (
@@ -469,7 +748,7 @@ export function ScreenerClient() {
         </div>
 
         {/* Panel de Noticias Leídas por FinBERT */}
-        {verifyState.status === 'conectado' && verifyState.data?.news_articles && (
+        {(verifyState.status === 'conectado' || verifyState.status === 'parcial') && verifyState.data?.news_articles && (
           <div className="bg-gray-900/30 p-3 rounded-lg border border-gray-800/60 mt-4 space-y-2">
             <p className="text-[10px] text-gray-500 uppercase font-semibold">
               Titulares leídos por FinBERT <span className={cn('ml-1 px-1.5 py-0.5 rounded text-[9px]', verifyState.data.news_sentiment === 'POSITIVE' ? 'bg-emerald-500/20 text-emerald-400' : verifyState.data.news_sentiment === 'NEGATIVE' ? 'bg-red-500/20 text-red-400' : 'bg-gray-800 text-gray-400')}>{verifyState.data.news_sentiment}</span>
@@ -540,7 +819,7 @@ export function ScreenerClient() {
               {!scanLoading && filtered.map((r) => (
                 <tr
                   key={r.symbol}
-                  onClick={() => handleSelectSymbol(r.symbol, r.market)}
+                  onClick={() => handleSelectSymbol(r.symbol, r.market, r)}
                   className={cn(
                     'hover:bg-gray-800/20 transition-colors cursor-pointer',
                     selectedSymbol === r.symbol ? 'bg-emerald-500/5' : ''
@@ -575,7 +854,7 @@ export function ScreenerClient() {
                   <td className="px-4 py-3 text-right">
                     {r.quant ? (
                       <span className={cn('text-xs font-bold px-2 py-1 rounded', r.quant.action === 'BUY' ? 'bg-emerald-500/20 text-emerald-400' : r.quant.action === 'SELL' ? 'bg-red-500/20 text-red-400' : 'bg-gray-800 text-gray-400')}>
-                        {r.quant.action}
+                        {hasIncompleteQuantData(r) ? 'PARCIAL' : r.quant.action}
                       </span>
                     ) : (
                       <span className="text-[10px] text-gray-600">N/A</span>
@@ -595,7 +874,7 @@ export function ScreenerClient() {
                     ) : <span className="text-xs text-gray-600">—</span>}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <Link href={`/analysis?symbol=${r.symbol}&market=${r.market}`} onClick={(e) => e.stopPropagation()} className="text-gray-500 hover:text-emerald-400 transition-colors">
+                    <Link href={buildAnalysisHref(r)} onClick={(e) => e.stopPropagation()} className="text-gray-500 hover:text-emerald-400 transition-colors">
                       <ArrowRightLeft className="w-4 h-4" />
                     </Link>
                   </td>

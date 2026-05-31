@@ -14,7 +14,8 @@ import {
   normalizeChartRange,
 } from '@/lib/chart-ranges'
 import { yahooFinance } from '@/lib/yahoo-finance'
-import { normalizeSymbol } from '@/lib/domain/market'
+import { getYahooSymbol } from '@/lib/market-data'
+import { normalizeSymbol, parseMarketOrLegacy } from '@/lib/domain/market'
 import { checkRateLimit, getClientIp } from '@/lib/api/rate-limit'
 import { getCached } from '@/lib/api/memory-cache'
 
@@ -255,7 +256,8 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url)
   const rawSymbol = normalizeSymbol(searchParams.get('symbol'))
-  const symbol = rawSymbol?.replace('.', '-')
+  const market = parseMarketOrLegacy(searchParams.get('market'), rawSymbol) || 'US'
+  const symbol = rawSymbol ? getYahooSymbol(rawSymbol, market) : null
   const rangeParam = searchParams.get('range')
   const timeframe = (searchParams.get('timeframe') || '1d') as Timeframe
 

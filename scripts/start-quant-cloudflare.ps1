@@ -12,6 +12,7 @@ $pythonExe = Join-Path $quantDir "venv\Scripts\python.exe"
 $cloudflaredExe = Join-Path $repoRoot "cloudflared.exe"
 $stderrLog = Join-Path $repoRoot "cloudflared-stderr.log"
 $stdoutLog = Join-Path $repoRoot "cloudflared-stdout.log"
+$statusFile = Join-Path $repoRoot "quant-start-status.json"
 $envLocal = Join-Path $repoRoot ".env.local"
 
 function Test-HttpOk($url) {
@@ -47,8 +48,12 @@ if (-not (Test-Path $cloudflaredExe)) {
 }
 
 if (-not (Test-HttpOk "http://127.0.0.1:8000/health")) {
-  Start-Process -FilePath $pythonExe -ArgumentList "run.py" -WorkingDirectory $quantDir -WindowStyle Hidden
+  $pythonProcess = Start-Process -FilePath $pythonExe -ArgumentList "run.py" -WorkingDirectory $quantDir -WindowStyle Hidden -PassThru
   Start-Sleep -Seconds 5
+} else {
+  $pythonProcess = Get-NetTCPConnection -LocalPort 8000 -State Listen -ErrorAction SilentlyContinue |
+    Select-Object -First 1 |
+    ForEach-Object { Get-Process -Id $_.OwningProcess -ErrorAction SilentlyContinue }
 }
 
 if (-not (Test-HttpOk "http://127.0.0.1:8000/health")) {
@@ -58,13 +63,14 @@ if (-not (Test-HttpOk "http://127.0.0.1:8000/health")) {
 Get-Process cloudflared -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
 Remove-Item -LiteralPath $stderrLog, $stdoutLog -Force -ErrorAction SilentlyContinue
 
-Start-Process `
+$cloudflaredProcess = Start-Process `
   -FilePath $cloudflaredExe `
   -ArgumentList @("tunnel", "--url", "http://127.0.0.1:8000", "--no-autoupdate") `
   -WorkingDirectory $repoRoot `
   -RedirectStandardOutput $stdoutLog `
   -RedirectStandardError $stderrLog `
-  -WindowStyle Hidden
+  -WindowStyle Hidden `
+  -PassThru
 
 $publicUrl = $null
 for ($i = 0; $i -lt 30; $i++) {
@@ -101,6 +107,26 @@ Set-EnvValue $envLocal "QUANT_ENGINE_URL" $publicUrl
 Write-Host "Quant-engine local: http://127.0.0.1:8000"
 Write-Host "Cloudflare tunnel: $publicUrl"
 Write-Host ".env.local actualizado: QUANT_ENGINE_URL=$publicUrl"
+Write-Host "Quant PID: $($pythonProcess.Id)"
+Write-Host "Cloudflared PID: $($cloudflaredProcess.Id)"
+
+$startupDir = [Environment]::GetFolderPath("Startup")
+$startupFile = Join-Path $startupDir "TradeMind Quant Cloudflare.cmd"
+$status = [ordered]@{
+  startedAt = (Get-Date).ToString("o")
+  repoRoot = "$repoRoot"
+  localHealth = "http://127.0.0.1:8000/health"
+  publicUrl = $publicUrl
+  publicHealth = "$publicUrl/health"
+  quantPid = $pythonProcess.Id
+  cloudflaredPid = $cloudflaredProcess.Id
+  updateVercelRequested = [bool]$UpdateVercel
+  deployRequested = [bool]$Deploy
+  startupTaskPresent = Test-Path $startupFile
+  startupTaskPath = $startupFile
+}
+$status | ConvertTo-Json | Set-Content -Path $statusFile
+Write-Host "Estado verificable escrito en: $statusFile"
 
 if ($UpdateVercel) {
   Push-Location $repoRoot
@@ -115,13 +141,12 @@ if ($UpdateVercel) {
 }
 
 if ($InstallStartupTask) {
-  $startupDir = [Environment]::GetFolderPath("Startup")
-  $startupFile = Join-Path $startupDir "TradeMind Quant Cloudflare.cmd"
   $startupContent = @(
     "@echo off",
     "cd /d `"$repoRoot`"",
-    "powershell.exe -NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`" -UpdateVercel -Deploy"
+    "powershell.exe -NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`" -UpdateVercel"
   )
   Set-Content -Path $startupFile -Value $startupContent
   Write-Host "Inicio automatico instalado: $startupFile"
+  Write-Host "Nota: el inicio automatico actualiza QUANT_ENGINE_URL, pero no despliega produccion. Usa START_QUANT_CLOUDFLARE.cmd para despliegue manual."
 }

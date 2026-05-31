@@ -73,6 +73,7 @@ __pycache__/
 # Quant engine generated/local artifacts
 quant-engine/modelos_locales/
 quant-engine/sentiment_cache.json
+quant-start-status.json
 
 # Archivos temporales de trabajo
 v1.txt

@@ -52,7 +52,7 @@ interface PendingSignalResult {
   signalId: string
   symbol: string
   price: number
-  position: any; // eslint-disable-line @typescript-eslint/no-explicit-any
+  position: unknown
 }
 
 async function fetchPendingSignals(userId: string): Promise<PendingSignal[]> {
@@ -237,11 +237,11 @@ export function PortfolioClient() {
     return new Map(ZESTY_SYMBOLS.map((item) => [item.symbol, item]))
   }, [])
 
-  const { data: signals = [] } = useQuery({
+  const { data: signals = [] } = useQuery<PendingSignal[]>({
     queryKey: ['signals', user?.id],
     queryFn: async () => {
       const { data } = await supabase.from('signals').select('*').eq('status', 'active').order('created_at', { ascending: false })
-      return data || []
+      return (data || []) as PendingSignal[]
     },
     enabled: !!user,
   })
@@ -267,6 +267,7 @@ export function PortfolioClient() {
         queryClient.invalidateQueries({ queryKey: ['positions'] })
         queryClient.invalidateQueries({ queryKey: ['profile'] })
         queryClient.invalidateQueries({ queryKey: ['portfolio-summary'] })
+        queryClient.invalidateQueries({ queryKey: ['live-portfolio-simulation'] })
         queryClient.invalidateQueries({ queryKey: ['pending-signals', user.id] })
       } else {
         toast.info('No hay señales pendientes de ejecución')
@@ -357,6 +358,7 @@ export function PortfolioClient() {
     setShowAddForm(false)
     queryClient.invalidateQueries({ queryKey: ['positions'] })
     queryClient.invalidateQueries({ queryKey: ['portfolio-summary'] })
+    queryClient.invalidateQueries({ queryKey: ['live-portfolio-simulation'] })
   }
 
   const closePosition = async (id: string, symbol: string) => {
@@ -368,6 +370,7 @@ export function PortfolioClient() {
     toast.success(`Posicion en ${symbol} cerrada`)
     queryClient.invalidateQueries({ queryKey: ['positions'] })
     queryClient.invalidateQueries({ queryKey: ['portfolio-summary'] })
+    queryClient.invalidateQueries({ queryKey: ['live-portfolio-simulation'] })
   }
 
   const updateVirtualBalance = async (nextBalance: number) => {
@@ -399,6 +402,7 @@ export function PortfolioClient() {
       setShowBalanceForm(false)
       queryClient.invalidateQueries({ queryKey: ['profile'] })
       queryClient.invalidateQueries({ queryKey: ['portfolio-summary'] })
+      queryClient.invalidateQueries({ queryKey: ['live-portfolio-simulation'] })
     } catch (err) {
       console.warn('[update virtual balance]', err)
       toast.error('Error al actualizar capital virtual')
@@ -583,13 +587,13 @@ export function PortfolioClient() {
             <div className="mb-6 p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-lg">
               <label className="block text-[10px] font-bold text-emerald-400 uppercase tracking-wider mb-2">Sincronizar con seÃ±al guardada</label>
               <div className="flex flex-wrap gap-2">
-                {signals.map((sig: any) => (
+                {signals.map((sig) => (
                   <button
                     key={sig.id}
                     type="button"
                     onClick={() => {
                       setValue('symbol', sig.symbol, { shouldValidate: true })
-                      setValue('market', 'US' as any)
+                      setValue('market', 'US')
                       setValue('entryPrice', sig.price, { shouldValidate: true })
                       toast.success(`Datos de ${sig.symbol} cargados`)
                     }}

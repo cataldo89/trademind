@@ -113,9 +113,10 @@ export function ZestyWorkspace() {
   useEffect(() => {
     const nextSymbol = searchParams.get('symbol')?.trim().toUpperCase()
     const nextMarket = (searchParams.get('market') || 'US') as Market
-    const nextRange = normalizeChartRange(searchParams.get('range'))
+    const rangeParam = searchParams.get('range')
+    const nextRange = rangeParam ? normalizeChartRange(rangeParam) : null
 
-    if (nextRange !== chartRange) {
+    if (nextRange && nextRange !== chartRange) {
       // URL params are the external source of truth for chart range.
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setChartRange(nextRange)
@@ -429,4 +430,3 @@ export function ZestyWorkspace() {
     </div>
   )
 }
-

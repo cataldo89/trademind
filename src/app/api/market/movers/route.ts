@@ -4,41 +4,67 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { Market, MarketMover } from '@/types'
-import { yahooFinance } from '@/lib/yahoo-finance'
 import { checkRateLimit, getClientIp } from '@/lib/api/rate-limit'
 import { getCached } from '@/lib/api/memory-cache'
 
 const RATE_LIMIT = 60
 const RATE_WINDOW_MS = 60_000
 const MOVERS_TTL_MS = 5 * 60_000
+const YAHOO_SCREENER_URL = 'https://query1.finance.yahoo.com/v1/finance/screener/predefined/saved'
+
+type YahooScreenerQuote = Record<string, unknown>
+
+async function fetchYahooScreener(scrId: string): Promise<YahooScreenerQuote[]> {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), 8_000)
+
+  try {
+    const url = `${YAHOO_SCREENER_URL}?scrIds=${encodeURIComponent(scrId)}&count=10`
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        Accept: 'application/json',
+        'User-Agent': 'TradeMind/1.0',
+      },
+      next: { revalidate: 300 },
+    })
+
+    if (!response.ok) return []
+
+    const body = await response.json()
+    return body?.finance?.result?.[0]?.quotes || []
+  } catch {
+    return []
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
+function parseMovers(quotes: YahooScreenerQuote[]): MarketMover[] {
+  return quotes
+    .map((quote) => ({
+      symbol: String(quote.symbol || ''),
+      name: String(quote.longName || quote.shortName || quote.displayName || quote.symbol || ''),
+      price: Number(quote.regularMarketPrice ?? quote.intradayprice) || 0,
+      change: Number(quote.regularMarketChange ?? quote.intradaypricechange) || 0,
+      changePercent: Number(quote.regularMarketChangePercent ?? quote.percentchange) || 0,
+      volume: Number(quote.regularMarketVolume ?? quote.dayvolume) || 0,
+      market: 'US' as Market,
+    }))
+    .filter((mover) => mover.symbol && Number.isFinite(mover.price) && mover.price > 0)
+}
 
 async function fetchUsMovers() {
-  const [gainersRaw, losersRaw, activeRaw] = await Promise.allSettled([
-    yahooFinance.screener({ scrIds: 'day_gainers', count: 10 }),
-    yahooFinance.screener({ scrIds: 'day_losers', count: 10 }),
-    yahooFinance.screener({ scrIds: 'most_actives', count: 10 }),
+  const [gainersRaw, losersRaw, activeRaw] = await Promise.all([
+    fetchYahooScreener('day_gainers'),
+    fetchYahooScreener('day_losers'),
+    fetchYahooScreener('most_actives'),
   ])
 
-  const parse = (result: PromiseSettledResult<{ quotes: unknown[] }>): MarketMover[] => {
-    if (result.status === 'rejected' || !result.value?.quotes) return []
-    return result.value.quotes.map((q: unknown) => {
-      const quote = q as Record<string, unknown>
-      return {
-        symbol: String(quote.symbol || ''),
-        name: String(quote.longName || quote.shortName || quote.symbol || ''),
-        price: Number(quote.regularMarketPrice) || 0,
-        change: Number(quote.regularMarketChange) || 0,
-        changePercent: Number(quote.regularMarketChangePercent) || 0,
-        volume: Number(quote.regularMarketVolume) || 0,
-        market: 'US' as Market,
-      }
-    })
-  }
-
   return {
-    gainers: parse(gainersRaw as PromiseSettledResult<{ quotes: unknown[] }>),
-    losers: parse(losersRaw as PromiseSettledResult<{ quotes: unknown[] }>),
-    mostActive: parse(activeRaw as PromiseSettledResult<{ quotes: unknown[] }>),
+    gainers: parseMovers(gainersRaw),
+    losers: parseMovers(losersRaw),
+    mostActive: parseMovers(activeRaw),
   }
 }
 

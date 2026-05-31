@@ -8,6 +8,23 @@ import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { DEFAULT_VIRTUAL_BALANCE, fetchVirtualBalanceProfile } from '@/lib/virtual-balance'
 
+const NEW_YORK_TIMEZONE = 'America/New_York'
+const newYorkDateFormatter = new Intl.DateTimeFormat('en-CA', {
+  timeZone: NEW_YORK_TIMEZONE,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+})
+
+function getNewYorkDateKey(date = new Date()) {
+  return newYorkDateFormatter.format(date)
+}
+
+function isTodayInNewYork(timestamp: number) {
+  if (!Number.isFinite(timestamp)) return false
+  return getNewYorkDateKey(new Date(timestamp)) === getNewYorkDateKey()
+}
+
 interface PortfolioStats {
   totalValue: number
   totalPnL: number
@@ -66,11 +83,13 @@ async function fetchPortfolioStats(): Promise<PortfolioStats | null> {
     const currentPrice = Number(quote?.price)
     if (!Number.isFinite(currentPrice) || currentPrice <= 0) return pos
 
+    const openedAtValue = new Date(String(pos.created_at || pos.entry_date || Date.now())).getTime()
+    const openedToday = isTodayInNewYork(openedAtValue)
     const value = currentPrice * pos.quantity
     const cost = pos.entry_price * pos.quantity
     const pnl = value - cost
     const pnlPercent = cost > 0 ? (pnl / cost) * 100 : 0
-    const dayPnL = Number(quote?.change || 0) * pos.quantity
+    const dayPnL = openedToday ? pnl : Number(quote?.change || 0) * pos.quantity
 
     return { ...pos, currentPrice, value, cost, pnl, pnlPercent, dayPnL }
   })
@@ -79,7 +98,8 @@ async function fetchPortfolioStats(): Promise<PortfolioStats | null> {
   const totalPnL = totalValue - totalCost
   const totalPnLPercent = totalCost > 0 ? (totalPnL / totalCost) * 100 : 0
   const dayPnL = updatedPositions.reduce((sum, p) => sum + (p.dayPnL || 0), 0)
-  const dayPnLPercent = totalValue > 0 ? (dayPnL / totalValue) * 100 : 0
+  const previousValue = totalValue - dayPnL
+  const dayPnLPercent = previousValue > 0 ? (dayPnL / previousValue) * 100 : 0
 
   return {
     totalValue,
@@ -164,18 +184,18 @@ export function PortfolioSummaryWidget() {
 
       <div className="p-5 grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          label="Valor total"
+          label="Valor posiciones"
           value={formatCurrency(stats.totalValue)}
           className="col-span-2 lg:col-span-1"
         />
         <StatCard
-          label="P&L total"
+          label="P&L total no realizado"
           value={formatCurrency(Math.abs(stats.totalPnL))}
           sub={formatPercent(stats.totalPnLPercent)}
           positive={totalPositive}
         />
         <StatCard
-          label="P&L del día"
+          label="P&L diario total"
           value={formatCurrency(Math.abs(stats.dayPnL))}
           sub={formatPercent(stats.dayPnLPercent)}
           positive={dayPositive}
@@ -225,4 +245,4 @@ function StatCard({
     </div>
   )
 }
-
+

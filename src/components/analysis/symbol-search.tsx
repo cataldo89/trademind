@@ -6,7 +6,7 @@ import { Search, X, Loader2 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { debounce } from '@/lib/utils'
 import { cn } from '@/lib/utils'
-import { POPULAR_US_SYMBOLS, AI_TECH_SYMBOLS, POPULAR_ETFS, ZESTY_SYMBOLS } from '@/lib/market-data'
+import { POPULAR_US_SYMBOLS, AI_TECH_SYMBOLS, POPULAR_ETFS, ZESTY_SYMBOLS, getZestySymbolMarket } from '@/lib/market-data'
 
 interface SymbolSearchProps {
   symbol: string
@@ -23,7 +23,7 @@ interface SearchResult {
 const QUICK_SYMBOLS: SearchResult[] = [
   ...POPULAR_US_SYMBOLS.slice(0, 5).map(s => ({ ...s, market: 'US' as Market })),
   ...POPULAR_ETFS.slice(0, 3).map(s => ({ ...s, market: 'US' as Market })),
-  ...ZESTY_SYMBOLS.map(s => ({ ...s, market: 'US' as Market })),
+  ...ZESTY_SYMBOLS.map(s => ({ ...s, market: getZestySymbolMarket(s.symbol) })),
 ]
 
 export function SymbolSearch({ symbol, market, onSelect }: SymbolSearchProps) {
@@ -145,4 +145,4 @@ export function SymbolSearch({ symbol, market, onSelect }: SymbolSearchProps) {
     </div>
   )
 }
-
+

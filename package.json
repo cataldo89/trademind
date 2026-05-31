@@ -10,6 +10,7 @@
     "quant:start": "powershell.exe -ExecutionPolicy Bypass -File scripts/start-quant-cloudflare.ps1",
     "quant:start:vercel": "powershell.exe -ExecutionPolicy Bypass -File scripts/start-quant-cloudflare.ps1 -UpdateVercel -Deploy",
     "quant:stop": "powershell.exe -ExecutionPolicy Bypass -File scripts/stop-quant-cloudflare.ps1",
+    "quant:audit": "powershell.exe -ExecutionPolicy Bypass -File scripts/audit-quant-cloudflare.ps1",
     "audit:zesty": "node scripts/audit-zesty-symbols.mjs",
     "typecheck": "tsc --noEmit",
     "test:contracts": "node --test tests/integration/*.test.mjs",

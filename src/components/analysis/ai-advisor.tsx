@@ -1,13 +1,22 @@
 'use client'
 
 import { useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { Market } from '@/types'
 import { Bot, Loader2, RefreshCcw, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
+import type { AdvisorScreenerContext } from '@/lib/ai-advisor-context'
 
 interface AIAdvisorProps {
   symbol: string
   market: Market
+  technicalSignal?: {
+    type: 'BUY' | 'SELL' | 'HOLD'
+    strength: number
+    reasons: string[]
+  }
+  range?: string
+  screenerContext?: AdvisorScreenerContext
 }
 
 interface AIAnalysisResponse {
@@ -20,7 +29,8 @@ interface AIAnalysisResponse {
   error?: string
 }
 
-export function AIAdvisor({ symbol, market }: AIAdvisorProps) {
+export function AIAdvisor({ symbol, market, technicalSignal, range, screenerContext }: AIAdvisorProps) {
+  const queryClient = useQueryClient()
   const [analysis, setAnalysis] = useState<string | null>(null)
   const [engine, setEngine] = useState<{ provider?: string; model?: string } | null>(null)
   const [promptContext, setPromptContext] = useState<string | null>(null)
@@ -31,12 +41,13 @@ export function AIAdvisor({ symbol, market }: AIAdvisorProps) {
     setIsLoading(true)
     setAnalysis(null)
     setEngine(null)
+    setPromptContext(null)
 
     try {
       const res = await fetch('/api/ai/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ symbol, market }),
+        body: JSON.stringify({ symbol, market, technicalSignal, range, screenerContext }),
       })
 
       const payload = (await res.json()) as AIAnalysisResponse
@@ -138,6 +149,10 @@ export function AIAdvisor({ symbol, market }: AIAdvisorProps) {
                 })
                 const body = await res.json().catch(() => null)
                 if (!res.ok || !body?.ok) throw new Error(body?.error?.message || 'No se pudo ejecutar la orden')
+                queryClient.invalidateQueries({ queryKey: ['positions'] })
+                queryClient.invalidateQueries({ queryKey: ['profile'] })
+                queryClient.invalidateQueries({ queryKey: ['portfolio-summary'] })
+                queryClient.invalidateQueries({ queryKey: ['live-portfolio-simulation'] })
                 toast.success('Operacion simulada ejecutada')
               }}
               className="py-1.5 text-xs font-bold bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors"

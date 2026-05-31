@@ -1,5 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { QuantClient } from '@/lib/ai/quant-client'
+import { getYahooSymbol, getZestySymbolMarket } from '@/lib/market-data'
+import { parseMarketOrLegacy } from '@/lib/domain/market'
+
+function classifyWorkflowResult(workflowResult: Record<string, unknown> | undefined) {
+  if (!workflowResult) {
+    return {
+      usable: false,
+      status: 'failed',
+      reason: 'Quant engine did not return workflow_result',
+    }
+  }
+
+  const action = String(workflowResult.action || '').toUpperCase()
+  const confidence = Number(workflowResult.confidence ?? 0)
+  const regime = String(workflowResult.market_regime || '').toLowerCase()
+  const explanation = String(workflowResult.xai_explanation || workflowResult.error_reason || '')
+  const hasDataFetchError = /error fetching data|fallo al obtener datos|datos insuficientes|incompleto/i.test(explanation)
+  const unknownRegime = !regime || regime === 'unknown' || regime.includes('desconocido')
+
+  if (hasDataFetchError) {
+    return { usable: false, status: 'failed', reason: explanation || 'Quant engine reported incomplete data' }
+  }
+
+  if (action === 'HOLD' && confidence === 0 && unknownRegime) {
+    return { usable: false, status: 'partial', reason: 'Python returned HOLD with 0 confidence and unknown regime' }
+  }
+
+  if (unknownRegime || confidence === 0) {
+    return { usable: false, status: 'partial', reason: 'Python returned partial quant data' }
+  }
+
+  return { usable: true, status: 'ok', reason: 'Python workflow completed with usable quant data' }
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,9 +43,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Symbol is required' }, { status: 400 })
     }
 
-    console.log(`[API Quant Analyze] Running workflow for symbol: ${symbol}`)
+    const market = parseMarketOrLegacy(body.market, symbol) || getZestySymbolMarket(symbol)
+    const quantSymbol = getYahooSymbol(symbol, market)
+
+    console.log(`[API Quant Analyze] Running workflow for symbol: ${symbol} (${quantSymbol})`)
     const client = new QuantClient()
-    const result = await client.runWorkflow(symbol)
+    const result = await client.runWorkflow(quantSymbol)
 
     if (!result.success) {
       console.error(`[API Quant Analyze] QuantClient returned failure:`, result.error)
@@ -28,8 +64,22 @@ export async function POST(request: NextRequest) {
       }, { status: statusCode })
     }
 
-    return NextResponse.json({ success: true, data: result.data })
-  } catch (error: any) {
+    const data = result.data
+    const workflowResult = data?.workflow_result
+    const diagnostic = classifyWorkflowResult(workflowResult)
+
+    if (workflowResult && data) {
+      data.workflow_result = {
+        ...workflowResult,
+        engine_status: diagnostic.status,
+        data_quality: diagnostic.usable ? 'complete' : diagnostic.status === 'partial' ? 'partial' : 'insufficient',
+        engine_reason: diagnostic.reason,
+        quant_symbol: quantSymbol,
+      }
+    }
+
+    return NextResponse.json({ success: true, data, symbol, quantSymbol, diagnostic })
+  } catch (error: unknown) {
     console.error('[API Quant Analyze] Exception:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

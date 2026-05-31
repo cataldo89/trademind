@@ -127,6 +127,28 @@ export const SYMBOL_CATEGORY_MAP: Record<string, string> = {
   'SCHD': 'altos-div',
   'SPYD': 'altos-div',
   'DGRO': 'altos-div',
+
+  // Chile / Bolsa de Santiago
+  'CHILE': 'chile',
+  'BCH': 'chile',
+  'BSAC': 'chile',
+  'BSANTANDER': 'chile',
+  'CAMPOS': 'chile',
+  'CFIBPDCCHA': 'chile',
+  'CFIBTETFMP': 'chile',
+  'CFIETFCC': 'chile',
+  'CFIETFCD': 'chile',
+  'CFIETFLP': 'chile',
+  'CFIETFRFLP': 'chile',
+  'CFIFALCDCG': 'chile',
+  'CFIFALCDCW': 'chile',
+  'CFIFALCFIW': 'chile',
+  'CFIFALCTAC': 'chile',
+  'CFIFYNSADB': 'chile',
+  'CFIMDCHA': 'chile',
+  'CFMTOEEQUB': 'chile',
+  'CHWAF': 'chile',
+  'CHYM': 'chile',
   
   // Materias primas
   'GLD': 'materias-primas',
@@ -160,8 +182,50 @@ const YAHOO_PROXY = '/api/market' // Our own Next.js API routes that proxy Yahoo
 
 // ---- Symbol helpers ----------------------------------------
 
-export function getYahooSymbol(symbol: string, _market: Market): string {
-  return symbol
+interface ZestySymbolMetadata {
+  market: Market
+  yahooSymbol?: string
+}
+
+export const ZESTY_SYMBOL_METADATA: Record<string, ZestySymbolMetadata> = {
+  CHILE: { market: 'CL', yahooSymbol: 'CHILE.SN' },
+  BCH: { market: 'US' },
+  BSAC: { market: 'US' },
+  BSANTANDER: { market: 'CL', yahooSymbol: 'BSANTANDER.SN' },
+  CAMPOS: { market: 'CL', yahooSymbol: 'CAMPOS.SN' },
+  CFIBPDCCHA: { market: 'CL', yahooSymbol: 'CFIBPDCCHA.SN' },
+  CFIBTETFMP: { market: 'CL', yahooSymbol: 'CFIBTETFMP.SN' },
+  CFIETFCC: { market: 'CL', yahooSymbol: 'CFIETFCC.SN' },
+  CFIETFCD: { market: 'CL', yahooSymbol: 'CFIETFCD.SN' },
+  CFIETFLP: { market: 'CL', yahooSymbol: 'CFIETFLP.SN' },
+  CFIETFRFLP: { market: 'CL', yahooSymbol: 'CFIETFRFLP.SN' },
+  CFIFALCDCG: { market: 'CL', yahooSymbol: 'CFIFALCDCG.SN' },
+  CFIFALCDCW: { market: 'CL', yahooSymbol: 'CFIFALCDCW.SN' },
+  CFIFALCFIW: { market: 'CL', yahooSymbol: 'CFIFALCFIW.SN' },
+  CFIFALCTAC: { market: 'CL', yahooSymbol: 'CFIFALCTAC.SN' },
+  CFIFYNSADB: { market: 'CL', yahooSymbol: 'CFIFYNSADB.SN' },
+  CFIMDCHA: { market: 'CL', yahooSymbol: 'CFIMDCHA.SN' },
+  CFMTOEEQUB: { market: 'CL', yahooSymbol: 'CFMTOEEQUB.SN' },
+  CHWAF: { market: 'US', yahooSymbol: 'CHW.AX' },
+  CHYM: { market: 'US' },
+}
+
+function normalizeYahooClassSymbol(symbol: string) {
+  const upper = symbol.toUpperCase()
+  if (/\.(SN|AX|SA)$/i.test(upper)) return upper
+  return upper.replace('.', '-')
+}
+
+export function getZestySymbolMarket(symbol: string): Market {
+  return ZESTY_SYMBOL_METADATA[symbol.toUpperCase()]?.market ?? 'US'
+}
+
+export function getYahooSymbol(symbol: string, market: Market): string {
+  const normalized = symbol.toUpperCase()
+  const metadataSymbol = ZESTY_SYMBOL_METADATA[normalized]?.yahooSymbol
+  if (metadataSymbol) return metadataSymbol
+  if (market === 'CL' && !/\.(SN|AX|SA)$/i.test(normalized)) return `${normalized}.SN`
+  return normalizeYahooClassSymbol(normalized)
 }
 
 export function getAlphaVantageInterval(timeframe: Timeframe): string {
@@ -521,6 +585,26 @@ export const ZESTY_SYMBOLS = [
   { symbol: 'BAMU', name: 'Brookstone Ultra-Short Bond ETF' },
   { symbol: 'BF.B', name: 'Brown-Forman Corporation Class B' },
   { symbol: 'CHRW', name: 'C.H. Robinson Worldwide' },
+  { symbol: 'CHILE', name: 'Banco de Chile' },
+  { symbol: 'BCH', name: 'Banco de Chile ADR' },
+  { symbol: 'BSAC', name: 'Banco Santander Chile ADR' },
+  { symbol: 'BSANTANDER', name: 'Banco Santander-Chile' },
+  { symbol: 'CAMPOS', name: 'Sociedad de Inversiones Campos Chilenos S.A.' },
+  { symbol: 'CFIBPDCCHA', name: 'BTG Deuda Corporativa Chile' },
+  { symbol: 'CFIBTETFMP', name: 'BTG ETF Renta Fija Chile Mediano Plazo' },
+  { symbol: 'CFIETFCC', name: 'Singular Chile Corporativo' },
+  { symbol: 'CFIETFCD', name: 'Singular Chile Corta Duracion' },
+  { symbol: 'CFIETFLP', name: 'Singular Chile Largo Plazo' },
+  { symbol: 'CFIETFRFLP', name: 'BTG ETF Renta Fija Chile Largo Plazo' },
+  { symbol: 'CFIFALCDCG', name: 'Falcom Deuda Corporativa Chile' },
+  { symbol: 'CFIFALCDCW', name: 'Falcom Deuda Corporativa Chile - Serie W' },
+  { symbol: 'CFIFALCFIW', name: 'Falcom Chilean Fixed Income' },
+  { symbol: 'CFIFALCTAC', name: 'Falcom Tactical Chilean Equities' },
+  { symbol: 'CFIFYNSADB', name: 'Fynsa Deuda Chile' },
+  { symbol: 'CFIMDCHA', name: 'Moneda deuda Chile, FI' },
+  { symbol: 'CFMTOEEQUB', name: 'Toesca Chile Equities FM' },
+  { symbol: 'CHWAF', name: 'Chilwa Minerals Ltd Ordinary Fully Paid' },
+  { symbol: 'CHYM', name: 'Chime Financial, Inc.' },
   { symbol: 'AI', name: 'C3.ai, Inc.' },
   { symbol: 'CZR', name: 'Caesars Entertainment, Inc.' },
   { symbol: 'CPB', name: 'Campbell Soup Co' },
@@ -943,6 +1027,7 @@ export function getCategorizedZestySymbols(): ZestyCategory[] {
     'bajo-riesgo': { id: 'bajo-riesgo', name: 'Bajo riesgo', symbols: [] },
     'biotecnologia': { id: 'biotecnologia', name: 'Biotecnología', symbols: [] },
     'bitcoin': { id: 'bitcoin', name: 'Bitcoin', symbols: [] },
+    'chile': { id: 'chile', name: 'Chile', symbols: [] },
     'etf-paises': { id: 'etf-paises', name: 'ETF por paises', symbols: [] },
     'etf-apalancados': { id: 'etf-apalancados', name: 'ETFs apalancados', symbols: [] },
     'etf-balanceados': { id: 'etf-balanceados', name: 'ETFs Balanceados', symbols: [] },
@@ -1049,4 +1134,4 @@ export function getCategorizedZestySymbols(): ZestyCategory[] {
     return (priority[a.id] || 999) - (priority[b.id] || 999)
   })
 }
-
+

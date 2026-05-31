@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { yahooFinance } from '@/lib/yahoo-finance'
 import { getCached } from '@/lib/api/memory-cache'
 import { QuantClient } from '@/lib/ai/quant-client'
+import { getYahooSymbol, getZestySymbolMarket } from '@/lib/market-data'
 import { calculatePreliminaryScore, calculateFinalQuantScore, rankScreenerResults, PreliminaryTechData, QuantResultData } from '@/lib/ranking'
+import type { Candle } from '@/types'
 
 const MAX_SYMBOLS = 500
 const YAHOO_CONCURRENCY = 10
@@ -11,15 +13,84 @@ const QUANT_MAX_CANDIDATES = parseInt(process.env.QUANT_MAX_CANDIDATES || '20', 
 const QUANT_CONCURRENCY = parseInt(process.env.QUANT_CONCURRENCY || '4', 10)
 const CACHE_TTL_MS = 60 * 1000 // 1 minute
 
+type PythonResultRecord = {
+  data: QuantResultData | null
+  ok: boolean
+  status: 'ok' | 'partial' | 'failed'
+  reason: string
+  quantSymbol: string
+}
+
+type QuoteLike = {
+  symbol?: string
+  regularMarketPrice?: number
+  regularMarketPreviousClose?: number
+  regularMarketChangePercent?: number
+  regularMarketVolume?: number
+  shortName?: string
+  longName?: string
+}
+
+type CandleLike = {
+  date?: string | Date
+  open?: number
+  high?: number
+  low?: number
+  close?: number
+  volume?: number
+}
+
+type ChartLike = {
+  quotes?: CandleLike[]
+  indicators?: { quote?: CandleLike[][] }
+  timestamp?: number[]
+}
+
+type SentimentRecord = {
+  sentiment?: string
+  score?: number
+}
+
+type PreliminaryWithSentiment = PreliminaryTechData & {
+  _sentiment?: SentimentRecord
+}
+
+function classifyPythonResult(data: QuantResultData | null): Pick<PythonResultRecord, 'ok' | 'status' | 'reason'> {
+  if (!data) {
+    return { ok: false, status: 'failed', reason: 'Quant engine did not return workflow_result' }
+  }
+
+  const action = String(data.action || '').toUpperCase()
+  const confidence = Number(data.confidence ?? 0)
+  const regime = String(data.market_regime || '').toLowerCase()
+  const explanation = String(data.xai_explanation || data.error_reason || '')
+  const hasDataFetchError = /error fetching data|fallo al obtener datos|datos insuficientes|incompleto/i.test(explanation)
+  const unknownRegime = !regime || regime === 'unknown' || regime.includes('desconocido')
+
+  if (hasDataFetchError) {
+    return { ok: false, status: 'failed', reason: explanation || 'Quant engine reported incomplete data' }
+  }
+
+  if (action === 'HOLD' && confidence === 0 && unknownRegime) {
+    return { ok: false, status: 'partial', reason: 'Python returned HOLD with 0 confidence and unknown regime' }
+  }
+
+  if (unknownRegime || confidence === 0) {
+    return { ok: false, status: 'partial', reason: 'Python returned partial quant data' }
+  }
+
+  return { ok: true, status: 'ok', reason: 'Python workflow completed with usable quant data' }
+}
+
 async function fetchBatchQuotes(symbols: string[]) {
-  const quotes = new Map<string, any>()
+  const quotes = new Map<string, QuoteLike>()
   const chunkSize = 50
   for (let i = 0; i < symbols.length; i += chunkSize) {
     const chunk = symbols.slice(i, i + chunkSize)
     try {
       const response = await yahooFinance.quote(chunk, {}, { validateResult: false })
       const arr = Array.isArray(response) ? response : (response ? [response] : [])
-      for (const q of arr) {
+      for (const q of arr as QuoteLike[]) {
         if (q && q.symbol) quotes.set(q.symbol, q)
       }
     } catch (e) {
@@ -29,23 +100,25 @@ async function fetchBatchQuotes(symbols: string[]) {
         try {
           const q = await yahooFinance.quote(sym, {}, { validateResult: false })
           if (q) quotes.set(sym, q)
-        } catch (err) {}
+        } catch {
+          // Keep scanning the rest of the batch when a single quote fails.
+        }
       }))
     }
   }
   return quotes
 }
 
-async function fetchCandles(symbol: string) {
+async function fetchCandles(symbol: string): Promise<Candle[]> {
   try {
     const period1 = new Date()
     period1.setDate(period1.getDate() - 365) // 1Y
-    const res = await yahooFinance.chart(symbol, { interval: '1d', period1 })
-    const rawQuotes = res.quotes || (res as any).indicators?.quote?.[0] || []
-    return rawQuotes.map((q: any, i: number) => {
+    const res = await yahooFinance.chart(symbol, { interval: '1d', period1 }) as ChartLike
+    const rawQuotes = res.quotes || res.indicators?.quote?.[0] || []
+    return rawQuotes.map((q, i: number) => {
       let time = 0
       if (q.date) time = Math.floor(new Date(q.date).getTime() / 1000)
-      else if ((res as any).timestamp?.[i]) time = (res as any).timestamp[i]
+      else if (res.timestamp?.[i]) time = res.timestamp[i]
       return {
         time,
         open: Number(q.open),
@@ -54,8 +127,8 @@ async function fetchCandles(symbol: string) {
         close: Number(q.close),
         volume: Number(q.volume)
       }
-    }).filter((c: any) => c.close > 0)
-  } catch (e) {
+    }).filter((c) => c.close > 0)
+  } catch {
     return []
   }
 }
@@ -67,6 +140,7 @@ export async function POST(request: NextRequest) {
     const category: string = body.category || 'unknown'
     const market: string = body.market || 'US'
     const symbolMap = body.symbolMap || {} // Optional: { "AAPL": "Apple Inc." }
+    const symbolMarkets: Record<string, 'US' | 'CL'> = body.symbolMarkets || {}
 
     if (!symbolsInput.length) {
       return NextResponse.json({ error: 'No symbols provided' }, { status: 400 })
@@ -77,7 +151,8 @@ export async function POST(request: NextRequest) {
     // Normalize symbols for Yahoo (e.g. BRK.B -> BRK-B)
     const yahooToOriginal = new Map<string, string>()
     const yahooSymbols = uniqueSymbols.map(sym => {
-      const ySym = sym.replace('.', '-')
+      const symbolMarket = symbolMarkets[sym] || getZestySymbolMarket(sym)
+      const ySym = getYahooSymbol(sym, symbolMarket)
       yahooToOriginal.set(ySym.toUpperCase(), sym)
       return ySym
     })
@@ -90,7 +165,7 @@ export async function POST(request: NextRequest) {
     })
 
     // Step 2: Fetch Candles with Concurrency
-    const candlesMap = new Map<string, any[]>()
+    const candlesMap = new Map<string, Candle[]>()
     await getCached(`scan:candles:${yahooSymbols.join(',')}`, CACHE_TTL_MS, async () => {
       let active = 0
       let index = 0
@@ -118,12 +193,13 @@ export async function POST(request: NextRequest) {
     // Step 3.5: Fetch Sentiment Cache
     const client = new QuantClient()
     const sentimentRes = await client.getSentimentCache()
-    const sentimentCache = sentimentRes.success && sentimentRes.data ? (sentimentRes.data as Record<string, any>) : {}
+    const sentimentCache = sentimentRes.success && sentimentRes.data ? (sentimentRes.data as Record<string, SentimentRecord>) : {}
 
     for (const ySym of yahooSymbols) {
       const original = yahooToOriginal.get(ySym.toUpperCase()) || ySym
       const q = quotesMap.get(ySym) || quotesMap.get(ySym.toUpperCase())
       const c = candlesMap.get(ySym) || []
+      const originalMarket = symbolMarkets[original] || getZestySymbolMarket(original) || market
       
       const quoteData = {
         price: Number(q?.regularMarketPrice ?? q?.regularMarketPreviousClose ?? null),
@@ -133,12 +209,12 @@ export async function POST(request: NextRequest) {
       
       const name = symbolMap[original] || q?.shortName || q?.longName || original
 
-      const prelim = calculatePreliminaryScore(original, name, market, category, c, quoteData)
+      const prelim = calculatePreliminaryScore(original, name, originalMarket, category, c, quoteData)
       
       // Inject Sentiment
-      const sent = sentimentCache[original]
+      const sent = sentimentCache[original] || sentimentCache[ySym] || sentimentCache[ySym.toUpperCase()]
       if (sent) {
-        prelim.score += (sent.score * 5) // +5 per sentiment score unit
+        prelim.score += (Number(sent.score ?? 0) * 5) // +5 per sentiment score unit
         prelim.score = Math.max(0, Math.min(100, prelim.score))
         // We attach it to prelim or wait for final? 
         // We'll attach it to prelim as suggestions
@@ -146,7 +222,7 @@ export async function POST(request: NextRequest) {
         if (sent.sentiment === 'NEGATIVE') prelim.suggestions.push({ type: 'warning', label: 'Noticias Negativas (FinBERT)' })
         
         // Also store it for later
-        ;(prelim as any)._sentiment = sent
+        ;(prelim as PreliminaryWithSentiment)._sentiment = sent
       }
 
       preliminaryResults.push(prelim)
@@ -155,7 +231,7 @@ export async function POST(request: NextRequest) {
     // Step 4: Sort and pick Top Candidates for Python
     preliminaryResults.sort((a, b) => b.score - a.score)
     const topCandidates = preliminaryResults.slice(0, QUANT_MAX_CANDIDATES)
-    const pythonResults = new Map<string, QuantResultData | null>()
+    const pythonResults = new Map<string, PythonResultRecord>()
     
     console.log(`[Quant Scan] Running Python analysis for Top ${topCandidates.length} candidates with concurrency ${QUANT_CONCURRENCY}...`)
     
@@ -171,14 +247,42 @@ export async function POST(request: NextRequest) {
         const candidate = topCandidates[quantIndex++]
         activeQuant++
         try {
-          const res = await client.runWorkflow(candidate.symbol)
+          const candidateMarket = (candidate.market === 'CL' || candidate.market === 'US')
+            ? candidate.market
+            : getZestySymbolMarket(candidate.symbol)
+          const quantSymbol = getYahooSymbol(candidate.symbol, candidateMarket)
+          const res = await client.runWorkflow(quantSymbol)
           if (res.success && res.data?.workflow_result) {
-             pythonResults.set(candidate.symbol, res.data.workflow_result as QuantResultData)
+             const workflowResult = res.data.workflow_result as QuantResultData
+             const classification = classifyPythonResult(workflowResult)
+             pythonResults.set(candidate.symbol, {
+               data: {
+                 ...workflowResult,
+                 engine_status: classification.status,
+                 data_quality: classification.ok ? 'complete' : classification.status === 'partial' ? 'partial' : 'insufficient',
+                 engine_reason: classification.reason,
+                 quant_symbol: quantSymbol,
+               },
+               ...classification,
+               quantSymbol,
+             })
           } else {
-             pythonResults.set(candidate.symbol, null)
+             pythonResults.set(candidate.symbol, {
+               data: null,
+               ok: false,
+               status: 'failed',
+               reason: res.error || 'Quant engine request failed',
+               quantSymbol,
+             })
           }
         } catch (e) {
-          pythonResults.set(candidate.symbol, null)
+          pythonResults.set(candidate.symbol, {
+            data: null,
+            ok: false,
+            status: 'failed',
+            reason: e instanceof Error ? e.message : String(e),
+            quantSymbol: candidate.symbol,
+          })
         }
         activeQuant--
         next()
@@ -189,15 +293,19 @@ export async function POST(request: NextRequest) {
     // Step 6: Final Ranking
     const finalResults = preliminaryResults.map(p => {
       const isTopCandidate = topCandidates.some(t => t.symbol === p.symbol)
-      const quantData = isTopCandidate ? (pythonResults.get(p.symbol) || null) : null
-      const isFallback = isTopCandidate ? (quantData === null) : true
+      const pythonRecord = isTopCandidate ? (pythonResults.get(p.symbol) || null) : null
+      const quantData = pythonRecord?.data || null
+      const isFallback = isTopCandidate ? (!pythonRecord || !pythonRecord.ok) : true
       
       const finalScore = calculateFinalQuantScore(p, quantData, isFallback)
       
-      const sent = (p as any)._sentiment
+      const sent = (p as PreliminaryWithSentiment)._sentiment
       if (sent) {
-        if (!finalScore.quant) finalScore.quant = {} as any
-        (finalScore.quant as any).weekend_sentiment = sent
+        if (!finalScore.quant) finalScore.quant = {}
+        finalScore.quant.weekend_sentiment = {
+          sentiment: String(sent.sentiment || 'UNKNOWN'),
+          score: Number(sent.score ?? 0),
+        }
       }
       return finalScore
     })
@@ -210,10 +318,24 @@ export async function POST(request: NextRequest) {
       total_valid: preliminaryResults.filter(r => !r.noData).length,
       total_failed: preliminaryResults.filter(r => r.noData).length,
       quant_processed: pythonResults.size,
+      quant_usable: Array.from(pythonResults.values()).filter(r => r.ok).length,
+      quant_partial: Array.from(pythonResults.values()).filter(r => r.status === 'partial').length,
+      quant_failed: Array.from(pythonResults.values()).filter(r => r.status === 'failed').length,
+      quant_diagnostics: Object.fromEntries(
+        Array.from(pythonResults.entries()).map(([symbol, result]) => [
+          symbol,
+          {
+            status: result.status,
+            usable: result.ok,
+            reason: result.reason,
+            quantSymbol: result.quantSymbol,
+          },
+        ])
+      ),
       results: ranked
     })
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[Quant Scan] Error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

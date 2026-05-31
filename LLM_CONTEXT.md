@@ -37,6 +37,7 @@ Esta tabla es la unica fuente canonica para rutas, URLs, puertos, repositorios y
 | Arranque frontend | `npm run dev` | Ejecutar desde el repo local. |
 | Arranque quant local | `npm run quant:start` | Levanta FastAPI + quick tunnel y actualiza `.env.local`. |
 | Arranque quant + Vercel | `npm run quant:start:vercel` | Actualiza `QUANT_ENGINE_URL` en Vercel y despliega produccion. |
+| Auditoria quant/tunel | `npm run quant:audit` | Muestra Startup, procesos, puerto 8000, health local/publico y errores recientes. |
 | Deploy Vercel manual | `vercel deploy --prod --project trademind-cv --scope cataldo89-1519s-projects` | Antes verificar `.vercel/project.json`. |
 
 Aliases historicos o no canonicos que no deben usarse como fuente: `https://trademind-rose.vercel.app`, URLs de deploy tipo `https://trademind-<hash>-cataldo89-1519s-projects.vercel.app`, y cualquier `https://*.trycloudflare.com` pegado en documentacion permanente.

@@ -28,6 +28,11 @@ export interface QuantResultData {
   ml_prediction?: number
   graham_passed?: boolean
   error_reason?: string
+  xai_explanation?: string
+  engine_status?: 'ok' | 'partial' | 'failed' | 'skipped'
+  data_quality?: 'complete' | 'partial' | 'insufficient'
+  engine_reason?: string
+  quant_symbol?: string
   weekend_sentiment?: { sentiment: string; score: number }
   news_sentiment?: string
   news_articles?: string[]
@@ -174,16 +179,22 @@ export function calculateFinalQuantScore(
       finalScore -= (conf * 0.3) // Max -30
     }
 
+    const regimeText = String(regime || '').toLowerCase()
+    const isUnknownRegime = !regime || regimeText === 'unknown' || regimeText.includes('desconocido')
+    const isBearRegime = regimeText.includes('bear')
+    const isBullRegime = regimeText.includes('bull')
+
     if (graham) finalScore += 5
-    if (regime === 'Bull Market' || regime === 'High Volatility Bull') finalScore += 5
-    if (regime === 'Bear Market' || regime === 'High Volatility Bear') finalScore -= 5
+    if (isBullRegime) finalScore += 5
+    if (isBearRegime) finalScore -= 12
+    if (isUnknownRegime) finalScore -= 20
 
     if (ml && ml > 0.6) finalScore += 10
     if (ml && ml < 0.4) finalScore -= 10
     
     // Fallback penalty if confidence is 0 and no data
     if (conf === 0 && action === 'HOLD') {
-        finalScore -= 5
+        finalScore -= 20
     }
   }
 

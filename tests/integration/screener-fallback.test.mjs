@@ -10,11 +10,13 @@ test('Screener handles BRK.B / BRK-B and BF.B / BF-B in route normalizations', (
   const quoteRoute = read('src/app/api/market/quote/route.ts')
   const candlesRoute = read('src/app/api/market/candles/route.ts')
   const analyzeRoute = read('src/app/api/ai/analyze/route.ts')
+  const marketData = read('src/lib/market-data.ts')
 
-  // Dot to hyphen replacement
-  assert.match(quoteRoute, /\.replace\(['"]\.['"],\s*['"]-['"]\)/)
-  assert.match(candlesRoute, /\.replace\(['"]\.['"],\s*['"]-['"]\)/)
-  assert.match(analyzeRoute, /\.replace\(['"]\.['"],\s*['"]-['"]\)/)
+  // Dot to hyphen replacement lives in the shared symbol helper.
+  assert.match(marketData, /\.replace\(['"]\.['"],\s*['"]-['"]\)/)
+  assert.match(quoteRoute, /getYahooSymbol\(s,\s*market\)/)
+  assert.match(candlesRoute, /getYahooSymbol\(/)
+  assert.match(analyzeRoute, /getYahooSymbol\(/)
 })
 
 test('Yahoo Finance calls use validateResult: false and log failures', () => {
@@ -48,9 +50,12 @@ test('Screener client implements candles fallback and noData handling', () => {
   assert.match(ranking, /!\s*candles\s*\|\|\s*candles\.length\s*<\s*10/)
   assert.match(ranking, /noData\s*=\s*true/)
 
-  // Python failures are represented as fallback results instead of breaking the whole screener.
-  assert.match(scanRoute, /pythonResults\.set\(candidate\.symbol,\s*null\)/)
-  assert.match(scanRoute, /const isFallback = isTopCandidate \? \(quantData === null\) : true/)
+  // Python failures are represented as structured diagnostics instead of breaking the whole screener.
+  assert.match(scanRoute, /type PythonResultRecord/)
+  assert.match(scanRoute, /classifyPythonResult/)
+  assert.match(scanRoute, /engine_status:\s*classification\.status/)
+  assert.match(scanRoute, /quant_usable:/)
+  assert.match(scanRoute, /const isFallback = isTopCandidate \? \(!pythonRecord \|\| !pythonRecord\.ok\) : true/)
   assert.match(scanRoute, /calculateFinalQuantScore\(p,\s*quantData,\s*isFallback\)/)
 
   // Render Checks

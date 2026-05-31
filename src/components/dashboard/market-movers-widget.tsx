@@ -113,8 +113,9 @@ export function MarketMoversWidget() {
         )}
 
         {!isLoading && !error && movers.length === 0 && (
-          <div className="py-12 text-center text-sm text-gray-500">
-            Mercado cerrado o sin datos disponibles
+          <div className="py-10 text-center">
+            <p className="text-sm text-gray-400">Sin rankings de mercado disponibles</p>
+            <p className="mt-1 text-xs text-gray-600">Yahoo no devolvio {tabs.find((t) => t.key === tab)?.label.toLowerCase()} para US.</p>
           </div>
         )}
 
@@ -157,4 +158,4 @@ function MoverRow({ mover }: { mover: Mover }) {
     </Link>
   )
 }
-
+
