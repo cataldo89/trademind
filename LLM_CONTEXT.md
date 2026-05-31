@@ -82,7 +82,8 @@ Toda IA debe leer en este orden:
 | `ESTRUCTURA_PROYECTO.md` | Mapa | Ubicar archivos; no usar como prueba de funcionalidad |
 | `soluciones_tecnicas.md` | Runbook historico | Problemas ya resueltos y patrones que no deben revertirse |
 | `docs/runbooks/problemas-escalamiento-errores-frontend-backend.md` | Incidentes/escala | Errores actuales frontend/backend, causas raiz y riesgos futuros |
-| `docs/architecture/fase-7-escalabilidad-distribuida.md` | Arquitectura evolutiva | Jobs asincronos, BFF estable y cache de series temporales para escalar quant-engine |
+| `docs/architecture/fase-7-escalabilidad-distribuida.md` | Arquitectura evolutiva | Jobs asincronos, BFF estable, SDD y cache de series temporales para escalar quant-engine |
+| `specs/` | SDD vivo | Contratos por dominio para jobs, cache y BFF; debe crecer con cada cambio funcional |
 | `SEGURIDAD.md` | Seguridad | Secretos, service role, scripts, pre-push |
 | `LLM.md` | Vision | Roadmap aspiracional AI-native; no estado real |
 | `MEMORY.md` | Memoria historica | Identidad, filosofia y estilo de producto |
@@ -139,7 +140,7 @@ Estado aplicado:
 - HMM/GARCH/ARIMA usan ese helper antes de caer a `yfinance`.
 - Graham puede quedar no concluyente sin anular el analisis tecnico.
 - El screener no deja que un HOLD neutral de Python tape un BUY/SELL tecnico por score.
-- Fase 7 inicia el desacoplamiento con `quant_jobs`, `quant_job_events`, `market_data_cache` y el BFF `/api/quant/jobs`.
+- Fase 7 inicia el desacoplamiento con `quant_jobs`, `quant_job_events`, `market_data_cache`, el BFF `/api/quant/jobs`, cache durable en `/api/market/candles` y specs SDD bajo `specs/`.
 
 Limitacion vigente: sin credenciales de Cloudflare para tunel nombrado, `trycloudflare.com` no garantiza URL fija. Usar `npm run quant:start:vercel` al reiniciar para actualizar Vercel.
 
@@ -240,6 +241,7 @@ Una tarea no esta terminada hasta cumplir:
 [ ] Manejo de errores correcto
 [ ] Tests o prueba CLI ejecutada si aplica
 [ ] Documentacion maestra actualizada si cambia contrato
+[ ] Spec bajo `specs/` actualizada si cambia API, Supabase, quant-engine, BFF o cache
 [ ] No rompe Vercel/Supabase/QuantConnect
 [ ] No introduce secretos
 ```

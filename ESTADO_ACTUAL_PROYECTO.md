@@ -50,7 +50,10 @@ Cambios aplicados despues de la auditoria inicial:
 
 - Se agrego `supabase/migrations/002_quant_jobs_and_market_cache.sql` con `quant_jobs`, `quant_job_events`, funciones `claim_next_quant_job` / `complete_quant_job` y `market_data_cache`.
 - Se agrego el BFF `/api/quant/jobs` para encolar y consultar trabajos cuantitativos por usuario sin bloquear el ciclo HTTP del dashboard.
-- Se documento `docs/architecture/fase-7-escalabilidad-distribuida.md` con mejoras TM-001 a TM-004: cola durable, BFF estable, cache de series temporales y contrato de errores.
+- Se agrego `src/lib/api/market-data-cache.ts` y `/api/market/candles` ahora consulta cache durable Supabase antes de Yahoo, con fallback stale si el proveedor falla.
+- Se creo `specs/` como estructura SDD inicial para jobs asincronos, cache de datos de mercado y contratos BFF/frontend.
+- Se documento `docs/architecture/fase-7-escalabilidad-distribuida.md` con mejoras TM-001 a TM-005: cola durable, BFF estable, cache de series temporales, contrato de errores y SDD local -> nube.
+- Se archivo el historial F0-F6 en `docs/archive/fases-f0-f6-historial.md`; los archivos de la carpeta local `Fases/` ya no son plan vivo.
 - `FASES_CHECKLIST.md` no existe en la raiz actual; si reaparece, debe archivarse en `docs/archive/` o sustituirse por la Fase 7 viva.
 - `SKILL.md` y `SECURITY.md` asociados a dotenv/dotenvx solo existen dentro de `node_modules/`, no estan versionados y no deben copiarse a la raiz.
 ## 1. Stack verificado

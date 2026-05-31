@@ -17,6 +17,7 @@ Rutas, URLs, puertos, GitHub, Vercel y Cloudflare canonicos viven en `LLM_CONTEX
 | `docs/runbooks/problemas-escalamiento-errores-frontend-backend.md` | Runbook de fallas frontend/backend y riesgos de escalamiento SaaS |
 | `docs/architecture/fase-7-escalabilidad-distribuida.md` | Plan vivo de jobs asincronos, BFF estable y cache de series temporales |
 | `docs/sdd-status.md` | Diagnostico SDD: alineacion parcial, brechas y proxima estructura `specs/` |
+| `specs/` | Specs SDD vivas por dominio: quant jobs, market-data cache y contratos BFF |
 | `SEGURIDAD.md` | Reglas de secretos, service role, scripts y checklist pre-push |
 | `MEMORY.md` | Memoria historica y filosofia del producto |
 | `LLM.md` | Vision futura y roadmap aspiracional AI-native |
@@ -64,6 +65,7 @@ Rutas, URLs, puertos, GitHub, Vercel y Cloudflare canonicos viven en `LLM_CONTEX
 |---|---|
 | `docs/runbooks/problemas-escalamiento-errores-frontend-backend.md` | Registro de errores actuales, sintomas de frontend causados por backend, riesgos futuros de escalamiento y contratos recomendados |
 | `docs/architecture/fase-7-escalabilidad-distribuida.md` | Fase 7 para desacoplar quant-engine con Supabase jobs, BFF y cache auditable |
+| `docs/archive/fases-f0-f6-historial.md` | Historial local F0-F6 archivado; no usar como plan vivo |
 
 Regla para agentes:
 
@@ -152,6 +154,7 @@ Si el error se manifiesta en UI, revisar este runbook antes de editar componente
 | `src/lib/ai/mcp-client.ts` | Wrapper de compatibilidad que reexporta `quant-client` |
 | `src/lib/supabase/client.ts` | Cliente Supabase browser |
 | `src/lib/supabase/server.ts` | Cliente Supabase server y admin client |
+| `src/lib/api/market-data-cache.ts` | Cache durable opcional en Supabase para series temporales Yahoo |
 | `src/lib/yahoo-finance.ts` | Wrapper yahoo-finance2 |
 | `src/lib/market-data.ts` | Datos/categorias Zesty y utilidades de mercado |
 | `src/lib/market-schedule.ts` | Horarios de mercado |
@@ -251,4 +254,4 @@ Actualizar este archivo cuando:
 
 ## 15. Estado SDD
 
-TradeMind usa practicas SDD parciales: contratos versionados, runbooks, estado tecnico y tests de contrato. No existe aun una estructura formal `specs/` por feature. La fuente de verdad de esta evaluacion es `docs/sdd-status.md`.
+TradeMind usa practicas SDD parciales con estructura formal inicial en `specs/`. La fuente de verdad de esta evaluacion es `docs/sdd-status.md`.

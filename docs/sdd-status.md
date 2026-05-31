@@ -1,6 +1,6 @@
 # TradeMind - Estado SDD
 
-Fecha: 2026-05-25
+Fecha: 2026-05-31
 
 ## Diagnostico
 
@@ -14,11 +14,18 @@ Evidencia de alineacion:
 - `docs/runbooks/problemas-escalamiento-errores-frontend-backend.md` documenta incidentes, causas raiz y criterios de cierre.
 - `tests/integration/*.test.mjs` valida contratos criticos.
 
-Brecha contra SDD formal:
+Normalizacion aplicada el 2026-05-31:
 
-- No existe una carpeta `specs/` versionada por feature.
-- No hay plantilla estandar de especificacion con problema, contrato, flujo, criterios de aceptacion y pruebas.
-- Algunas decisiones viven en memoria/runbooks en vez de specs por dominio.
+- Se creo `specs/README.md` como indice SDD.
+- Se creo `specs/quant-jobs.md` para el desacoplamiento local -> cloud del `quant-engine`.
+- Se creo `specs/market-data-cache.md` para cache durable de Yahoo/series temporales.
+- Se creo `specs/bff-frontend-contracts.md` para blindar React contra fallas de backend.
+
+Brecha SDD vigente:
+
+- Faltan specs por dominio para `virtual-trading`, `alerts-cron`, `screener-ranking` y `lean-backtests`.
+- Falta generar tipos compartidos desde OpenAPI/Supabase de forma rutinaria en CI.
+- Algunas decisiones historicas siguen en runbooks y deben migrarse gradualmente si vuelven a tocarse.
 
 ## Regla desde ahora
 
@@ -27,18 +34,18 @@ Los cambios funcionales deben partir de un contrato o spec breve antes de implem
 - `docs/contracts.md`
 - `ESTADO_ACTUAL_PROYECTO.md`
 - `docs/runbooks/problemas-escalamiento-errores-frontend-backend.md`
-- un futuro archivo bajo `specs/`
+- un archivo bajo `specs/`
 
 ## Proxima normalizacion recomendada
 
-Crear `specs/` con esta estructura:
+Completar `specs/` con esta estructura:
 
 ```text
 specs/
-  quant-engine-cloudflare.md
-  screener-ranking.md
   virtual-trading.md
   alerts-cron.md
+  screener-ranking.md
+  lean-backtests.md
 ```
 
 Cada spec debe incluir:

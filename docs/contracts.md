@@ -38,6 +38,16 @@ Backend llama RPC `execute_virtual_trade`, que bloquea el perfil del usuario, va
 - Respuesta: objeto para un simbolo, array para multiples simbolos.
 - API aplica cache server-side corta y rate limit por IP.
 
+## Candles / series temporales
+
+- Endpoint: `/api/market/candles?symbol=AAPL&market=US&range=1D`.
+- Contrato visual: la respuesta mantiene `data`, `range`, `requestedRange`, `interval`, `fallback` y `fallbackReason`.
+- Contrato tecnico: la ruta consulta cache en memoria y luego `market_data_cache` antes de pedir Yahoo Chart.
+- Clave durable: `symbol + market + range + provider`.
+- Rangos durables: `range:1D`, `range:5D`, `timeframe:1d`, etc.
+- Si Yahoo falla y existe payload stale en `market_data_cache`, se permite devolver stale como degradacion controlada.
+- La cache durable es una optimizacion: si falta `SUPABASE_SERVICE_ROLE_KEY`, la ruta sigue funcionando con cache en memoria y proveedor externo.
+
 ## Alertas
 
 - `POST /api/alerts/check` es solo para cron autorizado.
@@ -63,6 +73,7 @@ Backend llama RPC `execute_virtual_trade`, que bloquea el perfil del usuario, va
 
 ## SDD
 
-- Estado actual: SDD parcial, no formal completo.
+- Estado actual: SDD parcial con carpeta `specs/` inicial.
 - Fuente de contratos actual: este archivo, `LLM_CONTEXT.md`, `ESTADO_ACTUAL_PROYECTO.md` y runbooks.
+- Specs activas: `specs/quant-jobs.md`, `specs/market-data-cache.md`, `specs/bff-frontend-contracts.md`.
 - Diagnostico y brecha formal: `docs/sdd-status.md`.

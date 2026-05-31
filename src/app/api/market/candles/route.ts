@@ -18,6 +18,7 @@ import { getYahooSymbol } from '@/lib/market-data'
 import { normalizeSymbol, parseMarketOrLegacy } from '@/lib/domain/market'
 import { checkRateLimit, getClientIp } from '@/lib/api/rate-limit'
 import { getCached } from '@/lib/api/memory-cache'
+import { getDurableMarketData } from '@/lib/api/market-data-cache'
 
 const VALID_TIMEFRAMES = new Set<Timeframe>(['1m', '5m', '15m', '30m', '1h', '4h', '1d', '1w'])
 const RATE_LIMIT = 90
@@ -261,7 +262,7 @@ export async function GET(request: NextRequest) {
   const rangeParam = searchParams.get('range')
   const timeframe = (searchParams.get('timeframe') || '1d') as Timeframe
 
-  if (!symbol) {
+  if (!rawSymbol || !symbol) {
     return NextResponse.json({ error: 'Valid symbol is required' }, { status: 400 })
   }
 
@@ -275,7 +276,13 @@ export async function GET(request: NextRequest) {
       const response = await getCached(
         `candles:${symbol}:range:${requestedRange}`,
         CANDLES_TTL_MS,
-        () => fetchCandlesForRange(symbol, requestedRange)
+        () => getDurableMarketData({
+          symbol: rawSymbol,
+          market,
+          range: `range:${requestedRange}`,
+          ttlMs: CANDLES_TTL_MS,
+          loader: () => fetchCandlesForRange(symbol, requestedRange),
+        })
       )
 
       return NextResponse.json(response, {
@@ -295,7 +302,13 @@ export async function GET(request: NextRequest) {
     const candles = await getCached(
       `candles:${symbol}:timeframe:${timeframe}`,
       CANDLES_TTL_MS,
-      () => fetchCandles(symbol, interval, period1)
+      () => getDurableMarketData({
+        symbol: rawSymbol,
+        market,
+        range: `timeframe:${timeframe}`,
+        ttlMs: CANDLES_TTL_MS,
+        loader: () => fetchCandles(symbol, interval, period1),
+      })
     )
 
     return NextResponse.json({ data: candles }, {

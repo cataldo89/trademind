@@ -59,3 +59,17 @@ test('Quant jobs define durable async workflow contract', () => {
   assert.match(route, /getAuthenticatedContext/)
   assert.match(route, /idempotencyKey/)
 })
+
+test('Candles route uses durable market-data cache before Yahoo fallback', () => {
+  const candlesRoute = read('src/app/api/market/candles/route.ts')
+  const cache = read('src/lib/api/market-data-cache.ts')
+
+  assert.match(cache, /market_data_cache/)
+  assert.match(cache, /SUPABASE_SERVICE_ROLE_KEY/)
+  assert.match(cache, /expires_at/)
+  assert.match(cache, /upsert/)
+  assert.match(cache, /stale/)
+  assert.match(candlesRoute, /getDurableMarketData/)
+  assert.match(candlesRoute, /range:\s*`range:\$\{requestedRange\}`/)
+  assert.match(candlesRoute, /range:\s*`timeframe:\$\{timeframe\}`/)
+})

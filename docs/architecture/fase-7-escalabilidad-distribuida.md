@@ -1,6 +1,12 @@
 # Fase 7 - Escalabilidad Distribuida
 
-Estado: propuesta implementable con base inicial en `supabase/migrations/002_quant_jobs_and_market_cache.sql` y `/api/quant/jobs`.
+Estado: implementacion incremental con base en `supabase/migrations/002_quant_jobs_and_market_cache.sql`, `/api/quant/jobs`, `src/lib/api/market-data-cache.ts` y specs SDD bajo `specs/`.
+
+Fuentes bibliograficas locales usadas:
+
+- `Biblioteca_Asesoria_SaaS_Quant/documentos full stack/Software_Architecture_The_Hard_Parts_Neal_Ford_OReilly.pdf`
+- `Biblioteca_Asesoria_SaaS_Quant/documentos full stack/building-micro-frontends-distributed-systems-for-the-frontend-2.pdf`
+- `Biblioteca_Asesoria_SaaS_Quant/documentos full stack/Web Scalability for Startup Engineers.pdf`
 
 Nota de saneamiento: `FASES_CHECKLIST.md` no existe en la raiz actual. Si aparece de nuevo, debe moverse a `docs/archive/` o reemplazarse por este documento como Fase 7 viva. Los `SKILL.md` y `SECURITY.md` detectados pertenecen a `node_modules/` y no se versionan.
 
@@ -25,9 +31,18 @@ Nota de saneamiento: `FASES_CHECKLIST.md` no existe en la raiz actual. Si aparec
 - **Migracion a Fase 1 (Manana):** La misma tabla puede ser reemplazada o respaldada por Redis/managed cache sin cambiar el contrato de lectura; Supabase queda como auditoria y fallback durable.
 - **Mecanismo Anti-Alucinacion (Telemetria):** `market_data_cache.fetched_at`, `expires_at` y `provider` prueban si el worker uso datos frescos o cacheados, evitando conclusiones opacas sobre datos inexistentes.
 
+Implementado en esta iteracion: `src/app/api/market/candles/route.ts` usa `getDurableMarketData()` para consultar `market_data_cache` despues del cache en memoria y antes de Yahoo. Si Yahoo falla y existe payload stale, se devuelve stale como degradacion controlada sin cambiar el contrato visual del frontend.
+
 ### [TM-004] - Contrato De Error Que Muere En El BFF
 - **Evidencia Tecnica Activa:** `LLM_CONTEXT.md` exige no exponer detalles internos y el runbook P2.1 marca riesgo de `details: String(error)` en respuestas al cliente.
 - **Sustento Bibliografico:** *Building Micro-Frontends*, aislamiento de fallas por capa: el BFF traduce fallas internas en estados de UI estables.
 - **Implementacion Fase 0 (Hoy):** `/api/quant/jobs` responde errores genericos (`Failed to enqueue/load`) y guarda detalle operacional en logs/eventos; los componentes solo reciben `status`, `result`, `error_code` y `error_message` ya controlados.
 - **Migracion a Fase 1 (Manana):** Workers cloud pueden fallar por GPU, red o proveedor, pero esos detalles quedan encapsulados en eventos y codigos, no en `undefined` dentro de React.
 - **Mecanismo Anti-Alucinacion (Telemetria):** `quant_jobs.error_code`, `quant_jobs.error_message` y `quant_job_events.metadata` permiten auditar causa sin depender del render del cliente.
+
+### [TM-005] - SDD Como Contrato De Migracion Local A Nube
+- **Evidencia Tecnica Activa:** `docs/sdd-status.md` registraba SDD parcial y ausencia de `specs/`; `LLM_CONTEXT.md` exige no afirmar funcionalidad sin evidencia de codigo, logs, tests o CLI.
+- **Sustento Bibliografico:** *Software Architecture: The Hard Parts*, cap. 1: decisiones arquitectonicas y fitness functions; *Building Micro-Frontends*, capitulos de limites y contratos; *Web Scalability for Startup Engineers*, cap. 4: API-first/coding to contract.
+- **Implementacion Fase 0 (Hoy):** Se crean specs versionadas para jobs, cache y BFF. Cada mejora local queda vinculada a contrato, estados, telemetria y pruebas obligatorias.
+- **Migracion a Fase 1 (Manana):** La nube reemplaza ubicacion fisica de workers/cache, no el contrato. Las specs gobiernan que puede cambiar sin romper frontend ni datos.
+- **Mecanismo Anti-Alucinacion (Telemetria):** `specs/README.md`, `docs/contracts.md`, `docs/sdd-status.md` y `npm run test:contracts` prueban que cada contrato documentado tiene archivo y validacion asociada.
