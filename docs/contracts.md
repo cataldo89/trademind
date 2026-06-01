@@ -48,6 +48,18 @@ Backend llama RPC `execute_virtual_trade`, que bloquea el perfil del usuario, va
 - Si Yahoo falla y existe payload stale en `market_data_cache`, se permite devolver stale como degradacion controlada.
 - La cache durable es una optimizacion: si falta `SUPABASE_SERVICE_ROLE_KEY`, la ruta sigue funcionando con cache en memoria y proveedor externo.
 
+## Market data quality
+
+- Skill canonica: `market_data_quality`.
+- Endpoint quant-engine: `POST /mcp/tools/market_data_quality`.
+- Contrato vivo: `specs/market-data-quality.md`.
+- Entrada: `symbol`, `provider`, `timeframe`, `start_date`, `end_date`, dataset OHLCV y metadata del proveedor.
+- Salida: `status`, `usable_for_chart`, `usable_for_ta`, `usable_for_ml`, `usable_for_backtest`, `quality_score`, `issues`, `warnings`, `blocking_errors`, `recommendation` y `raw_diagnostics`.
+- Si `usable_for_ml=false`, el workflow cuantitativo no debe ejecutar modelos ML y debe devolver neutral/error controlado por datos insuficientes.
+- Si `quality_score < 60`, se considera calidad baja y tambien se bloquea ML en workflow/screener.
+- Si `usable_for_backtest=false`, no se debe ejecutar backtesting robusto.
+- El screener valida esta skill antes de calcular indicadores y antes de llamar al workflow Python.
+
 ## Alertas
 
 - `POST /api/alerts/check` es solo para cron autorizado.

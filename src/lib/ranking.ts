@@ -1,5 +1,6 @@
 import { Candle } from '@/types'
 import { calculateRSI, calculateMACD, calculateSMA, interpretRSI } from './indicators'
+import type { MarketDataQualityResult } from './market-data-quality'
 
 export interface PreliminaryTechData {
   symbol: string
@@ -17,6 +18,7 @@ export interface PreliminaryTechData {
   isLeveragedOrInverse: boolean
   suggestions: { type: string, label: string }[]
   score: number // Preliminary score
+  marketDataQuality?: MarketDataQualityResult
 }
 
 export interface QuantResultData {
@@ -33,6 +35,8 @@ export interface QuantResultData {
   data_quality?: 'complete' | 'partial' | 'insufficient'
   engine_reason?: string
   quant_symbol?: string
+  data_status?: string
+  market_data_quality?: MarketDataQualityResult
   weekend_sentiment?: { sentiment: string; score: number }
   news_sentiment?: string
   news_articles?: string[]
@@ -42,6 +46,7 @@ export interface FinalQuantScore extends PreliminaryTechData {
   quant?: QuantResultData
   isFallback: boolean
   finalScore: number
+  marketDataQuality?: MarketDataQualityResult
 }
 
 function isLeveragedOrInverse(name: string, category: string): boolean {

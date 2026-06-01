@@ -38,6 +38,7 @@ test('Screener client implements candles fallback and noData handling', () => {
   const client = read('src/components/screener/screener-client.tsx')
   const scanRoute = read('src/app/api/quant/scan/route.ts')
   const ranking = read('src/lib/ranking.ts')
+  const dataQuality = read('src/lib/market-data-quality.ts')
 
   // Current scan contract keeps nullable market data and fallback flags in shared ranking types.
   assert.match(ranking, /price:\s*number\s*\|\s*null/)
@@ -57,6 +58,16 @@ test('Screener client implements candles fallback and noData handling', () => {
   assert.match(scanRoute, /quant_usable:/)
   assert.match(scanRoute, /const isFallback = isTopCandidate \? \(!pythonRecord \|\| !pythonRecord\.ok\) : true/)
   assert.match(scanRoute, /calculateFinalQuantScore\(p,\s*quantData,\s*isFallback\)/)
+  assert.match(dataQuality, /export function assessMarketDataQuality/)
+  assert.match(ranking, /marketDataQuality\?:\s*MarketDataQualityResult/)
+  assert.match(scanRoute, /assessMarketDataQuality\(/)
+  assert.match(scanRoute, /\.filter\(candidate => candidate\.marketDataQuality\?\.usable_for_ml && candidate\.marketDataQuality\.quality_score >= 60\)/)
+  assert.match(scanRoute, /if \(topCandidates\.length > 0\)/)
+  assert.match(scanRoute, /market_data_quality:/)
+  assert.match(client, /status:\s*'idle'\s*\|\s*'consultando'\s*\|\s*'conectado'\s*\|\s*'parcial'\s*\|\s*'fallo'/)
+  assert.match(client, /const verificationStatus = diagnostic\?\.usable === false/)
+  assert.match(client, /diagnostic\.status === 'partial' \? 'parcial' : 'fallo'/)
+  assert.doesNotMatch(client, /status:\s*diagnostic\?\.usable === false \? 'parcial' : 'conectado'/)
 
   // Render Checks
   assert.match(client, /r\.noData\s*\|\|\s*r\.price\s*===\s*null/)

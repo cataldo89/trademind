@@ -155,6 +155,7 @@ Si el error se manifiesta en UI, revisar este runbook antes de editar componente
 | `src/lib/supabase/client.ts` | Cliente Supabase browser |
 | `src/lib/supabase/server.ts` | Cliente Supabase server y admin client |
 | `src/lib/api/market-data-cache.ts` | Cache durable opcional en Supabase para series temporales Yahoo |
+| `src/lib/market-data-quality.ts` | Skill TS para validar calidad OHLCV antes de TA/ML/backtesting |
 | `src/lib/yahoo-finance.ts` | Wrapper yahoo-finance2 |
 | `src/lib/market-data.ts` | Datos/categorias Zesty y utilidades de mercado |
 | `src/lib/market-schedule.ts` | Horarios de mercado |
@@ -191,6 +192,7 @@ Tablas principales descritas por el schema:
 | `quant-engine/risk_models.py` | HMM, GARCH/VaR y ARIMA |
 | `quant-engine/time_series_models.py` | Modelos de series temporales |
 | `quant-engine/market_data.py` | Cliente liviano Yahoo Chart API para velas usadas por modelos Python |
+| `quant-engine/market_data_quality.py` | Skill Python `market_data_quality` con contrato OHLCV y guardrails |
 | `quant-engine/graham_filters.py` | Filtros Benjamin Graham |
 | `quant-engine/ml_pipeline.py` | PCA/Lasso/Ridge iniciales |
 | `quant-engine/lean_integration.py` | Integracion LEAN pendiente end-to-end |

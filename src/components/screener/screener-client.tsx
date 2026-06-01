@@ -41,7 +41,7 @@ export function ScreenerClient() {
   }, [])
 
   const [verifyState, setVerifyState] = useState<{
-    status: 'idle' | 'consultando' | 'conectado' | 'parcial' | 'error' | 'modo_basico'
+    status: 'idle' | 'consultando' | 'conectado' | 'parcial' | 'fallo' | 'error' | 'modo_basico'
     symbol: string
     timestamp: string
     endpoint: string
@@ -114,8 +114,11 @@ export function ScreenerClient() {
       const body = await res.json()
       const workflowResult = body.data?.workflow_result as QuantResultData | undefined
       const diagnostic = body.diagnostic as { usable?: boolean; status?: string; reason?: string } | undefined
+      const verificationStatus = diagnostic?.usable === false
+        ? diagnostic.status === 'partial' ? 'parcial' : 'fallo'
+        : 'conectado'
       setVerifyState({
-        status: diagnostic?.usable === false ? 'parcial' : 'conectado',
+        status: verificationStatus,
         symbol,
         timestamp: new Date().toLocaleTimeString(),
         endpoint: '/api/quant/analyze',
@@ -644,6 +647,8 @@ export function ScreenerClient() {
               ? "bg-amber-500/5 text-amber-400 border-amber-500/20 animate-pulse"
               : verifyState.status === 'parcial'
               ? "bg-amber-500/5 text-amber-300 border-amber-500/20"
+              : verifyState.status === 'fallo'
+              ? "bg-red-500/5 text-red-400 border-red-500/20"
               : verifyState.status === 'modo_basico'
               ? "bg-gray-800/40 text-gray-400 border-gray-700"
               : "bg-red-500/5 text-red-400 border-red-500/20"
@@ -653,6 +658,7 @@ export function ScreenerClient() {
                 {verifyState.status === 'conectado' ? `Motor Quant conectado con datos utiles para: ${verifyState.symbol}`
                   : verifyState.status === 'consultando' ? `Consultando Python para: ${verifyState.symbol}...`
                   : verifyState.status === 'parcial' ? `Motor respondio para ${verifyState.symbol}, pero el analisis es parcial`
+                  : verifyState.status === 'fallo' ? `Motor respondio para ${verifyState.symbol}, pero el analisis fallo`
                   : verifyState.status === 'modo_basico' ? `Python no disponible para ${verifyState.symbol}, usando modo básico`
                   : `Error en consulta para: ${verifyState.symbol}`}
               </span>
@@ -676,6 +682,7 @@ export function ScreenerClient() {
                   verifyState.status === 'conectado' ? "bg-emerald-400" :
                   verifyState.status === 'consultando' ? "bg-amber-400 animate-ping" :
                   verifyState.status === 'parcial' ? "bg-amber-400" :
+                  verifyState.status === 'fallo' ? "bg-red-400" :
                   verifyState.status === 'error' ? "bg-red-400" :
                   verifyState.status === 'modo_basico' ? "bg-amber-500" : "bg-gray-600"
                 )} />
@@ -684,12 +691,14 @@ export function ScreenerClient() {
                   verifyState.status === 'conectado' ? "text-emerald-400" :
                   verifyState.status === 'consultando' ? "text-amber-400" :
                   verifyState.status === 'parcial' ? "text-amber-400" :
+                  verifyState.status === 'fallo' ? "text-red-400" :
                   verifyState.status === 'error' ? "text-red-400" :
                   verifyState.status === 'modo_basico' ? "text-amber-500" : "text-gray-400"
                 )}>
                   {verifyState.status === 'conectado' ? 'Motor Quant OK' :
                    verifyState.status === 'consultando' ? 'Consultando' :
                    verifyState.status === 'parcial' ? 'Motor parcial' :
+                   verifyState.status === 'fallo' ? 'Motor fallo' :
                    verifyState.status === 'error' ? 'Error' :
                    verifyState.status === 'modo_basico' ? 'Modo básico' : 'Sin iniciar'}
                 </span>
@@ -723,7 +732,7 @@ export function ScreenerClient() {
 
           <div className="bg-gray-900/30 p-3 rounded-lg border border-gray-800/60 space-y-1">
             <p className="text-[10px] text-gray-500 uppercase font-semibold mb-2">Resultado Python</p>
-            {(verifyState.status === 'conectado' || verifyState.status === 'parcial') && verifyState.data ? (
+            {(verifyState.status === 'conectado' || verifyState.status === 'parcial' || verifyState.status === 'fallo') && verifyState.data ? (
               <div className="space-y-1 text-[11px] font-mono">
                 <div className="grid grid-cols-2 gap-x-2 gap-y-0.5">
                   <div className="text-gray-400">Acción:</div>
@@ -735,9 +744,15 @@ export function ScreenerClient() {
                   "text-[9px] text-center font-bold mt-1 border rounded py-0.5",
                   verifyState.status === 'conectado'
                     ? "text-emerald-400 bg-emerald-950/20 border-emerald-900/30"
-                    : "text-amber-300 bg-amber-950/20 border-amber-900/30"
+                    : verifyState.status === 'parcial'
+                      ? "text-amber-300 bg-amber-950/20 border-amber-900/30"
+                      : "text-red-300 bg-red-950/20 border-red-900/30"
                 )}>
-                  {verifyState.status === 'conectado' ? 'Resultado util desde Python' : 'Respuesta parcial desde Python'}
+                  {verifyState.status === 'conectado'
+                    ? 'Resultado util desde Python'
+                    : verifyState.status === 'parcial'
+                      ? 'Respuesta parcial desde Python'
+                      : 'Respuesta fallida desde Python'}
                 </div>
               </div>
             ) : (
@@ -747,7 +762,7 @@ export function ScreenerClient() {
         </div>
 
         {/* Panel de Noticias Leídas por FinBERT */}
-        {(verifyState.status === 'conectado' || verifyState.status === 'parcial') && verifyState.data?.news_articles && (
+        {(verifyState.status === 'conectado' || verifyState.status === 'parcial' || verifyState.status === 'fallo') && verifyState.data?.news_articles && (
           <div className="bg-gray-900/30 p-3 rounded-lg border border-gray-800/60 mt-4 space-y-2">
             <p className="text-[10px] text-gray-500 uppercase font-semibold">
               Titulares leídos por FinBERT <span className={cn('ml-1 px-1.5 py-0.5 rounded text-[9px]', verifyState.data.news_sentiment === 'POSITIVE' ? 'bg-emerald-500/20 text-emerald-400' : verifyState.data.news_sentiment === 'NEGATIVE' ? 'bg-red-500/20 text-red-400' : 'bg-gray-800 text-gray-400')}>{verifyState.data.news_sentiment}</span>
@@ -854,6 +869,15 @@ export function ScreenerClient() {
                     {r.quant ? (
                       <span className={cn('text-xs font-bold px-2 py-1 rounded', r.quant.action === 'BUY' ? 'bg-emerald-500/20 text-emerald-400' : r.quant.action === 'SELL' ? 'bg-red-500/20 text-red-400' : 'bg-gray-800 text-gray-400')}>
                         {hasIncompleteQuantData(r) ? 'PARCIAL' : r.quant.action}
+                      </span>
+                    ) : r.marketDataQuality && !r.marketDataQuality.usable_for_ml ? (
+                      <span className={cn(
+                        'text-xs font-bold px-2 py-1 rounded',
+                        r.marketDataQuality.usable_for_chart
+                          ? 'bg-amber-500/15 text-amber-300'
+                          : 'bg-red-500/15 text-red-300'
+                      )}>
+                        DATA
                       </span>
                     ) : (
                       <span className="text-[10px] text-gray-600">N/A</span>

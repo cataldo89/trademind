@@ -1,4 +1,4 @@
-from typing import TypedDict
+from typing import Any, Dict, TypedDict
 
 # Define agent state
 class AgentState(TypedDict, total=False):
@@ -14,6 +14,48 @@ class AgentState(TypedDict, total=False):
     xai_explanation: str
     youtube_signal: str
     youtube_reason: str
+    market_data_quality: Dict[str, Any]
+    data_status: str
+
+def market_data_quality_analyst(state: AgentState):
+    from market_data import fetch_chart_dataframe
+    from market_data_quality import evaluate_market_data_quality_frame
+
+    frame = fetch_chart_dataframe(state["symbol"], range_="2y", interval="1d")
+    quality = evaluate_market_data_quality_frame(
+        symbol=state["symbol"],
+        provider="yahoo-chart",
+        timeframe="1d",
+        frame=frame,
+        metadata={"fetched_by": "quant-engine"},
+    )
+    state["market_data_quality"] = quality
+    state["data_status"] = "usable" if quality.get("usable_for_ml") else "insufficient"
+    return state
+
+def apply_data_quality_block(state: AgentState):
+    quality = state.get("market_data_quality") or {}
+    reason = quality.get("recommendation") or "Datos de mercado insuficientes para ML."
+    score = quality.get("quality_score", 0)
+    state["graham_passed"] = False
+    state["graham_reason"] = "No evaluado: datos de mercado insuficientes."
+    state["market_regime"] = "Unknown"
+    state["ml_prediction"] = 0.0
+    state["var_95"] = 0.0
+    state["youtube_signal"] = "NEUTRAL"
+    state["youtube_reason"] = "Blocked by market_data_quality"
+    state["news_sentiment"] = "NEUTRAL"
+    state["news_articles"] = []
+    state["action"] = "HOLD"
+    state["label"] = "Sin conclusion / datos insuficientes"
+    state["confidence"] = 0
+    state["xai_explanation"] = f"Analisis bloqueado por market_data_quality (score {score}): {reason}"
+    state["error_reason"] = state["xai_explanation"]
+    state["data_status"] = "insufficient"
+    return state
+
+def quality_allows_ml(quality: Dict[str, Any]) -> bool:
+    return bool(quality.get("usable_for_ml")) and int(quality.get("quality_score") or 0) >= 60
 
 def research_manager(state: AgentState):
     from graham_filters import check_margin_of_safety
@@ -84,6 +126,10 @@ def news_analyst(state: AgentState):
     return state
 
 def decision_node(state: AgentState):
+    quality = state.get("market_data_quality") or {}
+    if quality and not quality_allows_ml(quality):
+        return apply_data_quality_block(state)
+
     var_95 = state.get("var_95", 1)
     ml_pred = state.get("ml_prediction", 0)
     graham_passed = state.get("graham_passed", False)
@@ -163,6 +209,11 @@ def run_analysis_workflow(symbol: str):
     try:
         # Vanilla Python Workflow Execution
         state: AgentState = {"symbol": symbol}
+
+        # 0. Data quality guardrail
+        state = market_data_quality_analyst(state)
+        if not quality_allows_ml(state.get("market_data_quality", {})):
+            return apply_data_quality_block(state)
 
         # 1. Research Manager
         state = research_manager(state)

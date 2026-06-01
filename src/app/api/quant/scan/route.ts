@@ -4,10 +4,13 @@ import { getCached } from '@/lib/api/memory-cache'
 import { QuantClient } from '@/lib/ai/quant-client'
 import { getYahooSymbol, getZestySymbolMarket } from '@/lib/market-data'
 import { calculatePreliminaryScore, calculateFinalQuantScore, rankScreenerResults, PreliminaryTechData, QuantResultData } from '@/lib/ranking'
+import { assessMarketDataQuality, type MarketDataQualityResult } from '@/lib/market-data-quality'
 import type { Candle } from '@/types'
 
 const MAX_SYMBOLS = 500
 const YAHOO_CONCURRENCY = 10
+const YAHOO_QUOTES_TIMEOUT_MS = Number.parseInt(process.env.YAHOO_QUOTES_TIMEOUT_MS || '10000', 10)
+const YAHOO_CANDLES_TIMEOUT_MS = Number.parseInt(process.env.YAHOO_CANDLES_TIMEOUT_MS || '10000', 10)
 
 const QUANT_MAX_CANDIDATES = parseInt(process.env.QUANT_MAX_CANDIDATES || '20', 10)
 const QUANT_CONCURRENCY = parseInt(process.env.QUANT_CONCURRENCY || '4', 10)
@@ -53,6 +56,7 @@ type SentimentRecord = {
 
 type PreliminaryWithSentiment = PreliminaryTechData & {
   _sentiment?: SentimentRecord
+  marketDataQuality?: MarketDataQualityResult
 }
 
 function classifyPythonResult(data: QuantResultData | null): Pick<PythonResultRecord, 'ok' | 'status' | 'reason'> {
@@ -64,8 +68,18 @@ function classifyPythonResult(data: QuantResultData | null): Pick<PythonResultRe
   const confidence = Number(data.confidence ?? 0)
   const regime = String(data.market_regime || '').toLowerCase()
   const explanation = String(data.xai_explanation || data.error_reason || '')
+  const dataStatus = String((data as Record<string, unknown>).data_status || '').toLowerCase()
+  const marketDataQuality = (data as Record<string, unknown>).market_data_quality as { usable_for_ml?: boolean; recommendation?: string } | undefined
   const hasDataFetchError = /error fetching data|fallo al obtener datos|datos insuficientes|incompleto/i.test(explanation)
   const unknownRegime = !regime || regime === 'unknown' || regime.includes('desconocido')
+
+  if (dataStatus === 'insufficient' || marketDataQuality?.usable_for_ml === false) {
+    return {
+      ok: false,
+      status: 'failed',
+      reason: marketDataQuality?.recommendation || explanation || 'Market data quality blocked ML analysis',
+    }
+  }
 
   if (hasDataFetchError) {
     return { ok: false, status: 'failed', reason: explanation || 'Quant engine reported incomplete data' }
@@ -88,7 +102,11 @@ async function fetchBatchQuotes(symbols: string[]) {
   for (let i = 0; i < symbols.length; i += chunkSize) {
     const chunk = symbols.slice(i, i + chunkSize)
     try {
-      const response = await yahooFinance.quote(chunk, {}, { validateResult: false })
+      const response = await withTimeout(
+        yahooFinance.quote(chunk, {}, { validateResult: false }),
+        YAHOO_QUOTES_TIMEOUT_MS,
+        `Yahoo quote batch ${chunk.join(',')}`
+      )
       const arr = Array.isArray(response) ? response : (response ? [response] : [])
       for (const q of arr as QuoteLike[]) {
         if (q && q.symbol) quotes.set(q.symbol, q)
@@ -98,7 +116,11 @@ async function fetchBatchQuotes(symbols: string[]) {
       // Fallback to individual
       await Promise.all(chunk.map(async (sym) => {
         try {
-          const q = await yahooFinance.quote(sym, {}, { validateResult: false })
+          const q = await withTimeout(
+            yahooFinance.quote(sym, {}, { validateResult: false }),
+            YAHOO_QUOTES_TIMEOUT_MS,
+            `Yahoo quote ${sym}`
+          )
           if (q) quotes.set(sym, q)
         } catch {
           // Keep scanning the rest of the batch when a single quote fails.
@@ -113,7 +135,11 @@ async function fetchCandles(symbol: string): Promise<Candle[]> {
   try {
     const period1 = new Date()
     period1.setDate(period1.getDate() - 365) // 1Y
-    const res = await yahooFinance.chart(symbol, { interval: '1d', period1 }) as ChartLike
+    const res = await withTimeout(
+      yahooFinance.chart(symbol, { interval: '1d', period1 }),
+      YAHOO_CANDLES_TIMEOUT_MS,
+      `Yahoo chart ${symbol}`
+    ) as ChartLike
     const rawQuotes = res.quotes || res.indicators?.quote?.[0] || []
     return rawQuotes.map((q, i: number) => {
       let time = 0
@@ -128,9 +154,23 @@ async function fetchCandles(symbol: string): Promise<Candle[]> {
         volume: Number(q.volume)
       }
     }).filter((c) => c.close > 0)
-  } catch {
+  } catch (e) {
+    console.error(`[Quant Scan] No se pudieron obtener velas para ${symbol}:`, e)
     return []
   }
+}
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined
+  const timeout = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error(`${label} timed out after ${timeoutMs}ms`)), timeoutMs)
+  })
+
+  return Promise.race([promise, timeout]).finally(() => {
+    if (timeoutId) {
+      clearTimeout(timeoutId)
+    }
+  })
 }
 
 export async function POST(request: NextRequest) {
@@ -200,6 +240,17 @@ export async function POST(request: NextRequest) {
       const q = quotesMap.get(ySym) || quotesMap.get(ySym.toUpperCase())
       const c = candlesMap.get(ySym) || []
       const originalMarket = symbolMarkets[original] || getZestySymbolMarket(original) || market
+      const quality = assessMarketDataQuality({
+        symbol: original,
+        provider: 'yahoo-finance2-chart',
+        timeframe: '1d',
+        dataset: c,
+        metadata: {
+          provider: 'yahoo-finance2',
+          source: 'src/app/api/quant/scan',
+          adjusted: null,
+        },
+      })
       
       const quoteData = {
         price: Number(q?.regularMarketPrice ?? q?.regularMarketPreviousClose ?? null),
@@ -209,7 +260,15 @@ export async function POST(request: NextRequest) {
       
       const name = symbolMap[original] || q?.shortName || q?.longName || original
 
-      const prelim = calculatePreliminaryScore(original, name, originalMarket, category, c, quoteData)
+      const prelim = calculatePreliminaryScore(original, name, originalMarket, category, quality.usable_for_ta ? c : [], quoteData)
+      prelim.marketDataQuality = quality
+      if (!quality.usable_for_ta) {
+        prelim.noData = true
+        prelim.suggestions.push({
+          type: 'warning',
+          label: quality.usable_for_chart ? 'Solo grafico' : 'Datos insuficientes',
+        })
+      }
       
       // Inject Sentiment
       const sent = sentimentCache[original] || sentimentCache[ySym] || sentimentCache[ySym.toUpperCase()]
@@ -230,7 +289,9 @@ export async function POST(request: NextRequest) {
 
     // Step 4: Sort and pick Top Candidates for Python
     preliminaryResults.sort((a, b) => b.score - a.score)
-    const topCandidates = preliminaryResults.slice(0, QUANT_MAX_CANDIDATES)
+    const topCandidates = preliminaryResults
+      .filter(candidate => candidate.marketDataQuality?.usable_for_ml && candidate.marketDataQuality.quality_score >= 60)
+      .slice(0, QUANT_MAX_CANDIDATES)
     const pythonResults = new Map<string, PythonResultRecord>()
     
     console.log(`[Quant Scan] Running Python analysis for Top ${topCandidates.length} candidates with concurrency ${QUANT_CONCURRENCY}...`)
@@ -238,57 +299,59 @@ export async function POST(request: NextRequest) {
     // Step 5: Run Python Analysis Concurrently
     let activeQuant = 0
     let quantIndex = 0
-    await new Promise<void>((resolve) => {
-      const next = async () => {
-        if (quantIndex >= topCandidates.length) {
-          if (activeQuant === 0) resolve()
-          return
-        }
-        const candidate = topCandidates[quantIndex++]
-        activeQuant++
-        try {
-          const candidateMarket = (candidate.market === 'CL' || candidate.market === 'US')
-            ? candidate.market
-            : getZestySymbolMarket(candidate.symbol)
-          const quantSymbol = getYahooSymbol(candidate.symbol, candidateMarket)
-          const res = await client.runWorkflow(quantSymbol)
-          if (res.success && res.data?.workflow_result) {
-             const workflowResult = res.data.workflow_result as QuantResultData
-             const classification = classifyPythonResult(workflowResult)
-             pythonResults.set(candidate.symbol, {
-               data: {
-                 ...workflowResult,
-                 engine_status: classification.status,
-                 data_quality: classification.ok ? 'complete' : classification.status === 'partial' ? 'partial' : 'insufficient',
-                 engine_reason: classification.reason,
-                 quant_symbol: quantSymbol,
-               },
-               ...classification,
-               quantSymbol,
-             })
-          } else {
-             pythonResults.set(candidate.symbol, {
-               data: null,
-               ok: false,
-               status: 'failed',
-               reason: res.error || 'Quant engine request failed',
-               quantSymbol,
-             })
+    if (topCandidates.length > 0) {
+      await new Promise<void>((resolve) => {
+        const next = async () => {
+          if (quantIndex >= topCandidates.length) {
+            if (activeQuant === 0) resolve()
+            return
           }
-        } catch (e) {
-          pythonResults.set(candidate.symbol, {
-            data: null,
-            ok: false,
-            status: 'failed',
-            reason: e instanceof Error ? e.message : String(e),
-            quantSymbol: candidate.symbol,
-          })
+          const candidate = topCandidates[quantIndex++]
+          activeQuant++
+          try {
+            const candidateMarket = (candidate.market === 'CL' || candidate.market === 'US')
+              ? candidate.market
+              : getZestySymbolMarket(candidate.symbol)
+            const quantSymbol = getYahooSymbol(candidate.symbol, candidateMarket)
+            const res = await client.runWorkflow(quantSymbol)
+            if (res.success && res.data?.workflow_result) {
+               const workflowResult = res.data.workflow_result as QuantResultData
+               const classification = classifyPythonResult(workflowResult)
+               pythonResults.set(candidate.symbol, {
+                 data: {
+                   ...workflowResult,
+                   engine_status: classification.status,
+                   data_quality: classification.ok ? 'complete' : classification.status === 'partial' ? 'partial' : 'insufficient',
+                   engine_reason: classification.reason,
+                   quant_symbol: quantSymbol,
+                 },
+                 ...classification,
+                 quantSymbol,
+               })
+            } else {
+               pythonResults.set(candidate.symbol, {
+                 data: null,
+                 ok: false,
+                 status: 'failed',
+                 reason: res.error || 'Quant engine request failed',
+                 quantSymbol,
+               })
+            }
+          } catch (e) {
+            pythonResults.set(candidate.symbol, {
+              data: null,
+              ok: false,
+              status: 'failed',
+              reason: e instanceof Error ? e.message : String(e),
+              quantSymbol: candidate.symbol,
+            })
+          }
+          activeQuant--
+          next()
         }
-        activeQuant--
-        next()
-      }
-      for (let i = 0; i < QUANT_CONCURRENCY && i < topCandidates.length; i++) next()
-    })
+        for (let i = 0; i < QUANT_CONCURRENCY && i < topCandidates.length; i++) next()
+      })
+    }
 
     // Step 6: Final Ranking
     const finalResults = preliminaryResults.map(p => {
@@ -329,6 +392,23 @@ export async function POST(request: NextRequest) {
             usable: result.ok,
             reason: result.reason,
             quantSymbol: result.quantSymbol,
+          },
+        ])
+      ),
+      market_data_quality: Object.fromEntries(
+        preliminaryResults.map((result) => [
+          result.symbol,
+          {
+            status: result.marketDataQuality?.status,
+            usable_for_chart: result.marketDataQuality?.usable_for_chart,
+            usable_for_ta: result.marketDataQuality?.usable_for_ta,
+            usable_for_ml: result.marketDataQuality?.usable_for_ml,
+            usable_for_backtest: result.marketDataQuality?.usable_for_backtest,
+            quality_score: result.marketDataQuality?.quality_score,
+            recommendation: result.marketDataQuality?.recommendation,
+            blocking_errors: result.marketDataQuality?.blocking_errors ?? [],
+            issues: result.marketDataQuality?.issues ?? [],
+            warnings: result.marketDataQuality?.warnings ?? [],
           },
         ])
       ),

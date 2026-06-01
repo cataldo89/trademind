@@ -3,8 +3,8 @@ from __future__ import annotations
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
-from typing import Callable, Any
+from pydantic import BaseModel, Field
+from typing import Callable, Any, Dict, List, Optional
 import os
 import time
 
@@ -14,6 +14,8 @@ from risk_models import detect_regime, calculate_var_garch
 from time_series_models import predict_direction_arima, predict_direction_sarima
 from lean_integration import run_lean_backtest, export_to_lean
 from graham_filters import check_margin_of_safety
+from market_data import fetch_chart_dataframe
+from market_data_quality import evaluate_market_data_quality
 
 load_dotenv()
 
@@ -81,6 +83,16 @@ class LeanRequest(BaseModel):
     parameters: dict = {}
 
 
+class MarketDataQualityRequest(BaseModel):
+    symbol: str
+    provider: str = "yahoo-chart"
+    timeframe: str = "1d"
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    dataset: List[Dict[str, Any]] = Field(default_factory=list)
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
 @app.get("/health")
 def health_check():
     return {"status": "ok", "service": "quant-engine", "cache_entries": len(_CACHE)}
@@ -115,6 +127,27 @@ def check_graham_filters(req: SymbolRequest):
         lambda: check_margin_of_safety(req.symbol),
     )
     return {"passed": passed, "reason": reason}
+
+
+@app.post("/mcp/tools/market_data_quality")
+def market_data_quality(req: MarketDataQualityRequest):
+    dataset: Any = req.dataset
+    metadata = dict(req.metadata)
+    if not dataset:
+        frame = fetch_chart_dataframe(req.symbol, range_="2y", interval=req.timeframe)
+        dataset = frame
+        metadata.setdefault("fetched_by", "quant-engine")
+        metadata.setdefault("provider", req.provider)
+
+    return evaluate_market_data_quality(
+        symbol=req.symbol,
+        provider=req.provider,
+        timeframe=req.timeframe,
+        start_date=req.start_date,
+        end_date=req.end_date,
+        dataset=dataset,
+        metadata=metadata,
+    )
 
 
 # --- Detailed ML Endpoints ---

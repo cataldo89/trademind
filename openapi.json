@@ -145,6 +145,42 @@
         }
       }
     },
+    "/mcp/tools/market_data_quality": {
+      "post": {
+        "summary": "Market Data Quality",
+        "operationId": "market_data_quality_mcp_tools_market_data_quality_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MarketDataQualityRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/ml/extract_features": {
       "post": {
         "summary": "Extract Features",
@@ -324,10 +360,78 @@
           }
         }
       }
+    },
+    "/ml/trigger_sentiment_scan": {
+      "post": {
+        "summary": "Trigger Sentiment Scan",
+        "operationId": "trigger_sentiment_scan_ml_trigger_sentiment_scan_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchSymbolRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ml/sentiment_cache": {
+      "get": {
+        "summary": "Get Sentiment Cache",
+        "operationId": "get_sentiment_cache_ml_sentiment_cache_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "BatchSymbolRequest": {
+        "properties": {
+          "symbols": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Symbols"
+          }
+        },
+        "type": "object",
+        "required": [
+          "symbols"
+        ],
+        "title": "BatchSymbolRequest"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -358,6 +462,62 @@
           "symbol"
         ],
         "title": "LeanRequest"
+      },
+      "MarketDataQualityRequest": {
+        "properties": {
+          "symbol": {
+            "type": "string",
+            "title": "Symbol"
+          },
+          "provider": {
+            "type": "string",
+            "title": "Provider",
+            "default": "yahoo-chart"
+          },
+          "timeframe": {
+            "type": "string",
+            "title": "Timeframe",
+            "default": "1d"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "dataset": {
+            "items": {
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Dataset"
+          },
+          "metadata": {
+            "type": "object",
+            "title": "Metadata"
+          }
+        },
+        "type": "object",
+        "required": [
+          "symbol"
+        ],
+        "title": "MarketDataQualityRequest"
       },
       "SymbolRequest": {
         "properties": {

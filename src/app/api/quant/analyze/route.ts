@@ -16,8 +16,18 @@ function classifyWorkflowResult(workflowResult: Record<string, unknown> | undefi
   const confidence = Number(workflowResult.confidence ?? 0)
   const regime = String(workflowResult.market_regime || '').toLowerCase()
   const explanation = String(workflowResult.xai_explanation || workflowResult.error_reason || '')
+  const dataStatus = String(workflowResult.data_status || '').toLowerCase()
+  const marketDataQuality = workflowResult.market_data_quality as { usable_for_ml?: boolean; recommendation?: string } | undefined
   const hasDataFetchError = /error fetching data|fallo al obtener datos|datos insuficientes|incompleto/i.test(explanation)
   const unknownRegime = !regime || regime === 'unknown' || regime.includes('desconocido')
+
+  if (dataStatus === 'insufficient' || marketDataQuality?.usable_for_ml === false) {
+    return {
+      usable: false,
+      status: 'failed',
+      reason: marketDataQuality?.recommendation || explanation || 'Market data quality blocked ML analysis',
+    }
+  }
 
   if (hasDataFetchError) {
     return { usable: false, status: 'failed', reason: explanation || 'Quant engine reported incomplete data' }

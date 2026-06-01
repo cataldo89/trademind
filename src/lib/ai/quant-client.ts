@@ -108,6 +108,24 @@ export class QuantClient {
     return this.callTool('check_graham_filters', { symbol })
   }
 
+  async checkMarketDataQuality(parameters: {
+    symbol: string
+    provider?: string
+    timeframe?: string
+    start_date?: string
+    end_date?: string
+    dataset?: Record<string, unknown>[]
+    metadata?: Record<string, unknown>
+  }) {
+    return this.callTool('market_data_quality', {
+      provider: 'yahoo-chart',
+      timeframe: '1d',
+      dataset: [],
+      metadata: {},
+      ...parameters,
+    })
+  }
+
   async runWorkflow(symbol: string) {
     return this.callEndpoint<QuantWorkflowResponse>('/workflow/analyze', { symbol }, 15000)
   }
@@ -122,18 +140,25 @@ export class QuantClient {
     }>('/ml/trigger_sentiment_scan', { symbols }, 120000) // 2 min timeout
   }
 
-  async getSentimentCache() {
+  async getSentimentCache(timeoutMs = 5000) {
     if (this.configurationError || !this.serverUrl) {
       return { success: false, data: null, error: this.configurationError }
     }
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
     const headers: Record<string, string> = { 'Content-Type': 'application/json' }
     if (this.secret) headers['X-TradeMind-Quant-Secret'] = this.secret
     try {
-      const res = await fetch(`${this.serverUrl}/ml/sentiment_cache`, { headers })
+      const res = await fetch(`${this.serverUrl}/ml/sentiment_cache`, { headers, signal: controller.signal })
+      clearTimeout(timeoutId)
       if (!res.ok) return { success: false, data: null }
       const data = await res.json()
       return { success: true, data }
-    } catch {
+    } catch (error) {
+      clearTimeout(timeoutId)
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.error('[QuantClient] Timeout calling /ml/sentiment_cache')
+      }
       return { success: false, data: null }
     }
   }

@@ -43,6 +43,8 @@ test('Quant client does not use localhost in production', () => {
   assert.match(client, /QUANT_ENGINE_URL is required in production/)
   assert.match(client, /QUANT_ENGINE_SECRET is required/)
   assert.match(client, /X-TradeMind-Quant-Secret/)
+  assert.match(client, /checkMarketDataQuality/)
+  assert.match(client, /market_data_quality/)
 })
 
 test('Quant jobs define durable async workflow contract', () => {
