@@ -3,7 +3,7 @@ from graham_filters import check_margin_of_safety
 def test_graham_invalid_ticker():
     passed, reason = check_margin_of_safety("INVALID_TICKER_XYZ")
     assert not passed
-    assert "Invalid or missing" in reason or "Error fetching" in reason
+    assert "Invalid or missing" in reason or "Could not retrieve" in reason
 
 def test_graham_valid_ticker_aapl():
     # Solo probar que retorna una tupla con bool y string, 

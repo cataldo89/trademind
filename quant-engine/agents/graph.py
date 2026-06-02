@@ -240,10 +240,9 @@ def decision_node(state: AgentState):
     # Base confidence calculation
     confidence = 50
 
-    # Detect data errors or missing/incomplete fetches
     graham_reason = state.get('graham_reason', '')
     technical_missing = var_95 in (0, 1) and ml_pred == 0 and state.get('market_regime') in ("Unknown", "Desconocido")
-    graham_inconclusive = "Error" in graham_reason or "Invalid" in graham_reason or "missing" in graham_reason
+    graham_inconclusive = "Error" in graham_reason or "Invalid" in graham_reason or "missing" in graham_reason or "Could not retrieve" in graham_reason
     is_error = technical_missing
 
     if is_error:

@@ -5,7 +5,7 @@ def check_margin_of_safety(symbol: str):
         stock = yf.Ticker(symbol)
         info = stock.info
     except Exception as e:
-        return False, f"Error fetching data for {symbol}: {e}"
+        return False, f"Could not retrieve fundamental metrics for {symbol}: {e}"
 
     if not info or ('regularMarketPrice' not in info and 'previousClose' not in info):
         return False, f"Invalid or missing ticker data for {symbol}."
