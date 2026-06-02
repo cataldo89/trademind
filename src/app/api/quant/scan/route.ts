@@ -7,6 +7,7 @@ import { calculatePreliminaryScore, calculateFinalQuantScore, rankScreenerResult
 import { assessMarketDataQuality, type MarketDataQualityResult } from '@/lib/market-data-quality'
 import { normalizeHistoricalData } from '@/lib/historical-data-normalizer'
 import type { Candle } from '@/types'
+import { getDurableMarketData } from '@/lib/api/market-data-cache'
 
 const MAX_SYMBOLS = 500
 const YAHOO_CONCURRENCY = 10
@@ -152,29 +153,38 @@ async function fetchBatchQuotes(symbols: string[]) {
   return quotes
 }
 
-async function fetchCandles(symbol: string): Promise<Candle[]> {
+async function fetchCandles(symbol: string, market: 'US' | 'CL' = 'US'): Promise<Candle[]> {
   try {
-    const period1 = new Date()
-    period1.setDate(period1.getDate() - 365) // 1Y
-    const res = await withTimeout(
-      yahooFinance.chart(symbol, { interval: '1d', period1 }),
-      YAHOO_CANDLES_TIMEOUT_MS,
-      `Yahoo chart ${symbol}`
-    ) as ChartLike
-    const rawQuotes = res.quotes || res.indicators?.quote?.[0] || []
-    return rawQuotes.map((q, i: number) => {
-      let time = 0
-      if (q.date) time = Math.floor(new Date(q.date).getTime() / 1000)
-      else if (res.timestamp?.[i]) time = res.timestamp[i]
-      return {
-        time,
-        open: Number(q.open),
-        high: Number(q.high),
-        low: Number(q.low),
-        close: Number(q.close),
-        volume: Number(q.volume)
+    return await getDurableMarketData<Candle[]>({
+      symbol,
+      market,
+      range: '1y',
+      ttlMs: 4 * 60 * 60 * 1000, // 4 hours TTL
+      provider: 'yahoo-chart',
+      loader: async () => {
+        const period1 = new Date()
+        period1.setDate(period1.getDate() - 365) // 1Y
+        const res = await withTimeout(
+          yahooFinance.chart(symbol, { interval: '1d', period1 }),
+          YAHOO_CANDLES_TIMEOUT_MS,
+          `Yahoo chart ${symbol}`
+        ) as ChartLike
+        const rawQuotes = res.quotes || res.indicators?.quote?.[0] || []
+        return rawQuotes.map((q, i: number) => {
+          let time = 0
+          if (q.date) time = Math.floor(new Date(q.date).getTime() / 1000)
+          else if (res.timestamp?.[i]) time = res.timestamp[i]
+          return {
+            time,
+            open: Number(q.open),
+            high: Number(q.high),
+            low: Number(q.low),
+            close: Number(q.close),
+            volume: Number(q.volume)
+          }
+        }).filter((c) => c.close > 0)
       }
-    }).filter((c) => c.close > 0)
+    })
   } catch (e) {
     console.error(`[Quant Scan] No se pudieron obtener velas para ${symbol}:`, e)
     return []
@@ -237,8 +247,11 @@ export async function POST(request: NextRequest) {
             return
           }
           const sym = yahooSymbols[index++]
+          const original = yahooToOriginal.get(sym.toUpperCase()) || sym
+          const originalMarket = symbolMarkets[original] || getZestySymbolMarket(original) || market
+          const safeMarket: 'US' | 'CL' = originalMarket === 'CL' ? 'CL' : 'US'
           active++
-          const candles = await fetchCandles(sym)
+          const candles = await fetchCandles(sym, safeMarket)
           candlesMap.set(sym, candles)
           active--
           next()
@@ -289,26 +302,6 @@ export async function POST(request: NextRequest) {
         },
       })
       let providerFallback: Record<string, unknown> | undefined
-
-      if (!quality.usable_for_ml) {
-        const fallbackRes = await client.resolveProviderFallback({
-          symbol: original,
-          market: originalMarket,
-          timeframe: '1d',
-          range: '2y',
-          required_use: 'ml',
-        })
-        if (fallbackRes.success && fallbackRes.data?.selected_quality) {
-          providerFallback = fallbackRes.data as unknown as Record<string, unknown>
-          const fallbackQuality = fallbackRes.data.selected_quality as unknown as MarketDataQualityResult
-          const fallbackCandles = fallbackDatasetToCandles(fallbackRes.data.selected_dataset || [])
-          selectedProvider = fallbackRes.data.selected_provider || selectedProvider
-          quality = { ...fallbackQuality, provider: selectedProvider }
-          if (fallbackCandles.length > 0) {
-            c = fallbackCandles
-          }
-        }
-      }
       
       const quoteData = {
         price: Number(q?.regularMarketPrice ?? q?.regularMarketPreviousClose ?? null),
@@ -354,24 +347,50 @@ export async function POST(request: NextRequest) {
 
     // Step 4: Sort and pick Top Candidates for Python
     preliminaryResults.sort((a, b) => b.score - a.score)
-    const topCandidates = preliminaryResults
-      .filter(candidate => candidate.marketDataQuality?.usable_for_ml && candidate.marketDataQuality.quality_score >= 60)
-      .slice(0, QUANT_MAX_CANDIDATES)
+    const topCandidates = preliminaryResults.slice(0, QUANT_MAX_CANDIDATES)
+
+    // Now, resolve provider fallback ONLY for these top candidates if they need it
+    for (const candidate of topCandidates) {
+      if (candidate.marketDataQuality && !candidate.marketDataQuality.usable_for_ml) {
+        try {
+          const fallbackRes = await client.resolveProviderFallback({
+            symbol: candidate.symbol,
+            market: candidate.market,
+            timeframe: '1d',
+            range: '2y',
+            required_use: 'ml',
+          })
+          if (fallbackRes.success && fallbackRes.data) {
+            const fallbackQuality = fallbackRes.data.selected_quality as unknown as MarketDataQualityResult
+            const fallbackCandles = fallbackDatasetToCandles(fallbackRes.data.selected_dataset || [])
+            candidate.marketDataQuality = { ...fallbackQuality, provider: fallbackRes.data.selected_provider || candidate.marketDataQuality.provider }
+            if (fallbackCandles.length > 0) {
+              candidate.noData = false
+              candlesMap.set(candidate.symbol, fallbackCandles)
+            }
+          }
+        } catch (e) {
+          console.error(`[Quant Scan] Failed resolving fallback for top candidate ${candidate.symbol}:`, e)
+        }
+      }
+    }
+
     const pythonResults = new Map<string, PythonResultRecord>()
+    const candidatesToAnalyze = topCandidates.filter(candidate => candidate.marketDataQuality?.usable_for_ml)
     
-    console.log(`[Quant Scan] Running Python analysis for Top ${topCandidates.length} candidates with concurrency ${QUANT_CONCURRENCY}...`)
+    console.log(`[Quant Scan] Running Python analysis for Top ${candidatesToAnalyze.length} candidates with concurrency ${QUANT_CONCURRENCY}...`)
     
     // Step 5: Run Python Analysis Concurrently
     let activeQuant = 0
     let quantIndex = 0
-    if (topCandidates.length > 0) {
+    if (candidatesToAnalyze.length > 0) {
       await new Promise<void>((resolve) => {
         const next = async () => {
-          if (quantIndex >= topCandidates.length) {
+          if (quantIndex >= candidatesToAnalyze.length) {
             if (activeQuant === 0) resolve()
             return
           }
-          const candidate = topCandidates[quantIndex++]
+          const candidate = candidatesToAnalyze[quantIndex++]
           activeQuant++
           try {
             const candidateMarket = (candidate.market === 'CL' || candidate.market === 'US')
@@ -414,7 +433,7 @@ export async function POST(request: NextRequest) {
           activeQuant--
           next()
         }
-        for (let i = 0; i < QUANT_CONCURRENCY && i < topCandidates.length; i++) next()
+        for (let i = 0; i < QUANT_CONCURRENCY && i < candidatesToAnalyze.length; i++) next()
       })
     }
 
