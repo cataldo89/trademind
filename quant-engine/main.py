@@ -15,7 +15,13 @@ from time_series_models import predict_direction_arima, predict_direction_sarima
 from lean_integration import run_lean_backtest, export_to_lean
 from graham_filters import check_margin_of_safety
 from market_data import fetch_chart_dataframe
+from historical_data_normalizer import normalize_historical_dataset
 from market_data_quality import evaluate_market_data_quality
+from provider_fallback import resolve_provider_fallback
+from portfolio_risk_manager import evaluate_portfolio_risk
+from robust_backtest import run_robust_backtest
+from signal_quality import evaluate_signal_quality
+from trade_execution_guard import evaluate_trade_execution_guard
 
 load_dotenv()
 
@@ -93,6 +99,92 @@ class MarketDataQualityRequest(BaseModel):
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
 
+class ProviderFallbackRequest(BaseModel):
+    symbol: str
+    market: str = "US"
+    timeframe: str = "1d"
+    range: Optional[str] = "2y"
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    required_use: str = "ml"
+
+
+class HistoricalDataNormalizerRequest(BaseModel):
+    symbol: str
+    provider: str
+    market: str = "US"
+    timeframe: str = "1d"
+    raw_dataset: List[Dict[str, Any]] = Field(default_factory=list)
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
+class SignalQualityRequest(BaseModel):
+    symbol: str
+    market: str = "US"
+    selected_provider: Optional[str] = None
+    market_data_quality: Dict[str, Any] = Field(default_factory=dict)
+    technical_indicators: Dict[str, Any] = Field(default_factory=dict)
+    ml_prediction: Any = None
+    risk_metrics: Dict[str, Any] = Field(default_factory=dict)
+    graham_result: Dict[str, Any] = Field(default_factory=dict)
+    sentiment_result: Dict[str, Any] = Field(default_factory=dict)
+    workflow_action: str = "HOLD"
+    workflow_confidence: int = 0
+    reasons: List[str] = Field(default_factory=list)
+
+
+class RobustBacktestRequest(BaseModel):
+    symbol: str
+    market: str = "US"
+    provider: Optional[str] = None
+    timeframe: str = "1d"
+    normalized_dataset: List[Dict[str, Any]] = Field(default_factory=list)
+    market_data_quality: Dict[str, Any] = Field(default_factory=dict)
+    signal_quality: Dict[str, Any] = Field(default_factory=dict)
+    strategy_type: str = "buy_and_hold"
+    strategy_params: Dict[str, Any] = Field(default_factory=dict)
+    initial_capital: float = 10000.0
+    fees: float = 0.0
+    slippage: float = 0.0
+
+
+class PortfolioRiskManagerRequest(BaseModel):
+    user_id: Optional[str] = None
+    symbol: str
+    market: str = "US"
+    final_action: str = "HOLD"
+    signal_quality: Dict[str, Any] = Field(default_factory=dict)
+    robust_backtest: Dict[str, Any] = Field(default_factory=dict)
+    current_price: Optional[float] = None
+    portfolio_positions: Optional[List[Dict[str, Any]]] = None
+    cash_balance: Optional[float] = None
+    account_equity: Optional[float] = None
+    risk_profile: str = "balanced"
+    max_position_pct: Optional[float] = None
+    max_sector_pct: Optional[float] = None
+    max_market_pct: Optional[float] = None
+
+
+class TradeExecutionGuardRequest(BaseModel):
+    user_id: Optional[str] = None
+    symbol: str
+    market: str = "US"
+    side: str = "BUY"
+    requested_amount: Optional[float] = None
+    requested_quantity: Optional[float] = None
+    current_price: Optional[float] = None
+    signal_quality: Dict[str, Any] = Field(default_factory=dict)
+    robust_backtest: Dict[str, Any] = Field(default_factory=dict)
+    portfolio_risk: Dict[str, Any] = Field(default_factory=dict)
+    market_data_quality: Dict[str, Any] = Field(default_factory=dict)
+    selected_provider: Optional[str] = None
+    account_equity: Optional[float] = None
+    cash_balance: Optional[float] = None
+    current_position: Optional[Dict[str, Any]] = None
+    idempotency_key: Optional[str] = None
+    source: str = "manual"
+
+
 @app.get("/health")
 def health_check():
     return {"status": "ok", "service": "quant-engine", "cache_entries": len(_CACHE)}
@@ -147,6 +239,110 @@ def market_data_quality(req: MarketDataQualityRequest):
         end_date=req.end_date,
         dataset=dataset,
         metadata=metadata,
+    )
+
+
+@app.post("/mcp/tools/historical_data_normalizer")
+def historical_data_normalizer(req: HistoricalDataNormalizerRequest):
+    return normalize_historical_dataset(
+        symbol=req.symbol,
+        provider=req.provider,
+        market=req.market,
+        timeframe=req.timeframe,
+        raw_dataset=req.raw_dataset,
+        metadata=req.metadata,
+    )
+
+
+@app.post("/mcp/tools/provider_fallback")
+def provider_fallback(req: ProviderFallbackRequest):
+    return resolve_provider_fallback(
+        symbol=req.symbol,
+        market=req.market,
+        timeframe=req.timeframe,
+        range_=req.range,
+        start_date=req.start_date,
+        end_date=req.end_date,
+        required_use=req.required_use,
+    )
+
+
+@app.post("/mcp/tools/signal_quality")
+def signal_quality(req: SignalQualityRequest):
+    return evaluate_signal_quality(
+        symbol=req.symbol,
+        market=req.market,
+        selected_provider=req.selected_provider,
+        market_data_quality=req.market_data_quality,
+        technical_indicators=req.technical_indicators,
+        ml_prediction=req.ml_prediction,
+        risk_metrics=req.risk_metrics,
+        graham_result=req.graham_result,
+        sentiment_result=req.sentiment_result,
+        workflow_action=req.workflow_action,
+        workflow_confidence=req.workflow_confidence,
+        reasons=req.reasons,
+    )
+
+
+@app.post("/mcp/tools/robust_backtest")
+def robust_backtest(req: RobustBacktestRequest):
+    return run_robust_backtest(
+        symbol=req.symbol,
+        market=req.market,
+        provider=req.provider,
+        timeframe=req.timeframe,
+        normalized_dataset=req.normalized_dataset,
+        market_data_quality=req.market_data_quality,
+        signal_quality=req.signal_quality,
+        strategy_type=req.strategy_type,
+        strategy_params=req.strategy_params,
+        initial_capital=req.initial_capital,
+        fees=req.fees,
+        slippage=req.slippage,
+    )
+
+
+@app.post("/mcp/tools/portfolio_risk_manager")
+def portfolio_risk_manager(req: PortfolioRiskManagerRequest):
+    return evaluate_portfolio_risk(
+        user_id=req.user_id,
+        symbol=req.symbol,
+        market=req.market,
+        final_action=req.final_action,
+        signal_quality=req.signal_quality,
+        robust_backtest=req.robust_backtest,
+        current_price=req.current_price,
+        portfolio_positions=req.portfolio_positions,
+        cash_balance=req.cash_balance,
+        account_equity=req.account_equity,
+        risk_profile=req.risk_profile,
+        max_position_pct=req.max_position_pct,
+        max_sector_pct=req.max_sector_pct,
+        max_market_pct=req.max_market_pct,
+    )
+
+
+@app.post("/mcp/tools/trade_execution_guard")
+def trade_execution_guard(req: TradeExecutionGuardRequest):
+    return evaluate_trade_execution_guard(
+        user_id=req.user_id,
+        symbol=req.symbol,
+        market=req.market,
+        side=req.side,
+        requested_amount=req.requested_amount,
+        requested_quantity=req.requested_quantity,
+        current_price=req.current_price,
+        signal_quality=req.signal_quality,
+        robust_backtest=req.robust_backtest,
+        portfolio_risk=req.portfolio_risk,
+        market_data_quality=req.market_data_quality,
+        selected_provider=req.selected_provider,
+        account_equity=req.account_equity,
+        cash_balance=req.cash_balance,
+        current_position=req.current_position,
+        idempotency_key=req.idempotency_key,
+        source=req.source,
     )
 
 

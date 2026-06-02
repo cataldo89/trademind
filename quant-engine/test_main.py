@@ -2,6 +2,7 @@ import pytest
 from fastapi.testclient import TestClient
 from unittest.mock import patch
 import os
+import pandas as pd
 
 # Set env before importing main to ensure defaults don't mess up
 os.environ["QUANT_ENGINE_SECRET"] = "test-secret"
@@ -45,6 +46,10 @@ def test_graham_filters(mock_ticker):
 @patch("agents.graph.market_data_quality_analyst")
 def test_workflow_analyze(mock_quality, mock_risk, mock_tech, mock_research):
     def mock_quality_func(state):
+        dataset = [
+            {"time": int(pd.Timestamp(date).timestamp()), "open": 100 + i, "high": 101 + i, "low": 99 + i, "close": 100 + i, "volume": 1000}
+            for i, date in enumerate(pd.bdate_range("2024-01-02", periods=300))
+        ]
         state["market_data_quality"] = {
             "status": "OK",
             "usable_for_chart": True,
@@ -54,6 +59,7 @@ def test_workflow_analyze(mock_quality, mock_risk, mock_tech, mock_research):
             "quality_score": 95,
             "recommendation": "Mocked quality passed",
         }
+        state["provider_fallback"] = {"selected_provider": "mock", "selected_dataset": dataset}
         state["data_status"] = "usable"
         return state
 
@@ -86,9 +92,12 @@ def test_workflow_analyze(mock_quality, mock_risk, mock_tech, mock_research):
     data = response.json()
     assert "workflow_result" in data
     res = data["workflow_result"]
-    assert res["action"] == "BUY"
-    assert res["label"] == "COMPRAR CON CAUTELA"
-    assert res["confidence"] >= 75
+    assert res["action"] == "HOLD"
+    assert res["label"] == "Mantener / riesgo de cartera bloquea"
+    assert res["confidence"] <= 60
+    assert res["robust_backtest"]["backtest_status"] == "WEAK"
+    assert res["robust_backtest"]["usable_for_decision"] is False
+    assert res["portfolio_risk"]["portfolio_risk_status"] == "BLOCKED"
 
 
 def test_market_data_quality_endpoint_dataset():
@@ -114,6 +123,147 @@ def test_market_data_quality_endpoint_dataset():
     assert data["symbol"] == "AAPL"
     assert data["usable_for_chart"] is True
     assert data["usable_for_ml"] is False
+
+
+@patch("main.resolve_provider_fallback")
+def test_provider_fallback_endpoint(mock_fallback):
+    mock_fallback.return_value = {
+        "symbol": "AAPL",
+        "selected_provider": "stooq",
+        "selected_dataset": [],
+        "selected_quality": {"status": "OK", "usable_for_ml": True, "quality_score": 90},
+        "providers_attempted": ["yahoo-chart", "stooq"],
+        "provider_statuses": [],
+        "fallback_used": True,
+        "usable_for_chart": True,
+        "usable_for_ta": True,
+        "usable_for_ml": True,
+        "usable_for_backtest": True,
+        "final_status": "OK",
+        "reason": "mocked",
+        "errors": [],
+    }
+
+    response = client.post(
+        "/mcp/tools/provider_fallback",
+        json={"symbol": "AAPL", "market": "US", "timeframe": "1d", "range": "2y", "required_use": "ml"},
+        headers={"X-TradeMind-Quant-Secret": "test-secret"}
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["selected_provider"] == "stooq"
+    assert data["fallback_used"] is True
+    mock_fallback.assert_called_once()
+
+
+def test_historical_data_normalizer_endpoint():
+    response = client.post(
+        "/mcp/tools/historical_data_normalizer",
+        json={
+            "symbol": "AAPL",
+            "provider": "yahoo-chart",
+            "market": "US",
+            "timeframe": "1d",
+            "raw_dataset": [
+                {"Date": "2024-01-02", "Open": "100", "High": "101", "Low": "99", "Close": "100.5", "Volume": "1000"}
+            ],
+            "metadata": {"currency": "USD"},
+        },
+        headers={"X-TradeMind-Quant-Secret": "test-secret"}
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["normalization_status"] in {"OK", "WARNING"}
+    assert data["row_count"] == 1
+    assert data["normalized_dataset"][0]["time"] > 0
+
+
+def test_signal_quality_endpoint_blocks_bad_data():
+    response = client.post(
+        "/mcp/tools/signal_quality",
+        json={
+            "symbol": "INVALIDZZZ",
+            "market": "US",
+            "market_data_quality": {"usable_for_ml": False, "quality_score": 0, "usable_for_chart": False},
+            "sentiment_result": {"sentiment": "POSITIVE"},
+            "workflow_action": "BUY",
+            "workflow_confidence": 90,
+        },
+        headers={"X-TradeMind-Quant-Secret": "test-secret"}
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["signal_status"] == "BLOCKED"
+    assert data["final_action"] == "HOLD"
+    assert data["final_confidence"] == 0
+
+
+def test_robust_backtest_endpoint_blocks_bad_quality():
+    response = client.post(
+        "/mcp/tools/robust_backtest",
+        json={
+            "symbol": "INVALIDZZZ",
+            "normalized_dataset": [],
+            "market_data_quality": {"usable_for_backtest": False},
+            "signal_quality": {"signal_status": "BLOCKED"},
+        },
+        headers={"X-TradeMind-Quant-Secret": "test-secret"}
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["backtest_status"] == "BLOCKED"
+    assert data["usable_for_decision"] is False
+
+
+def test_portfolio_risk_manager_endpoint_blocks_signal_blocked():
+    response = client.post(
+        "/mcp/tools/portfolio_risk_manager",
+        json={
+            "symbol": "INVALIDZZZ",
+            "final_action": "BUY",
+            "signal_quality": {"signal_status": "BLOCKED"},
+            "robust_backtest": {"backtest_status": "FAILED"},
+            "cash_balance": 1000,
+            "account_equity": 10000,
+        },
+        headers={"X-TradeMind-Quant-Secret": "test-secret"}
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["portfolio_risk_status"] == "BLOCKED"
+    assert data["adjusted_action"] == "HOLD"
+
+
+def test_trade_execution_guard_endpoint_blocks_invalidzzz():
+    response = client.post(
+        "/mcp/tools/trade_execution_guard",
+        headers={"X-TradeMind-Quant-Secret": "test-secret"},
+        json={
+            "user_id": "u1",
+            "symbol": "INVALIDZZZ",
+            "market": "US",
+            "side": "BUY",
+            "requested_amount": 100,
+            "current_price": 100,
+            "signal_quality": {"signal_status": "BLOCKED", "final_action": "HOLD"},
+            "robust_backtest": {"backtest_status": "FAILED"},
+            "portfolio_risk": {"portfolio_risk_status": "BLOCKED", "action_allowed": False},
+            "market_data_quality": {"status": "FAILED", "usable_for_ml": False},
+            "cash_balance": 1000,
+            "account_equity": 10000,
+            "idempotency_key": "idem-test",
+            "source": "workflow",
+        },
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["execution_status"] == "BLOCKED"
+    assert data["action_to_execute"] == "NONE"
 
 
 @patch("agents.graph.research_manager")

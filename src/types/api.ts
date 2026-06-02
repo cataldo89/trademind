@@ -106,6 +106,108 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/mcp/tools/historical_data_normalizer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Historical Data Normalizer */
+        post: operations["historical_data_normalizer_mcp_tools_historical_data_normalizer_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mcp/tools/provider_fallback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Provider Fallback */
+        post: operations["provider_fallback_mcp_tools_provider_fallback_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mcp/tools/signal_quality": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Signal Quality */
+        post: operations["signal_quality_mcp_tools_signal_quality_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mcp/tools/robust_backtest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Robust Backtest */
+        post: operations["robust_backtest_mcp_tools_robust_backtest_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mcp/tools/portfolio_risk_manager": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Portfolio Risk Manager */
+        post: operations["portfolio_risk_manager_mcp_tools_portfolio_risk_manager_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mcp/tools/trade_execution_guard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Trade Execution Guard */
+        post: operations["trade_execution_guard_mcp_tools_trade_execution_guard_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/ml/extract_features": {
         parameters: {
             query?: never;
@@ -239,6 +341,27 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** HistoricalDataNormalizerRequest */
+        HistoricalDataNormalizerRequest: {
+            /** Symbol */
+            symbol: string;
+            /** Provider */
+            provider: string;
+            /**
+             * Market
+             * @default US
+             */
+            market: string;
+            /**
+             * Timeframe
+             * @default 1d
+             */
+            timeframe: string;
+            /** Raw Dataset */
+            raw_dataset?: Record<string, never>[];
+            /** Metadata */
+            metadata?: Record<string, never>;
+        };
         /** LeanRequest */
         LeanRequest: {
             /** Symbol */
@@ -272,6 +395,156 @@ export interface components {
             /** Metadata */
             metadata?: Record<string, never>;
         };
+        /** PortfolioRiskManagerRequest */
+        PortfolioRiskManagerRequest: {
+            /** User Id */
+            user_id?: string | null;
+            /** Symbol */
+            symbol: string;
+            /**
+             * Market
+             * @default US
+             */
+            market: string;
+            /**
+             * Final Action
+             * @default HOLD
+             */
+            final_action: string;
+            /** Signal Quality */
+            signal_quality?: Record<string, never>;
+            /** Robust Backtest */
+            robust_backtest?: Record<string, never>;
+            /** Current Price */
+            current_price?: number | null;
+            /** Portfolio Positions */
+            portfolio_positions?: Record<string, never>[] | null;
+            /** Cash Balance */
+            cash_balance?: number | null;
+            /** Account Equity */
+            account_equity?: number | null;
+            /**
+             * Risk Profile
+             * @default balanced
+             */
+            risk_profile: string;
+            /** Max Position Pct */
+            max_position_pct?: number | null;
+            /** Max Sector Pct */
+            max_sector_pct?: number | null;
+            /** Max Market Pct */
+            max_market_pct?: number | null;
+        };
+        /** ProviderFallbackRequest */
+        ProviderFallbackRequest: {
+            /** Symbol */
+            symbol: string;
+            /**
+             * Market
+             * @default US
+             */
+            market: string;
+            /**
+             * Timeframe
+             * @default 1d
+             */
+            timeframe: string;
+            /**
+             * Range
+             * @default 2y
+             */
+            range: string | null;
+            /** Start Date */
+            start_date?: string | null;
+            /** End Date */
+            end_date?: string | null;
+            /**
+             * Required Use
+             * @default ml
+             */
+            required_use: string;
+        };
+        /** RobustBacktestRequest */
+        RobustBacktestRequest: {
+            /** Symbol */
+            symbol: string;
+            /**
+             * Market
+             * @default US
+             */
+            market: string;
+            /** Provider */
+            provider?: string | null;
+            /**
+             * Timeframe
+             * @default 1d
+             */
+            timeframe: string;
+            /** Normalized Dataset */
+            normalized_dataset?: Record<string, never>[];
+            /** Market Data Quality */
+            market_data_quality?: Record<string, never>;
+            /** Signal Quality */
+            signal_quality?: Record<string, never>;
+            /**
+             * Strategy Type
+             * @default buy_and_hold
+             */
+            strategy_type: string;
+            /** Strategy Params */
+            strategy_params?: Record<string, never>;
+            /**
+             * Initial Capital
+             * @default 10000
+             */
+            initial_capital: number;
+            /**
+             * Fees
+             * @default 0
+             */
+            fees: number;
+            /**
+             * Slippage
+             * @default 0
+             */
+            slippage: number;
+        };
+        /** SignalQualityRequest */
+        SignalQualityRequest: {
+            /** Symbol */
+            symbol: string;
+            /**
+             * Market
+             * @default US
+             */
+            market: string;
+            /** Selected Provider */
+            selected_provider?: string | null;
+            /** Market Data Quality */
+            market_data_quality?: Record<string, never>;
+            /** Technical Indicators */
+            technical_indicators?: Record<string, never>;
+            /** Ml Prediction */
+            ml_prediction?: unknown;
+            /** Risk Metrics */
+            risk_metrics?: Record<string, never>;
+            /** Graham Result */
+            graham_result?: Record<string, never>;
+            /** Sentiment Result */
+            sentiment_result?: Record<string, never>;
+            /**
+             * Workflow Action
+             * @default HOLD
+             */
+            workflow_action: string;
+            /**
+             * Workflow Confidence
+             * @default 0
+             */
+            workflow_confidence: number;
+            /** Reasons */
+            reasons?: string[];
+        };
         /** SymbolRequest */
         SymbolRequest: {
             /** Symbol */
@@ -286,6 +559,52 @@ export interface components {
              * @default 1D
              */
             timeframe: string;
+        };
+        /** TradeExecutionGuardRequest */
+        TradeExecutionGuardRequest: {
+            /** User Id */
+            user_id?: string | null;
+            /** Symbol */
+            symbol: string;
+            /**
+             * Market
+             * @default US
+             */
+            market: string;
+            /**
+             * Side
+             * @default BUY
+             */
+            side: string;
+            /** Requested Amount */
+            requested_amount?: number | null;
+            /** Requested Quantity */
+            requested_quantity?: number | null;
+            /** Current Price */
+            current_price?: number | null;
+            /** Signal Quality */
+            signal_quality?: Record<string, never>;
+            /** Robust Backtest */
+            robust_backtest?: Record<string, never>;
+            /** Portfolio Risk */
+            portfolio_risk?: Record<string, never>;
+            /** Market Data Quality */
+            market_data_quality?: Record<string, never>;
+            /** Selected Provider */
+            selected_provider?: string | null;
+            /** Account Equity */
+            account_equity?: number | null;
+            /** Cash Balance */
+            cash_balance?: number | null;
+            /** Current Position */
+            current_position?: Record<string, never> | null;
+            /** Idempotency Key */
+            idempotency_key?: string | null;
+            /**
+             * Source
+             * @default manual
+             */
+            source: string;
         };
         /** ValidationError */
         ValidationError: {
@@ -454,6 +773,204 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["MarketDataQualityRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    historical_data_normalizer_mcp_tools_historical_data_normalizer_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HistoricalDataNormalizerRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    provider_fallback_mcp_tools_provider_fallback_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProviderFallbackRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    signal_quality_mcp_tools_signal_quality_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SignalQualityRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    robust_backtest_mcp_tools_robust_backtest_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RobustBacktestRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    portfolio_risk_manager_mcp_tools_portfolio_risk_manager_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PortfolioRiskManagerRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    trade_execution_guard_mcp_tools_trade_execution_guard_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TradeExecutionGuardRequest"];
             };
         };
         responses: {

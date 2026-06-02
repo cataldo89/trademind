@@ -9,6 +9,23 @@ export type QuantWorkflowResponse = {
   workflow_result?: Record<string, unknown>
 }
 
+export type ProviderFallbackResponse = {
+  symbol: string
+  selected_provider: string | null
+  selected_dataset: Record<string, unknown>[]
+  selected_quality: Record<string, unknown> | null
+  providers_attempted: string[]
+  provider_statuses: Record<string, unknown>[]
+  fallback_used: boolean
+  usable_for_chart: boolean
+  usable_for_ta: boolean
+  usable_for_ml: boolean
+  usable_for_backtest: boolean
+  final_status: 'OK' | 'WARNING' | 'FAILED'
+  reason: string
+  errors: Record<string, unknown>[]
+}
+
 type QuantClientOptions = {
   serverUrl?: string
   secret?: string
@@ -124,6 +141,57 @@ export class QuantClient {
       metadata: {},
       ...parameters,
     })
+  }
+
+  async normalizeHistoricalData(parameters: {
+    symbol: string
+    provider: string
+    market?: string
+    timeframe?: string
+    raw_dataset?: Record<string, unknown>[]
+    metadata?: Record<string, unknown>
+  }) {
+    return this.callTool('historical_data_normalizer', {
+      market: 'US',
+      timeframe: '1d',
+      raw_dataset: [],
+      metadata: {},
+      ...parameters,
+    })
+  }
+
+  async evaluateSignalQuality(parameters: Record<string, unknown>) {
+    return this.callTool('signal_quality', parameters)
+  }
+
+  async runRobustBacktest(parameters: Record<string, unknown>) {
+    return this.callTool('robust_backtest', parameters)
+  }
+
+  async evaluatePortfolioRisk(parameters: Record<string, unknown>) {
+    return this.callTool('portfolio_risk_manager', parameters)
+  }
+
+  async evaluateTradeExecutionGuard(parameters: Record<string, unknown>) {
+    return this.callTool('trade_execution_guard', parameters)
+  }
+
+  async resolveProviderFallback(parameters: {
+    symbol: string
+    market?: string
+    timeframe?: string
+    range?: string
+    start_date?: string
+    end_date?: string
+    required_use?: 'chart' | 'ta' | 'ml' | 'backtest'
+  }) {
+    return this.callTool('provider_fallback', {
+      market: 'US',
+      timeframe: '1d',
+      range: '2y',
+      required_use: 'ml',
+      ...parameters,
+    }) as Promise<QuantToolResponse<ProviderFallbackResponse>>
   }
 
   async runWorkflow(symbol: string) {

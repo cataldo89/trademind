@@ -15,20 +15,24 @@ class AgentState(TypedDict, total=False):
     youtube_signal: str
     youtube_reason: str
     market_data_quality: Dict[str, Any]
+    provider_fallback: Dict[str, Any]
+    signal_quality: Dict[str, Any]
+    robust_backtest: Dict[str, Any]
+    portfolio_risk: Dict[str, Any]
     data_status: str
 
 def market_data_quality_analyst(state: AgentState):
-    from market_data import fetch_chart_dataframe
-    from market_data_quality import evaluate_market_data_quality_frame
+    from provider_fallback import resolve_provider_fallback
 
-    frame = fetch_chart_dataframe(state["symbol"], range_="2y", interval="1d")
-    quality = evaluate_market_data_quality_frame(
+    fallback = resolve_provider_fallback(
         symbol=state["symbol"],
-        provider="yahoo-chart",
+        market="US",
         timeframe="1d",
-        frame=frame,
-        metadata={"fetched_by": "quant-engine"},
+        range_="2y",
+        required_use="ml",
     )
+    quality = fallback.get("selected_quality") or {}
+    state["provider_fallback"] = fallback
     state["market_data_quality"] = quality
     state["data_status"] = "usable" if quality.get("usable_for_ml") else "insufficient"
     return state
@@ -49,9 +53,106 @@ def apply_data_quality_block(state: AgentState):
     state["action"] = "HOLD"
     state["label"] = "Sin conclusion / datos insuficientes"
     state["confidence"] = 0
-    state["xai_explanation"] = f"Analisis bloqueado por market_data_quality (score {score}): {reason}"
+    provider = (state.get("provider_fallback") or {}).get("selected_provider")
+    provider_text = f" Provider seleccionado: {provider}." if provider else ""
+    state["xai_explanation"] = f"Analisis bloqueado por market_data_quality (score {score}): {reason}{provider_text}"
     state["error_reason"] = state["xai_explanation"]
     state["data_status"] = "insufficient"
+    state = apply_signal_quality(state)
+    state = apply_robust_backtest(state)
+    state = apply_portfolio_risk(state)
+    return state
+
+def apply_signal_quality(state: AgentState):
+    from signal_quality import evaluate_signal_quality
+
+    quality = state.get("market_data_quality") or {}
+    fallback = state.get("provider_fallback") or {}
+    signal = evaluate_signal_quality(
+        symbol=state["symbol"],
+        market="US",
+        selected_provider=fallback.get("selected_provider") or quality.get("provider"),
+        market_data_quality=quality,
+        technical_indicators={
+            "market_regime": state.get("market_regime"),
+            "youtube_signal": state.get("youtube_signal"),
+        },
+        ml_prediction=state.get("ml_prediction", 0.0),
+        risk_metrics={"var_95": state.get("var_95", 0.0)},
+        graham_result={"passed": state.get("graham_passed"), "reason": state.get("graham_reason")},
+        sentiment_result={"sentiment": state.get("news_sentiment", "NEUTRAL")},
+        workflow_action=state.get("action", "HOLD"),
+        workflow_confidence=int(state.get("confidence", 0) or 0),
+        reasons=[state.get("xai_explanation", "")],
+    )
+    state["signal_quality"] = signal
+    state["action"] = signal["final_action"]
+    state["confidence"] = signal["final_confidence"]
+    if signal["signal_status"] in {"BLOCKED", "CONFLICTED", "WEAK"}:
+        state["label"] = {
+            "BLOCKED": "Sin conclusion / senal bloqueada",
+            "CONFLICTED": "Mantener / senal contradictoria",
+            "WEAK": "Mantener / senal debil",
+        }.get(signal["signal_status"], state.get("label", "MANTENER"))
+    state["xai_explanation"] = f"{state.get('xai_explanation', '')} Signal quality: {signal['explanation']}".strip()
+    if signal["signal_status"] == "BLOCKED":
+        state["error_reason"] = state["xai_explanation"]
+        state["data_status"] = "insufficient"
+    return state
+
+def apply_robust_backtest(state: AgentState):
+    from robust_backtest import run_robust_backtest
+
+    fallback = state.get("provider_fallback") or {}
+    backtest = run_robust_backtest(
+        symbol=state["symbol"],
+        market="US",
+        provider=fallback.get("selected_provider"),
+        timeframe="1d",
+        normalized_dataset=fallback.get("selected_dataset") or [],
+        market_data_quality=state.get("market_data_quality") or {},
+        signal_quality=state.get("signal_quality") or {},
+        strategy_type="buy_and_hold",
+        strategy_params={},
+        fees=0.0005,
+        slippage=0.0005,
+    )
+    state["robust_backtest"] = backtest
+    status = backtest.get("backtest_status")
+    if status in {"BLOCKED", "FAILED"}:
+        state["action"] = "HOLD"
+        state["confidence"] = 0 if status == "BLOCKED" else min(int(state.get("confidence", 0) or 0), 40)
+        state["label"] = "Mantener / backtest no robusto"
+    elif status == "WEAK":
+        state["confidence"] = min(int(state.get("confidence", 0) or 0), 60)
+        if state.get("action") == "BUY":
+            state["label"] = "Comprar no confirmado / backtest debil"
+    state["xai_explanation"] = f"{state.get('xai_explanation', '')} Robust backtest: {backtest.get('explanation')}".strip()
+    return state
+
+def apply_portfolio_risk(state: AgentState):
+    from portfolio_risk_manager import evaluate_portfolio_risk
+
+    portfolio = evaluate_portfolio_risk(
+        symbol=state["symbol"],
+        market="US",
+        final_action=state.get("action", "HOLD"),
+        signal_quality=state.get("signal_quality") or {},
+        robust_backtest=state.get("robust_backtest") or {},
+        current_price=None,
+        portfolio_positions=None,
+        cash_balance=None,
+        account_equity=None,
+        risk_profile="balanced",
+    )
+    state["portfolio_risk"] = portfolio
+    if portfolio.get("portfolio_risk_status") == "BLOCKED":
+        state["action"] = "HOLD"
+        state["confidence"] = 0
+        state["label"] = "Mantener / riesgo de cartera bloquea"
+    elif portfolio.get("portfolio_risk_status") == "WARNING":
+        state["confidence"] = min(int(state.get("confidence", 0) or 0), 60)
+    state["xai_explanation"] = f"{state.get('xai_explanation', '')} Portfolio risk: {portfolio.get('explanation')}".strip()
     return state
 
 def quality_allows_ml(quality: Dict[str, Any]) -> bool:
@@ -203,6 +304,9 @@ def decision_node(state: AgentState):
     state["label"] = label
     state["confidence"] = confidence
     state["xai_explanation"] = explanation
+    state = apply_signal_quality(state)
+    state = apply_robust_backtest(state)
+    state = apply_portfolio_risk(state)
     return state
 
 def run_analysis_workflow(symbol: str):

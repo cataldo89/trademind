@@ -340,34 +340,81 @@ export function PortfolioClient() {
 
   const addPosition = async (data: AddPositionForm) => {
     if (!user) return
-    const { error } = await supabase.from('positions').insert({
-      user_id: user.id,
+    const { data: { session } } = await supabase.auth.getSession()
+    const idempotencyKey = crypto.randomUUID()
+    const payload = {
+      side: 'BUY',
       symbol: data.symbol,
       name: data.name || data.symbol,
       market: data.market,
       quantity: data.quantity,
-      entry_price: data.entryPrice,
-      entry_date: data.entryDate,
-      currency: 'USD',
+      price: data.entryPrice,
+      source: 'manual',
       notes: data.notes,
-      status: 'open',
+      idempotencyKey,
+    }
+
+    let response = await fetch('/api/portfolio/trade', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+      },
+      body: JSON.stringify(payload),
     })
-    if (error) { toast.error('Error al agregar posición'); return }
+    let body = await response.json().catch(() => null)
+
+    if (body?.error?.code === 'TRADE_CONFIRMATION_REQUIRED') {
+      const confirmed = window.confirm(body.error.message || 'La operacion requiere confirmacion. Continuar con la ejecucion virtual?')
+      if (!confirmed) return
+      response = await fetch('/api/portfolio/trade', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
+        body: JSON.stringify({ ...payload, confirmationAccepted: true }),
+      })
+      body = await response.json().catch(() => null)
+    }
+
+    if (!response.ok || !body?.ok) {
+      toast.error(body?.error?.message || 'Error al agregar posicion')
+      return
+    }
     toast.success(`Posición en ${data.symbol} agregada`)
     reset()
     setShowAddForm(false)
+    queryClient.invalidateQueries({ queryKey: ['profile'] })
     queryClient.invalidateQueries({ queryKey: ['positions'] })
     queryClient.invalidateQueries({ queryKey: ['portfolio-summary'] })
     queryClient.invalidateQueries({ queryKey: ['live-portfolio-simulation'] })
   }
 
-  const closePosition = async (id: string, symbol: string) => {
-    const { error } = await supabase
-      .from('positions')
-      .update({ status: 'closed', closed_at: new Date().toISOString() })
-      .eq('id', id)
-    if (error) { toast.error('Error al cerrar posicion'); return }
-    toast.success(`Posicion en ${symbol} cerrada`)
+  const closePosition = async (position: Position) => {
+    const price = Number(position.currentPrice || position.entry_price)
+    if (!Number.isFinite(price) || price <= 0) {
+      toast.error('No hay precio valido para cerrar la posicion')
+      return
+    }
+
+    const { data: { session } } = await supabase.auth.getSession()
+    const response = await fetch(`/api/portfolio/positions/${position.id}/close`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+      },
+      body: JSON.stringify({ price, idempotencyKey: crypto.randomUUID(), notes: 'Cierre manual desde portafolio' }),
+    })
+    const body = await response.json().catch(() => null)
+    if (!response.ok || !body?.ok) {
+      toast.error(body?.error?.message || 'Error al cerrar posicion')
+      return
+    }
+
+    toast.success(`Posicion en ${position.symbol} cerrada`)
+    queryClient.invalidateQueries({ queryKey: ['profile'] })
     queryClient.invalidateQueries({ queryKey: ['positions'] })
     queryClient.invalidateQueries({ queryKey: ['portfolio-summary'] })
     queryClient.invalidateQueries({ queryKey: ['live-portfolio-simulation'] })
@@ -725,7 +772,7 @@ export function PortfolioClient() {
                       </td>
                       <td className="px-4 py-3">
                         <button
-                          onClick={() => closePosition(pos.id, pos.symbol)}
+                          onClick={() => closePosition(pos)}
                           className="text-gray-600 hover:text-red-400 transition-colors p-1"
                           title="Cerrar posición"
                         >

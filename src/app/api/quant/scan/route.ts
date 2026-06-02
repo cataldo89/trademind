@@ -5,6 +5,7 @@ import { QuantClient } from '@/lib/ai/quant-client'
 import { getYahooSymbol, getZestySymbolMarket } from '@/lib/market-data'
 import { calculatePreliminaryScore, calculateFinalQuantScore, rankScreenerResults, PreliminaryTechData, QuantResultData } from '@/lib/ranking'
 import { assessMarketDataQuality, type MarketDataQualityResult } from '@/lib/market-data-quality'
+import { normalizeHistoricalData } from '@/lib/historical-data-normalizer'
 import type { Candle } from '@/types'
 
 const MAX_SYMBOLS = 500
@@ -57,6 +58,26 @@ type SentimentRecord = {
 type PreliminaryWithSentiment = PreliminaryTechData & {
   _sentiment?: SentimentRecord
   marketDataQuality?: MarketDataQualityResult
+  providerFallback?: Record<string, unknown>
+}
+
+function fallbackDatasetToCandles(dataset: Record<string, unknown>[]): Candle[] {
+  return dataset
+    .map((row) => {
+      const timeValue = row.time ?? row.timestamp ?? row.date ?? row.datetime
+      const parsedTime = typeof timeValue === 'number'
+        ? timeValue
+        : Date.parse(String(timeValue ?? '')) / 1000
+      return {
+        time: Number.isFinite(parsedTime) ? Math.floor(parsedTime) : 0,
+        open: Number(row.open ?? row.Open),
+        high: Number(row.high ?? row.High),
+        low: Number(row.low ?? row.Low),
+        close: Number(row.close ?? row.Close),
+        volume: Number(row.volume ?? row.Volume),
+      }
+    })
+    .filter((candle) => candle.time > 0 && Number.isFinite(candle.close))
 }
 
 function classifyPythonResult(data: QuantResultData | null): Pick<PythonResultRecord, 'ok' | 'status' | 'reason'> {
@@ -238,19 +259,56 @@ export async function POST(request: NextRequest) {
     for (const ySym of yahooSymbols) {
       const original = yahooToOriginal.get(ySym.toUpperCase()) || ySym
       const q = quotesMap.get(ySym) || quotesMap.get(ySym.toUpperCase())
-      const c = candlesMap.get(ySym) || []
+      let c = candlesMap.get(ySym) || []
       const originalMarket = symbolMarkets[original] || getZestySymbolMarket(original) || market
-      const quality = assessMarketDataQuality({
+      let selectedProvider = 'yahoo-finance2-chart'
+      const normalizedLocal = normalizeHistoricalData({
         symbol: original,
-        provider: 'yahoo-finance2-chart',
+        provider: selectedProvider,
+        market: originalMarket,
         timeframe: '1d',
-        dataset: c,
+        raw_dataset: c as unknown as Record<string, unknown>[],
         metadata: {
           provider: 'yahoo-finance2',
           source: 'src/app/api/quant/scan',
           adjusted: null,
         },
       })
+      c = normalizedLocal.normalized_dataset
+      let quality = assessMarketDataQuality({
+        symbol: original,
+        provider: selectedProvider,
+        timeframe: '1d',
+        dataset: c,
+        metadata: {
+          provider: 'yahoo-finance2',
+          source: 'src/app/api/quant/scan',
+          normalization_status: normalizedLocal.normalization_status,
+          adjusted_status: normalizedLocal.adjusted_status,
+          adjusted: null,
+        },
+      })
+      let providerFallback: Record<string, unknown> | undefined
+
+      if (!quality.usable_for_ml) {
+        const fallbackRes = await client.resolveProviderFallback({
+          symbol: original,
+          market: originalMarket,
+          timeframe: '1d',
+          range: '2y',
+          required_use: 'ml',
+        })
+        if (fallbackRes.success && fallbackRes.data?.selected_quality) {
+          providerFallback = fallbackRes.data as unknown as Record<string, unknown>
+          const fallbackQuality = fallbackRes.data.selected_quality as unknown as MarketDataQualityResult
+          const fallbackCandles = fallbackDatasetToCandles(fallbackRes.data.selected_dataset || [])
+          selectedProvider = fallbackRes.data.selected_provider || selectedProvider
+          quality = { ...fallbackQuality, provider: selectedProvider }
+          if (fallbackCandles.length > 0) {
+            c = fallbackCandles
+          }
+        }
+      }
       
       const quoteData = {
         price: Number(q?.regularMarketPrice ?? q?.regularMarketPreviousClose ?? null),
@@ -262,6 +320,13 @@ export async function POST(request: NextRequest) {
 
       const prelim = calculatePreliminaryScore(original, name, originalMarket, category, quality.usable_for_ta ? c : [], quoteData)
       prelim.marketDataQuality = quality
+      ;(prelim as PreliminaryWithSentiment).providerFallback = providerFallback || {
+        selected_provider: selectedProvider,
+        fallback_used: false,
+      }
+      if (!quality.usable_for_ml) {
+        prelim.suggestions = prelim.suggestions.filter((suggestion) => suggestion.type !== 'opportunity')
+      }
       if (!quality.usable_for_ta) {
         prelim.noData = true
         prelim.suggestions.push({
@@ -277,7 +342,7 @@ export async function POST(request: NextRequest) {
         prelim.score = Math.max(0, Math.min(100, prelim.score))
         // We attach it to prelim or wait for final? 
         // We'll attach it to prelim as suggestions
-        if (sent.sentiment === 'POSITIVE') prelim.suggestions.push({ type: 'opportunity', label: 'Noticias Positivas (FinBERT)' })
+        if (quality.usable_for_ml && sent.sentiment === 'POSITIVE') prelim.suggestions.push({ type: 'opportunity', label: 'Noticias Positivas (FinBERT)' })
         if (sent.sentiment === 'NEGATIVE') prelim.suggestions.push({ type: 'warning', label: 'Noticias Negativas (FinBERT)' })
         
         // Also store it for later
@@ -370,6 +435,7 @@ export async function POST(request: NextRequest) {
           score: Number(sent.score ?? 0),
         }
       }
+      ;(finalScore as PreliminaryWithSentiment).providerFallback = (p as PreliminaryWithSentiment).providerFallback
       return finalScore
     })
 
@@ -400,6 +466,9 @@ export async function POST(request: NextRequest) {
           result.symbol,
           {
             status: result.marketDataQuality?.status,
+            selected_provider: result.marketDataQuality?.provider,
+            fallback_used: Boolean((result as PreliminaryWithSentiment).providerFallback?.fallback_used),
+            provider_statuses: ((result as PreliminaryWithSentiment).providerFallback?.provider_statuses as unknown[]) ?? [],
             usable_for_chart: result.marketDataQuality?.usable_for_chart,
             usable_for_ta: result.marketDataQuality?.usable_for_ta,
             usable_for_ml: result.marketDataQuality?.usable_for_ml,

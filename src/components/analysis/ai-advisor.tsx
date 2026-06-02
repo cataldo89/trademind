@@ -130,7 +130,8 @@ export function AIAdvisor({ symbol, market, technicalSignal, range, screenerCont
                 if (!Number.isFinite(amount) || amount <= 0) { toast.error('Ingresa un monto valido'); return }
 
                 const { data: { session } } = await supabaseClient.auth.getSession()
-                const res = await fetch('/api/portfolio/trade', {
+                const idempotencyKey = crypto.randomUUID()
+                let res = await fetch('/api/portfolio/trade', {
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json',
@@ -143,11 +144,36 @@ export function AIAdvisor({ symbol, market, technicalSignal, range, screenerCont
                     market,
                     amount,
                     price,
-                    source: 'ai_advisor',
+                    source: 'manual',
+                    idempotencyKey,
                     notes: 'Orden simulada desde asesor IA',
                   }),
                 })
-                const body = await res.json().catch(() => null)
+                let body = await res.json().catch(() => null)
+                if (body?.error?.code === 'TRADE_CONFIRMATION_REQUIRED') {
+                  const confirmed = window.confirm(body.error.message || 'La operacion requiere confirmacion. Continuar con la ejecucion virtual?')
+                  if (!confirmed) return
+                  res = await fetch('/api/portfolio/trade', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+                    },
+                    body: JSON.stringify({
+                      side: 'BUY',
+                      symbol,
+                      name: symbol,
+                      market,
+                      amount,
+                      price,
+                      source: 'manual',
+                      idempotencyKey,
+                      confirmationAccepted: true,
+                      notes: 'Orden simulada desde asesor IA',
+                    }),
+                  })
+                  body = await res.json().catch(() => null)
+                }
                 if (!res.ok || !body?.ok) throw new Error(body?.error?.message || 'No se pudo ejecutar la orden')
                 queryClient.invalidateQueries({ queryKey: ['positions'] })
                 queryClient.invalidateQueries({ queryKey: ['profile'] })

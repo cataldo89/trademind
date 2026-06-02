@@ -55,6 +55,7 @@ export async function POST(request: NextRequest) {
     }
 
     const defaultAmount = Math.min(100, 10000 * 0.1)
+    const idempotencyKey = `pending-signal:${signal.id}:${new Date().toISOString().slice(0, 10)}`
     
     const baseUrl = request.headers.get('x-forwarded-host') || request.headers.get('host') || 'http://localhost:3000'
     const tradeRes = await fetch(`${baseUrl}/api/portfolio/trade`, {
@@ -70,8 +71,9 @@ export async function POST(request: NextRequest) {
         market,
         amount: defaultAmount,
         price,
-        source: 'pending-signal',
+        source: 'signal',
         signalId: signal.id,
+        idempotencyKey,
         notes: `Ejecucion automatica desde senal pendiente (${signal.timeframe}) - precio ${price.toFixed(2)}`,
       }),
     })

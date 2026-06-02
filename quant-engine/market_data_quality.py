@@ -23,6 +23,9 @@ def _normalize_column_name(name: Any) -> str:
 
 
 def _coerce_time_series(values: pd.Series) -> pd.Series:
+    if pd.api.types.is_datetime64_any_dtype(values):
+        return pd.to_datetime(values, utc=True, errors="coerce")
+
     numeric = pd.to_numeric(values, errors="coerce")
     numeric_count = int(numeric.notna().sum())
 

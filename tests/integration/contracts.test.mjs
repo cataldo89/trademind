@@ -45,6 +45,26 @@ test('Quant client does not use localhost in production', () => {
   assert.match(client, /X-TradeMind-Quant-Secret/)
   assert.match(client, /checkMarketDataQuality/)
   assert.match(client, /market_data_quality/)
+  assert.match(client, /evaluateTradeExecutionGuard/)
+  assert.match(client, /trade_execution_guard/)
+})
+
+test('Virtual trade routes call trade_execution_guard before transactional RPCs', () => {
+  const tradeRoute = read('src/app/api/portfolio/trade/route.ts')
+  const closeRoute = read('src/app/api/portfolio/positions/[id]/close/route.ts')
+  const portfolioClient = read('src/components/portfolio/portfolio-client.tsx')
+
+  assert.match(tradeRoute, /buildExecutionGuard/)
+  assert.match(tradeRoute, /evaluateTradeExecutionGuard/)
+  assert.match(tradeRoute, /guard\.execution_status === 'BLOCKED'/)
+  assert.match(tradeRoute, /guard\.execution_status === 'REQUIRES_CONFIRMATION'/)
+  assert.match(tradeRoute, /execute_virtual_trade/)
+  assert.match(closeRoute, /buildCloseGuard/)
+  assert.match(closeRoute, /evaluateTradeExecutionGuard/)
+  assert.match(closeRoute, /guard\.execution_status !== 'ALLOWED'/)
+  assert.match(closeRoute, /close_virtual_position/)
+  assert.match(portfolioClient, /\/api\/portfolio\/trade/)
+  assert.doesNotMatch(portfolioClient, /from\('positions'\)\.insert/)
 })
 
 test('Quant jobs define durable async workflow contract', () => {

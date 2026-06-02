@@ -181,6 +181,222 @@
         }
       }
     },
+    "/mcp/tools/historical_data_normalizer": {
+      "post": {
+        "summary": "Historical Data Normalizer",
+        "operationId": "historical_data_normalizer_mcp_tools_historical_data_normalizer_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HistoricalDataNormalizerRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mcp/tools/provider_fallback": {
+      "post": {
+        "summary": "Provider Fallback",
+        "operationId": "provider_fallback_mcp_tools_provider_fallback_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProviderFallbackRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mcp/tools/signal_quality": {
+      "post": {
+        "summary": "Signal Quality",
+        "operationId": "signal_quality_mcp_tools_signal_quality_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignalQualityRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mcp/tools/robust_backtest": {
+      "post": {
+        "summary": "Robust Backtest",
+        "operationId": "robust_backtest_mcp_tools_robust_backtest_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RobustBacktestRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mcp/tools/portfolio_risk_manager": {
+      "post": {
+        "summary": "Portfolio Risk Manager",
+        "operationId": "portfolio_risk_manager_mcp_tools_portfolio_risk_manager_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PortfolioRiskManagerRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mcp/tools/trade_execution_guard": {
+      "post": {
+        "summary": "Trade Execution Guard",
+        "operationId": "trade_execution_guard_mcp_tools_trade_execution_guard_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TradeExecutionGuardRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/ml/extract_features": {
       "post": {
         "summary": "Extract Features",
@@ -445,6 +661,45 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
+      "HistoricalDataNormalizerRequest": {
+        "properties": {
+          "symbol": {
+            "type": "string",
+            "title": "Symbol"
+          },
+          "provider": {
+            "type": "string",
+            "title": "Provider"
+          },
+          "market": {
+            "type": "string",
+            "title": "Market",
+            "default": "US"
+          },
+          "timeframe": {
+            "type": "string",
+            "title": "Timeframe",
+            "default": "1d"
+          },
+          "raw_dataset": {
+            "items": {
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Raw Dataset"
+          },
+          "metadata": {
+            "type": "object",
+            "title": "Metadata"
+          }
+        },
+        "type": "object",
+        "required": [
+          "symbol",
+          "provider"
+        ],
+        "title": "HistoricalDataNormalizerRequest"
+      },
       "LeanRequest": {
         "properties": {
           "symbol": {
@@ -519,6 +774,337 @@
         ],
         "title": "MarketDataQualityRequest"
       },
+      "PortfolioRiskManagerRequest": {
+        "properties": {
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Id"
+          },
+          "symbol": {
+            "type": "string",
+            "title": "Symbol"
+          },
+          "market": {
+            "type": "string",
+            "title": "Market",
+            "default": "US"
+          },
+          "final_action": {
+            "type": "string",
+            "title": "Final Action",
+            "default": "HOLD"
+          },
+          "signal_quality": {
+            "type": "object",
+            "title": "Signal Quality"
+          },
+          "robust_backtest": {
+            "type": "object",
+            "title": "Robust Backtest"
+          },
+          "current_price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Price"
+          },
+          "portfolio_positions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Portfolio Positions"
+          },
+          "cash_balance": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cash Balance"
+          },
+          "account_equity": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Account Equity"
+          },
+          "risk_profile": {
+            "type": "string",
+            "title": "Risk Profile",
+            "default": "balanced"
+          },
+          "max_position_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Position Pct"
+          },
+          "max_sector_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Sector Pct"
+          },
+          "max_market_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Market Pct"
+          }
+        },
+        "type": "object",
+        "required": [
+          "symbol"
+        ],
+        "title": "PortfolioRiskManagerRequest"
+      },
+      "ProviderFallbackRequest": {
+        "properties": {
+          "symbol": {
+            "type": "string",
+            "title": "Symbol"
+          },
+          "market": {
+            "type": "string",
+            "title": "Market",
+            "default": "US"
+          },
+          "timeframe": {
+            "type": "string",
+            "title": "Timeframe",
+            "default": "1d"
+          },
+          "range": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Range",
+            "default": "2y"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "required_use": {
+            "type": "string",
+            "title": "Required Use",
+            "default": "ml"
+          }
+        },
+        "type": "object",
+        "required": [
+          "symbol"
+        ],
+        "title": "ProviderFallbackRequest"
+      },
+      "RobustBacktestRequest": {
+        "properties": {
+          "symbol": {
+            "type": "string",
+            "title": "Symbol"
+          },
+          "market": {
+            "type": "string",
+            "title": "Market",
+            "default": "US"
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider"
+          },
+          "timeframe": {
+            "type": "string",
+            "title": "Timeframe",
+            "default": "1d"
+          },
+          "normalized_dataset": {
+            "items": {
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Normalized Dataset"
+          },
+          "market_data_quality": {
+            "type": "object",
+            "title": "Market Data Quality"
+          },
+          "signal_quality": {
+            "type": "object",
+            "title": "Signal Quality"
+          },
+          "strategy_type": {
+            "type": "string",
+            "title": "Strategy Type",
+            "default": "buy_and_hold"
+          },
+          "strategy_params": {
+            "type": "object",
+            "title": "Strategy Params"
+          },
+          "initial_capital": {
+            "type": "number",
+            "title": "Initial Capital",
+            "default": 10000.0
+          },
+          "fees": {
+            "type": "number",
+            "title": "Fees",
+            "default": 0.0
+          },
+          "slippage": {
+            "type": "number",
+            "title": "Slippage",
+            "default": 0.0
+          }
+        },
+        "type": "object",
+        "required": [
+          "symbol"
+        ],
+        "title": "RobustBacktestRequest"
+      },
+      "SignalQualityRequest": {
+        "properties": {
+          "symbol": {
+            "type": "string",
+            "title": "Symbol"
+          },
+          "market": {
+            "type": "string",
+            "title": "Market",
+            "default": "US"
+          },
+          "selected_provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selected Provider"
+          },
+          "market_data_quality": {
+            "type": "object",
+            "title": "Market Data Quality"
+          },
+          "technical_indicators": {
+            "type": "object",
+            "title": "Technical Indicators"
+          },
+          "ml_prediction": {
+            "title": "Ml Prediction"
+          },
+          "risk_metrics": {
+            "type": "object",
+            "title": "Risk Metrics"
+          },
+          "graham_result": {
+            "type": "object",
+            "title": "Graham Result"
+          },
+          "sentiment_result": {
+            "type": "object",
+            "title": "Sentiment Result"
+          },
+          "workflow_action": {
+            "type": "string",
+            "title": "Workflow Action",
+            "default": "HOLD"
+          },
+          "workflow_confidence": {
+            "type": "integer",
+            "title": "Workflow Confidence",
+            "default": 0
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Reasons"
+          }
+        },
+        "type": "object",
+        "required": [
+          "symbol"
+        ],
+        "title": "SignalQualityRequest"
+      },
       "SymbolRequest": {
         "properties": {
           "symbol": {
@@ -549,6 +1135,149 @@
           "symbol"
         ],
         "title": "ToolRequest"
+      },
+      "TradeExecutionGuardRequest": {
+        "properties": {
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Id"
+          },
+          "symbol": {
+            "type": "string",
+            "title": "Symbol"
+          },
+          "market": {
+            "type": "string",
+            "title": "Market",
+            "default": "US"
+          },
+          "side": {
+            "type": "string",
+            "title": "Side",
+            "default": "BUY"
+          },
+          "requested_amount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requested Amount"
+          },
+          "requested_quantity": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requested Quantity"
+          },
+          "current_price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Price"
+          },
+          "signal_quality": {
+            "type": "object",
+            "title": "Signal Quality"
+          },
+          "robust_backtest": {
+            "type": "object",
+            "title": "Robust Backtest"
+          },
+          "portfolio_risk": {
+            "type": "object",
+            "title": "Portfolio Risk"
+          },
+          "market_data_quality": {
+            "type": "object",
+            "title": "Market Data Quality"
+          },
+          "selected_provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selected Provider"
+          },
+          "account_equity": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Account Equity"
+          },
+          "cash_balance": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cash Balance"
+          },
+          "current_position": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Position"
+          },
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idempotency Key"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source",
+            "default": "manual"
+          }
+        },
+        "type": "object",
+        "required": [
+          "symbol"
+        ],
+        "title": "TradeExecutionGuardRequest"
       },
       "ValidationError": {
         "properties": {

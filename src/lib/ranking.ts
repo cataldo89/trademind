@@ -1,6 +1,9 @@
 import { Candle } from '@/types'
 import { calculateRSI, calculateMACD, calculateSMA, interpretRSI } from './indicators'
 import type { MarketDataQualityResult } from './market-data-quality'
+import type { PortfolioRiskResult } from './portfolio-risk-manager'
+import type { RobustBacktestResult } from './robust-backtest'
+import { assessSignalQuality, type SignalQualityResult } from './signal-quality'
 
 export interface PreliminaryTechData {
   symbol: string
@@ -19,6 +22,7 @@ export interface PreliminaryTechData {
   suggestions: { type: string, label: string }[]
   score: number // Preliminary score
   marketDataQuality?: MarketDataQualityResult
+  providerFallback?: Record<string, unknown>
 }
 
 export interface QuantResultData {
@@ -40,6 +44,9 @@ export interface QuantResultData {
   weekend_sentiment?: { sentiment: string; score: number }
   news_sentiment?: string
   news_articles?: string[]
+  signal_quality?: SignalQualityResult
+  robust_backtest?: RobustBacktestResult
+  portfolio_risk?: PortfolioRiskResult
 }
 
 export interface FinalQuantScore extends PreliminaryTechData {
@@ -47,6 +54,14 @@ export interface FinalQuantScore extends PreliminaryTechData {
   isFallback: boolean
   finalScore: number
   marketDataQuality?: MarketDataQualityResult
+  signalQuality?: SignalQualityResult
+  robustBacktest?: RobustBacktestResult
+  portfolioRisk?: PortfolioRiskResult
+}
+
+function isMarketDataQualityBlocked(preliminary: PreliminaryTechData): boolean {
+  const quality = preliminary.marketDataQuality
+  return preliminary.noData || quality?.status === 'FAILED' || quality?.usable_for_ml === false
 }
 
 function isLeveragedOrInverse(name: string, category: string): boolean {
@@ -166,6 +181,25 @@ export function calculateFinalQuantScore(
   quantData: QuantResultData | null,
   isFallback: boolean
 ): FinalQuantScore {
+  if (preliminary.marketDataQuality?.status === 'FAILED' || preliminary.noData) {
+    const blockedSignal = assessSignalQuality({
+      symbol: preliminary.symbol,
+      market: preliminary.market,
+      selected_provider: preliminary.marketDataQuality?.provider,
+      market_data_quality: preliminary.marketDataQuality,
+      workflow_action: quantData?.action || 'HOLD',
+      workflow_confidence: Number(quantData?.confidence ?? 0),
+      sentiment_result: { sentiment: quantData?.weekend_sentiment?.sentiment || quantData?.news_sentiment },
+    })
+    return {
+      ...preliminary,
+      quant: quantData ? { ...quantData, signal_quality: blockedSignal } : undefined,
+      isFallback,
+      finalScore: 0,
+      signalQuality: blockedSignal,
+    }
+  }
+
   let finalScore = preliminary.score
 
   if (isFallback || !quantData) {
@@ -205,22 +239,66 @@ export function calculateFinalQuantScore(
 
   // Penalty for no data
   if (preliminary.noData) {
-    finalScore = Math.min(finalScore, 20) // Cap the score really low if no data
+    finalScore = 0
+  } else if (preliminary.marketDataQuality?.usable_for_ml === false) {
+    finalScore = Math.min(finalScore, 20)
   }
+
+  const signalQuality = assessSignalQuality({
+    symbol: preliminary.symbol,
+    market: preliminary.market,
+    selected_provider: preliminary.marketDataQuality?.provider,
+    market_data_quality: preliminary.marketDataQuality,
+    technical_indicators: {
+      rsi: preliminary.rsi,
+      macd_signal: preliminary.macdSignal,
+      price_vs_ma20: preliminary.priceVsMA20,
+      price_vs_ma50: preliminary.priceVsMA50,
+    },
+    ml_prediction: quantData?.ml_prediction,
+    risk_metrics: { var_95: quantData?.var_95 },
+    graham_result: { passed: quantData?.graham_passed },
+    sentiment_result: { sentiment: quantData?.weekend_sentiment?.sentiment || quantData?.news_sentiment },
+    workflow_action: quantData?.action || 'HOLD',
+    workflow_confidence: Number(quantData?.confidence ?? 0),
+    reasons: [quantData?.engine_reason, quantData?.xai_explanation].filter(Boolean) as string[],
+  })
+
+  const robustBacktest = quantData?.robust_backtest
+  const portfolioRisk = quantData?.portfolio_risk
+  if (signalQuality.signal_status === 'BLOCKED') finalScore = 0
+  else if (signalQuality.signal_status === 'CONFLICTED') finalScore = Math.min(finalScore, 49)
+  else if (signalQuality.signal_status === 'WEAK') finalScore = Math.min(finalScore, 69)
+  else finalScore = Math.min(finalScore, signalQuality.signal_score)
+
+  if (robustBacktest && !robustBacktest.usable_for_decision) finalScore = Math.min(finalScore, 49)
+  if (robustBacktest?.backtest_status === 'BLOCKED' || robustBacktest?.backtest_status === 'FAILED') finalScore = 0
+  else if (robustBacktest?.backtest_status === 'WEAK') finalScore = Math.min(finalScore, 60)
+  if (portfolioRisk?.portfolio_risk_status === 'BLOCKED' || portfolioRisk?.action_allowed === false) finalScore = 0
+  else if (portfolioRisk?.portfolio_risk_status === 'WARNING') finalScore = Math.min(finalScore, 60)
 
   // Clamp 0-100
   finalScore = Math.max(0, Math.min(100, finalScore))
 
   return {
     ...preliminary,
-    quant: quantData || undefined,
+    quant: quantData ? { ...quantData, signal_quality: signalQuality } : undefined,
     isFallback,
-    finalScore
+    finalScore,
+    signalQuality,
+    robustBacktest,
+    portfolioRisk,
   }
 }
 
 export function rankScreenerResults(results: FinalQuantScore[]): FinalQuantScore[] {
   return results.sort((a, b) => {
+    const blockedA = isMarketDataQualityBlocked(a)
+    const blockedB = isMarketDataQualityBlocked(b)
+    if (blockedA !== blockedB) {
+      return blockedA ? 1 : -1
+    }
+
     // 1. Principal: finalScore
     if (b.finalScore !== a.finalScore) {
       return b.finalScore - a.finalScore

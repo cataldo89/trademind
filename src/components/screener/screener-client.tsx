@@ -231,13 +231,17 @@ export function ScreenerClient() {
   const scanResults: FinalQuantScore[] = scanResponse?.results || []
   const isRegularMarketOpen = marketStatus.isOpen && marketStatus.session === 'regular'
 
+  const isMarketDataBlocked = (r: FinalQuantScore) => {
+    return r.noData || r.marketDataQuality?.status === 'FAILED' || r.marketDataQuality?.usable_for_ml === false
+  }
+
   // Top candidates para las tarjetas
-  const topCards = scanResults.slice(0, 9).filter(r => !r.noData)
+  const topCards = scanResults.filter(r => !isMarketDataBlocked(r)).slice(0, 9)
 
   const filtered = scanResults
     .filter(r => !r.noData) // Filtrar acciones sin datos (N/A)
     .filter(r => {
-      if (filter === 'opportunities') return r.suggestions.some(s => s.type === 'opportunity') || r.quant?.action === 'BUY'
+      if (filter === 'opportunities') return !isMarketDataBlocked(r) && (r.suggestions.some(s => s.type === 'opportunity') || r.quant?.action === 'BUY')
       if (filter === 'warnings') return r.suggestions.some(s => s.type === 'warning') || r.quant?.action === 'SELL'
       return true
     })
@@ -250,6 +254,7 @@ export function ScreenerClient() {
   const verificationCandidate = filtered[0] || scanResults.find((result) => !result.noData) || scanSymbols[0] || null
 
   const hasUsableQuantData = (r: FinalQuantScore) => {
+    if (isMarketDataBlocked(r)) return false
     if (r.isFallback || !r.quant) return false
     if (r.quant.engine_status && r.quant.engine_status !== 'ok') return false
     if (r.quant.data_quality && r.quant.data_quality !== 'complete') return false
@@ -265,6 +270,17 @@ export function ScreenerClient() {
   }
 
   const hasCleanBuySetup = (r: FinalQuantScore) => {
+    if (isMarketDataBlocked(r)) return false
+    if (r.signalQuality) {
+      return r.signalQuality.signal_status === 'OK' &&
+        r.signalQuality.final_action === 'BUY' &&
+        r.signalQuality.final_confidence >= 70 &&
+        r.robustBacktest?.usable_for_decision !== false &&
+        r.robustBacktest?.backtest_status !== 'BLOCKED' &&
+        r.robustBacktest?.backtest_status !== 'FAILED' &&
+        r.portfolioRisk?.portfolio_risk_status !== 'BLOCKED' &&
+        r.portfolioRisk?.action_allowed !== false
+    }
     const sentiment = r.quant?.weekend_sentiment?.sentiment
     const regime = String(r.quant?.market_regime || '').toLowerCase()
     const hasMomentum = r.macdSignal === 'Cruce alcista' || r.macdSignal === 'Positivo'
@@ -283,6 +299,8 @@ export function ScreenerClient() {
   }
 
   const getDisplayAction = (r: FinalQuantScore) => {
+    if (isMarketDataBlocked(r)) return 'HOLD'
+    if (r.signalQuality) return r.signalQuality.final_action
     if (hasUsableQuantData(r) && (r.quant?.action === 'BUY' || r.quant?.action === 'SELL')) return r.quant.action
     if (hasCleanBuySetup(r)) return 'BUY (Tech)'
     if (r.finalScore <= 40 || r.macdSignal.includes('bajista')) return 'SELL (Tech)'
@@ -290,6 +308,15 @@ export function ScreenerClient() {
   }
 
   const getDecisionScore = (r: FinalQuantScore) => {
+    if (isMarketDataBlocked(r)) return 0
+    if (r.signalQuality) {
+      if (r.robustBacktest?.backtest_status === 'BLOCKED' || r.robustBacktest?.backtest_status === 'FAILED') return 0
+      if (r.robustBacktest?.usable_for_decision === false) return Math.min(r.signalQuality.final_confidence, 49)
+      if (r.robustBacktest?.backtest_status === 'WEAK') return Math.min(r.signalQuality.final_confidence, 60)
+      if (r.portfolioRisk?.portfolio_risk_status === 'BLOCKED' || r.portfolioRisk?.action_allowed === false) return 0
+      if (r.portfolioRisk?.portfolio_risk_status === 'WARNING') return Math.min(r.signalQuality.final_confidence, 60)
+      return r.signalQuality.signal_status === 'OK' ? r.signalQuality.final_confidence : Math.min(r.signalQuality.final_confidence, 49)
+    }
     let score = r.finalScore
     const action = getDisplayAction(r)
     const sentiment = r.quant?.weekend_sentiment?.sentiment
@@ -341,10 +368,9 @@ export function ScreenerClient() {
 
   const bestRecommendation = useMemo(() => {
     const candidates = scanResults
-      .filter((r) => !r.noData)
+      .filter((r) => !isMarketDataBlocked(r))
       .filter((r) => {
-        const action = getDisplayAction(r)
-        return (action === 'BUY' || action === 'BUY (Tech)') && hasCleanBuySetup(r)
+        return hasCleanBuySetup(r)
       })
       .map((r) => ({ result: r, decisionScore: getDecisionScore(r) }))
       .filter((candidate) => candidate.decisionScore >= 75)
@@ -847,6 +873,12 @@ export function ScreenerClient() {
                       <div>
                         <p className="font-mono font-semibold text-white">{r.symbol}</p>
                         <p className="text-xs text-gray-500 max-w-36 truncate">{r.name}</p>
+                        {r.marketDataQuality?.provider ? (
+                          <p className="text-[10px] text-cyan-300/80 max-w-36 truncate">
+                            DATA: {r.marketDataQuality.provider}
+                            {r.providerFallback?.fallback_used ? ' fallback' : ''}
+                          </p>
+                        ) : null}
                       </div>
                     </div>
                   </td>
@@ -866,7 +898,20 @@ export function ScreenerClient() {
                     )}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    {r.quant ? (
+                    {r.signalQuality ? (
+                      <span className={cn(
+                        'text-xs font-bold px-2 py-1 rounded',
+                        r.signalQuality.signal_status === 'OK'
+                          ? 'bg-emerald-500/20 text-emerald-400'
+                          : r.signalQuality.signal_status === 'CONFLICTED'
+                            ? 'bg-amber-500/20 text-amber-300'
+                            : r.signalQuality.signal_status === 'BLOCKED'
+                              ? 'bg-red-500/15 text-red-300'
+                              : 'bg-gray-800 text-gray-400'
+                      )}>
+                        {r.signalQuality.signal_status}
+                      </span>
+                    ) : r.quant ? (
                       <span className={cn('text-xs font-bold px-2 py-1 rounded', r.quant.action === 'BUY' ? 'bg-emerald-500/20 text-emerald-400' : r.quant.action === 'SELL' ? 'bg-red-500/20 text-red-400' : 'bg-gray-800 text-gray-400')}>
                         {hasIncompleteQuantData(r) ? 'PARCIAL' : r.quant.action}
                       </span>
