@@ -57,6 +57,48 @@ export class QuantClient {
     }
   }
 
+  getDiagnostics() {
+    return {
+      configured: !this.configurationError && Boolean(this.serverUrl),
+      configurationError: this.configurationError,
+      serverUrlHost: this.serverUrl ? new URL(this.serverUrl).host : null,
+      authConfigured: Boolean(this.secret) || this.authDisabled,
+      authDisabled: this.authDisabled,
+    }
+  }
+
+  async health(timeoutMs = 5000): Promise<QuantToolResponse<{ status?: string; service?: string; cache_entries?: number }>> {
+    if (this.configurationError || !this.serverUrl) {
+      return { success: false, data: null, status: 'configuration_error', error: this.configurationError || 'Quant engine is not configured.' }
+    }
+
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
+
+    try {
+      const response = await fetch(`${this.serverUrl}/health`, { signal: controller.signal })
+      clearTimeout(timeoutId)
+
+      if (!response.ok) {
+        return {
+          success: false,
+          data: null,
+          status: 'request_failed',
+          error: `Quant health failed with status ${response.status}`,
+        }
+      }
+
+      const data = await response.json()
+      return { success: true, data, status: 'ok' }
+    } catch (error: unknown) {
+      clearTimeout(timeoutId)
+      if (error instanceof Error && error.name === 'AbortError') {
+        return { success: false, data: null, status: 'timeout', error: 'Connection to quant-engine health timed out' }
+      }
+      return { success: false, data: null, status: 'request_failed', error: error instanceof Error ? error.message : 'Quant health request failed' }
+    }
+  }
+
   async callEndpoint<T = unknown>(endpointPath: string, parameters: Record<string, unknown>, timeoutMs = 8000): Promise<QuantToolResponse<T>> {
     if (this.configurationError || !this.serverUrl) {
       console.error('[QuantClient] Configuration error:', this.configurationError)
@@ -192,6 +234,38 @@ export class QuantClient {
       required_use: 'ml',
       ...parameters,
     }) as Promise<QuantToolResponse<ProviderFallbackResponse>>
+  }
+
+  async trainAssetRanker(parameters: {
+    historical_data_by_symbol: Record<string, Record<string, unknown>[]>
+    horizon_days?: number
+    model_version?: string
+  }) {
+    return this.callEndpoint<{
+      ok: boolean
+      model?: string
+      model_path?: string
+      metrics?: Record<string, number>
+      error?: string
+    }>('/ml/train_asset_ranker', parameters, 60000)
+  }
+
+  async rankAssets(parameters: {
+    symbols: string[]
+    market?: string
+    range?: string
+    historical_data_by_symbol: Record<string, Record<string, unknown>[]>
+    use_model?: boolean
+  }) {
+    return this.callEndpoint<{
+      ok: boolean
+      model?: string
+      model_status?: string
+      generated_at?: string
+      count?: number
+      rankings?: Record<string, unknown>[]
+      error?: string
+    }>('/ml/rank_assets', parameters, 30000)
   }
 
   async runWorkflow(symbol: string) {

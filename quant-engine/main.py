@@ -185,6 +185,20 @@ class TradeExecutionGuardRequest(BaseModel):
     source: str = "manual"
 
 
+class TrainAssetRankerRequest(BaseModel):
+    historical_data_by_symbol: Dict[str, List[Dict[str, Any]]]
+    horizon_days: int = 5
+    model_version: str = "v1"
+
+
+class RankAssetsRequest(BaseModel):
+    symbols: List[str]
+    market: str = "US"
+    range: str = "1y"
+    historical_data_by_symbol: Dict[str, List[Dict[str, Any]]]
+    use_model: bool = True
+
+
 @app.get("/health")
 def health_check():
     return {"status": "ok", "service": "quant-engine", "cache_entries": len(_CACHE)}
@@ -345,7 +359,6 @@ def trade_execution_guard(req: TradeExecutionGuardRequest):
         source=req.source,
     )
 
-
 # --- Detailed ML Endpoints ---
 
 @app.post("/ml/extract_features")
@@ -386,6 +399,35 @@ def lean_backtest(req: LeanRequest):
         "details": result.get("output") or result.get("message"),
     }
 
+@app.post("/ml/train_asset_ranker")
+def train_asset_ranker(req: TrainAssetRankerRequest):
+    import sys
+    import os
+    sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+    from asset_ranker import train_lightgbm_asset_ranker
+    
+    return train_lightgbm_asset_ranker(
+        historical_data_by_symbol=req.historical_data_by_symbol,
+        horizon_days=req.horizon_days,
+        model_version=req.model_version
+    )
+
+
+@app.post("/ml/rank_assets")
+def rank_assets_endpoint(req: RankAssetsRequest):
+    import sys
+    import os
+    sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+    from asset_ranker import rank_assets
+    
+    return rank_assets(
+        symbols=req.symbols,
+        market=req.market,
+        range_str=req.range,
+        historical_data_by_symbol=req.historical_data_by_symbol,
+        use_model=req.use_model
+    )
+
 
 # --- Agent Workflow Endpoints ---
 
@@ -417,8 +459,6 @@ def trigger_sentiment_scan(req: BatchSymbolRequest):
     sys.path.append(os.path.dirname(os.path.abspath(__file__)))
     from sentiment_models import run_daily_sentiment_job
     
-    # We run it synchronously here just for testing/triggering manually
-    # In production this would be a true background task (e.g. celery/BackgroundTasks)
     unique_symbols = []
     seen_symbols = set()
     for symbol in req.symbols:
@@ -444,7 +484,6 @@ def get_sentiment_cache():
     sys.path.append(os.path.dirname(os.path.abspath(__file__)))
     from sentiment_models import get_cached_sentiment
     
-    # We read the whole cache by passing a dummy or just reading the file
     import json
     try:
         if os.path.exists("sentiment_cache.json"):

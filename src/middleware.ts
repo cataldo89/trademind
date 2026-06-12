@@ -35,7 +35,7 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Public routes that don't require auth
-  const publicRoutes = ['/login', '/register', '/forgot-password', '/reset-password', '/api/market', '/api/ai', '/live']
+  const publicRoutes = ['/login', '/register', '/forgot-password', '/reset-password', '/api/market', '/api/ai', '/api/quant/status', '/live']
   const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route))
 
   // Define user variable outside try block
@@ -52,12 +52,12 @@ export async function middleware(request: NextRequest) {
   // Redirigir a login si no hay usuario y no es una ruta pública
   let shouldRedirect = !user && !isPublicRoute && pathname !== '/'
 
-  // Dev bypass para /api/quant (solo desarrollo y con header)
-  if (process.env.NODE_ENV === 'development' && pathname.startsWith('/api/quant')) {
+  // Dev bypass for local quant UI checks without creating Supabase test users.
+  if (process.env.NODE_ENV === 'development') {
     const devBypass = request.headers.get('X-Dev-Bypass') === 'true'
-    if (devBypass) {
-      shouldRedirect = false
-    }
+      || request.nextUrl.searchParams.get('devBypass') === 'true'
+      || pathname.startsWith('/api/quant')
+    if (devBypass) shouldRedirect = false
   }
 
   if (shouldRedirect) {
@@ -95,4 +95,4 @@ export const config = {
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
-
+

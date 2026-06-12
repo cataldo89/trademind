@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { quantClient } from '@/lib/ai/quant-client'
 import { getYahooSymbol, getZestySymbolMarket } from '@/lib/market-data'
 
-const MAX_SENTIMENT_SCAN_SYMBOLS = Number(process.env.SENTIMENT_SCAN_MAX_SYMBOLS || 30)
+const MAX_SENTIMENT_SCAN_SYMBOLS = Number(process.env.SENTIMENT_SCAN_MAX_SYMBOLS || 5)
+const SENTIMENT_SCAN_BATCH_SIZE = Number(process.env.SENTIMENT_SCAN_BATCH_SIZE || 5)
 const DEFAULT_CACHE_FRESHNESS_MS = Number(process.env.SENTIMENT_CACHE_FRESHNESS_MS || 12 * 60 * 60 * 1000)
 
 function isFreshCachedSentiment(value: unknown, freshnessMs: number) {
@@ -19,6 +20,15 @@ function isFreshCachedSentiment(value: unknown, freshnessMs: number) {
 
   if (!Number.isFinite(timestamp)) return true
   return Date.now() - timestamp < freshnessMs
+}
+
+function chunkSymbols(symbols: string[], batchSize: number) {
+  const safeBatchSize = Math.max(1, Math.min(batchSize, MAX_SENTIMENT_SCAN_SYMBOLS))
+  const chunks: string[][] = []
+  for (let index = 0; index < symbols.length; index += safeBatchSize) {
+    chunks.push(symbols.slice(index, index + safeBatchSize))
+  }
+  return chunks
 }
 
 export async function POST(request: NextRequest) {
@@ -66,16 +76,41 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    const res = await quantClient.triggerSentimentScan(limitedSymbols)
-    
-    if (!res.success) {
-      return NextResponse.json({ error: res.error || 'Quant engine error' }, { status: 500 })
+    let processed = 0
+    const warnings: string[] = []
+
+    for (const batch of chunkSymbols(limitedSymbols, SENTIMENT_SCAN_BATCH_SIZE)) {
+      const res = await quantClient.triggerSentimentScan(batch)
+
+      if (!res.success) {
+        warnings.push(res.error || 'Quant engine unavailable; sentiment scan skipped')
+        continue
+      }
+
+      processed += res.data?.processed ?? batch.length
+    }
+
+    if (processed === 0) {
+      return NextResponse.json({
+        success: true,
+        degraded: true,
+        requested: symbols.length,
+        processed: 0,
+        skippedCached: quantSymbols.length - missingOrStaleSymbols.length,
+        freshnessMs,
+        refreshedRanking: false,
+        truncated: missingOrStaleSymbols.length > limitedSymbols.length,
+        limit: MAX_SENTIMENT_SCAN_SYMBOLS,
+        symbols,
+        quantSymbols: limitedSymbols,
+        warning: warnings[0] || 'Quant engine unavailable; sentiment scan skipped',
+      })
     }
 
     return NextResponse.json({
       success: true,
       requested: symbols.length,
-      processed: res.data?.processed ?? limitedSymbols.length,
+      processed,
       skippedCached: quantSymbols.length - missingOrStaleSymbols.length,
       freshnessMs,
       refreshedRanking: true,
@@ -83,6 +118,8 @@ export async function POST(request: NextRequest) {
       limit: MAX_SENTIMENT_SCAN_SYMBOLS,
       symbols,
       quantSymbols: limitedSymbols,
+      degraded: warnings.length > 0,
+      warning: warnings[0],
     })
   } catch (error: unknown) {
     console.error('[API/Quant/Sentiment] Error:', error)

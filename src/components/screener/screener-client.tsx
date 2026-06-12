@@ -12,11 +12,33 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import type { FinalQuantScore, QuantResultData } from '@/lib/ranking'
+import type { FinalQuantScore } from '@/lib/ranking'
 import { getUSMarketStatus } from '@/lib/market-schedule'
 
-const SENTIMENT_SCAN_SYMBOL_LIMIT = 30
+const SENTIMENT_SCAN_SYMBOL_LIMIT = 5
 const TOP_SENTIMENT_FRESHNESS_MS = 60 * 60 * 1000
+type DisplayDecision = {
+  action: 'BUY' | 'SELL' | 'HOLD' | 'BUY (Tech)' | 'SELL (Tech)' | string
+  source: string
+  status: string
+  primaryReason: string
+  details: string[]
+}
+
+function isPythonLightGbmReady(body: any) {
+  return body?.model_status === 'loaded'
+    && body?.python_execution?.quant_engine_ready === true
+    && body?.python_execution?.lightgbm_ready === true
+    && body?.python_execution?.rank_source === 'python_lightgbm_local_model'
+}
+
+function formatQuantEngineWarning(value: unknown) {
+  const message = typeof value === 'string' ? value : ''
+  if (!message || message === 'Quant engine request failed') {
+    return 'Modo fallback tecnico: Ranking LightGBM no respondio para esta ejecucion. El ranking visible usa datos tecnicos locales.'
+  }
+  return message
+}
 
 function toMarket(value: string | Market | undefined): Market {
   return value === 'CL' ? 'CL' : 'US'
@@ -27,8 +49,12 @@ export function ScreenerClient() {
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<'all' | 'opportunities' | 'warnings'>('all')
   const [category, setCategory] = useState('zesty-all')
-  const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null)
   const [isScanningSentiment, setIsScanningSentiment] = useState(false)
+  const [isRanking, setIsRanking] = useState(false)
+  const [mlRankings, setMlRankings] = useState<any[]>([])
+  const [mlExecution, setMlExecution] = useState<any>(null)
+  const [isQuantScanEnabled, setIsQuantScanEnabled] = useState(false)
+  const [forceQuantRefreshNonce, setForceQuantRefreshNonce] = useState(0)
   const [marketStatus, setMarketStatus] = useState(() => getUSMarketStatus())
   const queryClient = useQueryClient()
 
@@ -39,111 +65,6 @@ export function ScreenerClient() {
 
     return () => clearInterval(interval)
   }, [])
-
-  const [verifyState, setVerifyState] = useState<{
-    status: 'idle' | 'consultando' | 'conectado' | 'parcial' | 'fallo' | 'error' | 'modo_basico'
-    symbol: string
-    timestamp: string
-    endpoint: string
-    latency: number | null
-    httpStatus: number | null
-    source: 'TypeScript frontend' | 'Python quant-engine' | 'Fallback básico'
-    data: QuantResultData | null
-    errorMessage?: string
-  }>({
-    status: 'idle',
-    symbol: '',
-    timestamp: '',
-    endpoint: '',
-    latency: null,
-    httpStatus: null,
-    source: 'TypeScript frontend',
-    data: null,
-    errorMessage: undefined
-  })
-
-  const runVerification = async (symbol: string, market = getZestySymbolMarket(symbol)) => {
-    if (!symbol) return
-    // eslint-disable-next-line react-hooks/purity
-    const start = performance.now()
-    setVerifyState(prev => ({
-      ...prev,
-      status: 'consultando',
-      symbol,
-      endpoint: '/api/quant/analyze',
-      latency: null,
-      httpStatus: null,
-      data: null,
-      errorMessage: undefined
-    }))
-
-    try {
-      const res = await fetch('/api/quant/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ symbol, market }),
-      })
-      // eslint-disable-next-line react-hooks/purity
-      const latency = Math.round(performance.now() - start)
-      const httpStatus = res.status
-
-      if (!res.ok) {
-        let errMsg = 'Quant workflow failed';
-        try {
-          const errBody = await res.json();
-          errMsg = errBody.error || errMsg;
-        } catch {
-          try {
-            errMsg = await res.text() || errMsg;
-          } catch {}
-        }
-        setVerifyState({
-          status: 'modo_basico',
-          symbol,
-          timestamp: new Date().toLocaleTimeString(),
-          endpoint: '/api/quant/analyze',
-          latency,
-          httpStatus,
-          source: 'Fallback básico',
-          data: null,
-          errorMessage: errMsg
-        })
-        return
-      }
-
-      const body = await res.json()
-      const workflowResult = body.data?.workflow_result as QuantResultData | undefined
-      const diagnostic = body.diagnostic as { usable?: boolean; status?: string; reason?: string } | undefined
-      const verificationStatus = diagnostic?.usable === false
-        ? diagnostic.status === 'partial' ? 'parcial' : 'fallo'
-        : 'conectado'
-      setVerifyState({
-        status: verificationStatus,
-        symbol,
-        timestamp: new Date().toLocaleTimeString(),
-        endpoint: '/api/quant/analyze',
-        latency,
-        httpStatus,
-        source: 'Python quant-engine',
-        data: workflowResult || null,
-        errorMessage: diagnostic?.usable === false ? diagnostic.reason : undefined
-      })
-    } catch (err: unknown) {
-      // eslint-disable-next-line react-hooks/purity
-      const latency = Math.round(performance.now() - start)
-      setVerifyState({
-        status: 'error',
-        symbol,
-        timestamp: new Date().toLocaleTimeString(),
-        endpoint: '/api/quant/analyze',
-        latency,
-        httpStatus: null,
-        source: 'Fallback básico',
-        data: null,
-        errorMessage: err instanceof Error ? err.message : String(err)
-      })
-    }
-  }
 
   const handleSelectSymbol = (symbol: string, market: string, result?: FinalQuantScore) => {
     if (result) {
@@ -171,41 +92,153 @@ export function ScreenerClient() {
       })
       const body = await res.json().catch(() => null)
       if (!res.ok) throw new Error(body?.error || 'Falló el escaneo de sentimiento')
+      if (body?.degraded && Number(body?.processed || 0) === 0) {
+        toast.warning(body.warning || 'FinBERT no se actualizo porque el quant-engine no esta disponible.')
+        return
+      }
       const processed = Number(body?.processed || 0)
       const skippedCached = Number(body?.skippedCached || 0)
       const suffix = body?.truncated ? ` (lote limitado a ${body.limit})` : ''
       const scanMessage = processed > 0
         ? `FinBERT actualizÃ³ ${processed} activo(s); ${skippedCached} ya tenÃ­an cache fresco${suffix}.`
         : `${skippedCached} activo(s) ya tenÃ­an sentimiento fresco.`
+      if (body?.degraded) {
+        toast.warning(body.warning || 'FinBERT actualizo parcialmente el lote.')
+      }
       toast.success(`${scanMessage} Recalculando ranking...`)
       await queryClient.invalidateQueries({ queryKey: ['screener-quant-scan', category] })
       await queryClient.refetchQueries({ queryKey: ['screener-quant-scan', category], type: 'active' })
       toast.success('Top Activos recalculado con el sentimiento vigente.')
 
       // Si el usuario ya tenía el motor abierto para un símbolo, re-evaluarlo para mostrar las noticias frescas
-      const candidate = bestRecommendation?.result || verificationCandidate
-
-      if (candidate?.symbol) {
-        runVerification(candidate.symbol, toMarket(candidate.market))
-      }
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : String(e)
-      toast.error('Error al escanear noticias: ' + message)
+      toast.warning('Noticias no actualizadas: ' + message)
     } finally {
       setIsScanningSentiment(false)
     }
   }
 
+  const triggerMLRanking = async () => {
+    setIsRanking(true)
+    const startedAt = new Date().toLocaleTimeString()
+    setMlExecution({
+      status: 'running',
+      stage: 'Entrenando modelo local en Python',
+      startedAt,
+      symbols: scanSymbols.length,
+    })
+    toast.info('Entrenando modelo local y rankeando activos con LightGBM...')
+    try {
+      const symbols = scanSymbols.map((s) => s.symbol)
+      const res = await fetch('/api/quant/asset-rank', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          symbols,
+          market: 'US',
+          range: '1y',
+          save_to_supabase: true,
+          use_model: true,
+          train_local: true,
+          horizon_days: 5,
+          model_version: `ui_${new Date().toISOString().slice(0, 10)}`,
+        }),
+      })
+      const body = await res.json().catch(() => null)
+      if (!res.ok) {
+        const fallbackRankings = Array.isArray(body?.rankings) ? body.rankings : []
+        if (fallbackRankings.length > 0) {
+          setIsQuantScanEnabled(false)
+          setMlRankings(fallbackRankings)
+          setMlExecution({
+            status: 'fallback',
+            stage: body.python_execution?.rank_source || body.model_status || 'quant_engine_unavailable',
+            startedAt,
+            finishedAt: new Date().toLocaleTimeString(),
+            symbols: symbols.length,
+            trainingSymbols: body.python_execution?.training_symbols,
+            prefilter: body.python_execution?.prefilter,
+            modelStatus: body.model_status,
+            modelPath: body.python_execution?.model_path,
+            metadataPath: body.python_execution?.metadata_path,
+            trainOk: Boolean(body.train_result?.ok),
+            warning: formatQuantEngineWarning(body.warning || body.error),
+          })
+          toast.warning(`Ranking tecnico fallback para ${fallbackRankings.length} activos. LightGBM sigue bloqueado hasta que Cloudflare/FastAPI respondan.`)
+          return
+        }
+        throw new Error(body?.error || 'Falló el ranking')
+      }
+      const lightgbmReady = isPythonLightGbmReady(body)
+      if (!lightgbmReady) {
+        setIsQuantScanEnabled(false)
+        setMlRankings([])
+        setMlExecution({
+          status: 'fallback',
+          stage: body.python_execution?.rank_source || body.model_status || 'quant_engine_unavailable',
+          startedAt,
+          finishedAt: new Date().toLocaleTimeString(),
+          symbols: symbols.length,
+          trainingSymbols: body.python_execution?.training_symbols,
+          prefilter: body.python_execution?.prefilter,
+          modelStatus: body.model_status,
+          modelPath: body.python_execution?.model_path,
+          metadataPath: body.python_execution?.metadata_path,
+          trainOk: Boolean(body.train_result?.ok),
+          warning: formatQuantEngineWarning(body.warning || body.train_result?.error),
+        })
+        toast.error('LightGBM no esta listo: el ranking quedo bloqueado porque el quant-engine esta en fallback.')
+        return
+      }
+
+      setMlRankings(body.rankings || [])
+      setMlExecution({
+        status: 'trained',
+        stage: body.python_execution?.rank_source || body.model_status || 'completed',
+        startedAt,
+        finishedAt: new Date().toLocaleTimeString(),
+        symbols: symbols.length,
+        trainingSymbols: body.python_execution?.training_symbols,
+        prefilter: body.python_execution?.prefilter,
+        modelStatus: body.model_status,
+        modelPath: body.python_execution?.model_path,
+        metadataPath: body.python_execution?.metadata_path,
+        trainOk: Boolean(body.train_result?.ok),
+        warning: body.warning || body.train_result?.error,
+      })
+      setIsQuantScanEnabled(true)
+      toast.success(`Ranking LightGBM completado para ${body.count} activos.`)
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : String(e)
+      setIsQuantScanEnabled(false)
+      setMlRankings([])
+      setMlExecution((current: any) => ({
+        ...current,
+        status: 'error',
+        stage: 'Error ejecutando Python ML',
+        finishedAt: new Date().toLocaleTimeString(),
+        warning: message,
+      }))
+      toast.error('Error al rankear activos: ' + message)
+    } finally {
+      setIsRanking(false)
+    }
+  }
+
   const categories = useMemo(() => getCategorizedZestySymbols(), [])
   const selectedCategory = categories.find((cat) => cat.id === category) ?? categories[0]
+  const lightgbmUiReady = isQuantScanEnabled
+    && mlExecution?.status === 'trained'
+    && mlExecution?.modelStatus === 'loaded'
 
   // Enviar todos los activos de la categoría (con un límite de 500)
   const scanSymbols = (selectedCategory?.symbols ?? [])
     .slice(0, 500)
     .map((s) => ({ ...s, market: getZestySymbolMarket(s.symbol) }))
 
-  const { data: scanResponse, isLoading: scanLoading } = useQuery({
-    queryKey: ['screener-quant-scan', category],
+  const { data: scanResponse, isFetching: scanLoading, isError: scanIsError, error: scanError } = useQuery({
+    queryKey: ['screener-quant-scan', category, forceQuantRefreshNonce],
     queryFn: async () => {
       const symbols = Array.from(new Set(scanSymbols.map((s) => s.symbol).filter(Boolean)))
       if (symbols.length === 0) return null
@@ -215,20 +248,34 @@ export function ScreenerClient() {
       scanSymbols.forEach(s => { symbolMap[s.symbol] = s.name })
       scanSymbols.forEach(s => { symbolMarkets[s.symbol] = s.market })
 
+      const controller = new AbortController()
+      const timeoutId = window.setTimeout(() => controller.abort(), 60000)
+
       const res = await fetch('/api/quant/scan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ symbols, category, market: 'US', symbolMap, symbolMarkets })
-      })
+        signal: controller.signal,
+        body: JSON.stringify({
+          symbols,
+          category,
+          market: 'US',
+          symbolMap,
+          symbolMarkets,
+          forceQuantRefresh: forceQuantRefreshNonce > 0,
+        })
+      }).finally(() => window.clearTimeout(timeoutId))
 
       if (!res.ok) throw new Error('Failed to fetch scan results')
       return res.json()
     },
     staleTime: 5 * 60 * 1000,
     refetchInterval: 10 * 60 * 1000,
+    retry: false,
+    enabled: lightgbmUiReady && forceQuantRefreshNonce > 0,
   })
 
   const scanResults: FinalQuantScore[] = scanResponse?.results || []
+  const scanAudit = scanResponse?.scan_audit
   const isRegularMarketOpen = marketStatus.isOpen && marketStatus.session === 'regular'
 
   const isMarketDataBlocked = (r: FinalQuantScore) => {
@@ -251,8 +298,6 @@ export function ScreenerClient() {
     })
     .slice(0, 50) // Limitar la tabla a 50 resultados para evitar scroll infinito
 
-  const verificationCandidate = filtered[0] || scanResults.find((result) => !result.noData) || scanSymbols[0] || null
-
   const hasUsableQuantData = (r: FinalQuantScore) => {
     if (isMarketDataBlocked(r)) return false
     if (r.isFallback || !r.quant) return false
@@ -267,6 +312,37 @@ export function ScreenerClient() {
       r.quant?.engine_status === 'failed' ||
       r.quant?.data_quality === 'partial' ||
       r.quant?.data_quality === 'insufficient'
+  }
+
+  const getPythonBadge = (r: FinalQuantScore) => {
+    if (!r.quant) return { label: 'Filtro Rapido', className: 'bg-gray-800 text-gray-400' }
+    if (r.quant.engine_status === 'ok' || r.quant.data_quality === 'complete') {
+      return { label: 'Python OK', className: 'bg-indigo-500/20 text-indigo-300' }
+    }
+    if (r.quant.engine_status === 'partial' || r.quant.data_quality === 'partial') {
+      return { label: 'Python parcial', className: 'bg-amber-500/20 text-amber-300' }
+    }
+    if (r.quant.engine_status === 'failed' || r.quant.data_quality === 'insufficient') {
+      return { label: 'Python fallo', className: 'bg-red-500/15 text-red-300' }
+    }
+    return { label: 'Python recibido', className: 'bg-indigo-500/20 text-indigo-300' }
+  }
+
+  const formatConfidence = (value: unknown) => {
+    const number = Number(value)
+    return Number.isFinite(number) ? `${number}%` : 'N/A'
+  }
+
+  const getProviderSummary = (r: FinalQuantScore) => {
+    const statuses = r.providerFallback?.provider_statuses
+    if (!Array.isArray(statuses) || statuses.length === 0) return null
+    return statuses
+      .slice(0, 4)
+      .map((item) => {
+        const record = item as Record<string, unknown>
+        return `${record.provider || 'provider'}:${record.status || 'n/a'}`
+      })
+      .join(' | ')
   }
 
   const hasCleanBuySetup = (r: FinalQuantScore) => {
@@ -298,13 +374,99 @@ export function ScreenerClient() {
       !r.isLeveragedOrInverse
   }
 
+  const getDisplayDecision = (r: FinalQuantScore): DisplayDecision => {
+    const details = [
+      `Score tecnico ${r.finalScore.toFixed(0)}`,
+      r.quant ? `Quant ${r.quant.action || 'N/A'} ${Number(r.quant.confidence ?? 0)}%` : 'Sin respuesta quant usable',
+      r.rsi !== null ? `RSI ${r.rsi.toFixed(1)}` : 'RSI sin datos',
+      r.macdSignal !== 'Sin datos' ? `MACD ${r.macdSignal}` : 'MACD sin datos',
+      r.quant?.market_regime ? `Regimen ${r.quant.market_regime}` : null,
+      r.quant?.weekend_sentiment?.sentiment ? `FinBERT ${r.quant.weekend_sentiment.sentiment}` : null,
+      getProviderSummary(r) ? `Providers ${getProviderSummary(r)}` : null,
+    ].filter(Boolean) as string[]
+
+    if (isMarketDataBlocked(r)) {
+      return {
+        action: 'HOLD',
+        source: 'market-data-quality',
+        status: r.marketDataQuality?.status || 'BLOCKED',
+        primaryReason: r.marketDataQuality?.recommendation || 'Datos insuficientes o bloqueados; BUY/SELL no confiable.',
+        details,
+      }
+    }
+
+    if (r.signalQuality) {
+      const reasons = [
+        r.robustBacktest?.backtest_status === 'BLOCKED' || r.robustBacktest?.backtest_status === 'FAILED'
+          ? `Backtest ${r.robustBacktest.backtest_status}: ${r.robustBacktest.blocking_reasons?.[0] || r.robustBacktest.explanation || 'no usable para decision'}`
+          : null,
+        r.robustBacktest?.usable_for_decision === false
+          ? 'Backtest no usable para decision'
+          : null,
+        r.portfolioRisk?.portfolio_risk_status === 'BLOCKED' || r.portfolioRisk?.action_allowed === false
+          ? `Riesgo portfolio bloquea: ${(r.portfolioRisk.blocking_reasons || []).join('; ') || 'accion no permitida'}`
+          : null,
+        ...r.signalQuality.blocking_reasons,
+        ...r.signalQuality.contradicting_factors,
+        ...r.signalQuality.warnings,
+      ].filter(Boolean) as string[]
+      return {
+        action: r.signalQuality.final_action,
+        source: 'signal-quality',
+        status: r.signalQuality.signal_status,
+        primaryReason: reasons[0] || r.signalQuality.explanation,
+        details: [
+          r.signalQuality.explanation,
+          ...reasons,
+          ...details,
+        ].filter(Boolean),
+      }
+    }
+
+    if (hasUsableQuantData(r) && (r.quant?.action === 'BUY' || r.quant?.action === 'SELL')) {
+      return {
+        action: r.quant.action,
+        source: 'python-quant-engine',
+        status: r.quant.engine_status || 'ok',
+        primaryReason: r.quant.xai_explanation || r.quant.engine_reason || 'Python quant-engine entrego una accion usable.',
+        details,
+      }
+    }
+
+    if (hasCleanBuySetup(r)) {
+      return {
+        action: 'BUY (Tech)',
+        source: 'technical-fallback',
+        status: 'TECH_OK',
+        primaryReason: 'Setup tecnico limpio sin veto de riesgo: momentum, RSI, precio y sentimiento aceptables.',
+        details,
+      }
+    }
+
+    if (r.finalScore <= 40 || r.macdSignal.includes('bajista')) {
+      return {
+        action: 'SELL (Tech)',
+        source: 'technical-fallback',
+        status: 'TECH_BEARISH',
+        primaryReason: r.macdSignal.includes('bajista') ? `MACD ${r.macdSignal}` : `Score tecnico bajo (${r.finalScore.toFixed(0)})`,
+        details,
+      }
+    }
+
+    return {
+      action: 'HOLD',
+      source: hasIncompleteQuantData(r) ? 'python-partial' : 'rules',
+      status: hasIncompleteQuantData(r) ? (r.quant?.engine_status || 'partial') : 'NO_CLEAR_SETUP',
+      primaryReason: hasIncompleteQuantData(r)
+        ? (r.quant?.engine_reason || r.quant?.xai_explanation || 'El motor devolvio datos parciales; no hay accion confiable.')
+        : 'No alcanza umbral para BUY/SELL despues de score, confianza, regimen y riesgo.',
+      details,
+    }
+  }
+
   const getDisplayAction = (r: FinalQuantScore) => {
     if (isMarketDataBlocked(r)) return 'HOLD'
-    if (r.signalQuality) return r.signalQuality.final_action
-    if (hasUsableQuantData(r) && (r.quant?.action === 'BUY' || r.quant?.action === 'SELL')) return r.quant.action
-    if (hasCleanBuySetup(r)) return 'BUY (Tech)'
-    if (r.finalScore <= 40 || r.macdSignal.includes('bajista')) return 'SELL (Tech)'
-    return 'HOLD'
+    return getDisplayDecision(r).action
   }
 
   const getDecisionScore = (r: FinalQuantScore) => {
@@ -353,6 +515,10 @@ export function ScreenerClient() {
     params.set('screenerAction', getDisplayAction(r))
     params.set('screenerScore', r.finalScore.toFixed(0))
     params.set('decisionScore', getDecisionScore(r).toFixed(0))
+    const decision = getDisplayDecision(r)
+    params.set('decisionSource', decision.source)
+    params.set('decisionStatus', decision.status)
+    params.set('decisionReason', decision.primaryReason.slice(0, 220))
 
     if (r.changePercent !== null) params.set('change', r.changePercent.toFixed(2))
     if (r.rsi !== null) params.set('rsi', r.rsi.toFixed(1))
@@ -410,7 +576,7 @@ export function ScreenerClient() {
       <div>
         <h1 className="text-2xl font-bold text-white">TradeMind Intelligence</h1>
         <p className="text-sm text-gray-400 mt-1">
-          Escaneo Quant de {scanSymbols.length} activos en {selectedCategory?.name ?? 'Zesty'}
+          {lightgbmUiReady ? 'Escaneo Quant' : 'Esperando entrenamiento LightGBM'} de {scanSymbols.length} activos en {selectedCategory?.name ?? 'Zesty'}
           {scanResponse && ` · Python top ${scanResponse.quant_processed}`}
           {scanResponse && ` · usable ${scanResponse.quant_usable ?? 0} / parcial ${scanResponse.quant_partial ?? 0} / fallo ${scanResponse.quant_failed ?? 0}`}
         </p>
@@ -534,7 +700,9 @@ export function ScreenerClient() {
             Top Activos (Quant Engine)
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {topCards.map((r, i) => (
+            {topCards.map((r, i) => {
+              const decision = getDisplayDecision(r)
+              return (
               <Link
                 key={`${r.symbol}-${i}`}
                 href={buildAnalysisHref(r)}
@@ -555,7 +723,7 @@ export function ScreenerClient() {
                         : isBearishCard(r) ? 'bg-red-500/20 text-red-400'
                         : 'bg-gray-700 text-gray-300'
                     )}>
-                      {getDisplayAction(r)}
+                      {decision.action}
                     </span>
                     <span className="text-xs font-semibold text-white truncate max-w-[150px]" title={r.name}>{r.name}</span>
                   </div>
@@ -569,11 +737,15 @@ export function ScreenerClient() {
 
                 {/* Transparency Badges */}
                 <div className="flex flex-wrap gap-1 mb-3">
-                  {hasUsableQuantData(r) ? (
+                  {r.quant ? (
+                    <span className={cn('px-1.5 py-0.5 text-[9px] font-bold rounded', getPythonBadge(r).className)}>
+                      [{getPythonBadge(r).label}]
+                    </span>
+                  ) : hasUsableQuantData(r) ? (
                     <span className="px-1.5 py-0.5 bg-indigo-500/20 text-indigo-300 text-[9px] font-bold rounded">
                       [Python OK]
                     </span>
-                  ) : hasIncompleteQuantData(r) ? (
+                  ) : r.quant && hasIncompleteQuantData(r) ? (
                     <span className="px-1.5 py-0.5 bg-amber-500/20 text-amber-300 text-[9px] font-bold rounded">
                       [Python parcial]
                     </span>
@@ -598,7 +770,7 @@ export function ScreenerClient() {
                    <div className="text-[10px] text-gray-400 mb-2 mt-1 space-y-1">
                      <div className="flex justify-between">
                        <span>Confianza:</span>
-                       <span className="text-white font-mono">{r.quant.confidence}%</span>
+                       <span className="text-white font-mono">{formatConfidence(r.quant.confidence)}</span>
                      </div>
                      <div className="flex justify-between">
                        <span>Régimen:</span>
@@ -614,12 +786,59 @@ export function ScreenerClient() {
                    </div>
                 )}
 
+                <div className="mb-2 rounded-lg border border-gray-800/70 bg-gray-950/30 p-2 text-[10px] text-gray-400">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="uppercase font-semibold text-gray-500">Motivo {decision.action}</span>
+                    <span className="font-mono text-gray-300">{decision.source} · {decision.status}</span>
+                  </div>
+                  <p className="mt-1 line-clamp-2 text-gray-300" title={decision.details.join(' | ')}>
+                    {decision.primaryReason}
+                  </p>
+                  {getProviderSummary(r) && (
+                    <p className="mt-1 truncate font-mono text-[9px] text-cyan-300/80" title={getProviderSummary(r) || undefined}>
+                      DATA {getProviderSummary(r)}
+                    </p>
+                  )}
+                </div>
+
                 <div className="flex items-center gap-1 text-xs text-gray-500 mt-2 border-t border-gray-800/50 pt-2">
                   <Eye className="w-3 h-3" />
                   <span>Ver análisis</span>
                   <ChevronRight className="w-3 h-3 ml-auto" />
                 </div>
               </Link>
+            )})}
+          </div>
+        </div>
+      )}
+
+      {mlRankings.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+            <Zap className={cn('w-3.5 h-3.5', lightgbmUiReady ? 'text-emerald-400' : 'text-amber-300')} />
+            {lightgbmUiReady ? 'Top Ranking (ML LightGBM)' : 'Top Ranking tecnico (fallback)'}
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {mlRankings.slice(0, 9).map((r, i) => (
+              <div
+                key={i}
+                className={cn(
+                  'p-4 rounded-xl border',
+                  lightgbmUiReady ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-amber-500/10 border-amber-500/30'
+                )}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-white">{r.symbol}</span>
+                  <span className="text-[10px] text-gray-500">Rank: #{r.rank}</span>
+                </div>
+                <div className="text-[10px] text-gray-400 space-y-1">
+                  <p>Score ML: <span className="text-white font-mono">{Number(r.score).toFixed(4)}</span></p>
+                  <p>Action: <span className="text-emerald-400 font-bold">{r.signal}</span></p>
+                  {r.main_reasons?.map((reason: string, idx: number) => (
+                    <p key={idx} className="truncate text-gray-500" title={reason}>- {reason}</p>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
         </div>
@@ -628,7 +847,19 @@ export function ScreenerClient() {
       {scanLoading && (
         <div className="p-8 text-center rounded-xl border border-gray-800 bg-gray-900/30">
           <Loader2 className="w-8 h-8 text-emerald-500 animate-spin mx-auto mb-2" />
-          <p className="text-sm text-gray-500">Escaneando mercados con Engine Quant...</p>
+          <p className="text-sm text-gray-500">Escaneando mercado con el quant-engine conectado...</p>
+        </div>
+      )}
+
+      {scanIsError && !scanLoading && (
+        <div className="p-6 text-center rounded-xl border border-red-500/25 bg-red-500/10">
+          <AlertTriangle className="w-7 h-7 text-red-300 mx-auto mb-2" />
+          <p className="text-sm font-semibold text-white">El escaneo cuantitativo no respondió a tiempo</p>
+          <p className="text-xs text-gray-400 mt-1">
+            {scanError instanceof Error && scanError.name === 'AbortError'
+              ? 'Se cortó automáticamente después de 60 segundos.'
+              : scanError instanceof Error ? scanError.message : 'Intenta recalcular de nuevo.'}
+          </p>
         </div>
       )}
 
@@ -643,6 +874,13 @@ export function ScreenerClient() {
           </div>
           <div className="flex items-center gap-2">
             <button
+              onClick={() => setForceQuantRefreshNonce(Date.now())}
+              disabled={scanLoading || !lightgbmUiReady}
+              className="px-3 py-1.5 text-xs font-semibold bg-gray-700 hover:bg-gray-600 disabled:opacity-50 text-white rounded-lg transition-all"
+            >
+              Recalcular sin cache quant
+            </button>
+            <button
               onClick={triggerManualSentimentScan}
               disabled={isScanningSentiment}
               className="px-3 py-1.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-lg transition-all"
@@ -650,164 +888,99 @@ export function ScreenerClient() {
               {isScanningSentiment ? 'Actualizando sentimiento...' : 'Escanear Noticias (FinBERT)'}
             </button>
             <button
-              onClick={() => verificationCandidate?.symbol && runVerification(verificationCandidate.symbol, toMarket(verificationCandidate.market))}
-              disabled={verifyState.status === 'consultando'}
-              className="px-3 py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-lg transition-all"
+              onClick={triggerMLRanking}
+              disabled={isRanking}
+              className="px-3 py-1.5 text-xs font-semibold bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 text-white rounded-lg transition-all flex items-center gap-1"
             >
-              {verifyState.status === 'consultando'
-                ? 'Probando...'
-                : verificationCandidate?.symbol
-                  ? `Probar motor con ${verificationCandidate.symbol}`
-                  : 'Probar motor'}
+              <Zap className="w-3 h-3" />
+              {isRanking ? 'Rankeando...' : 'Ranking LightGBM'}
             </button>
           </div>
         </div>
 
-        {/* Status Message */}
-        {verifyState.symbol && (
+        {mlExecution && (
           <div className={cn(
-            "text-xs px-3 py-2 rounded-lg border font-medium flex items-center justify-between flex-wrap gap-2",
-            verifyState.status === 'conectado'
-              ? "bg-emerald-500/5 text-emerald-400 border-emerald-500/20"
-              : verifyState.status === 'consultando'
-              ? "bg-amber-500/5 text-amber-400 border-amber-500/20 animate-pulse"
-              : verifyState.status === 'parcial'
-              ? "bg-amber-500/5 text-amber-300 border-amber-500/20"
-              : verifyState.status === 'fallo'
-              ? "bg-red-500/5 text-red-400 border-red-500/20"
-              : verifyState.status === 'modo_basico'
-              ? "bg-gray-800/40 text-gray-400 border-gray-700"
-              : "bg-red-500/5 text-red-400 border-red-500/20"
+            'rounded-lg border p-3 text-[11px]',
+            mlExecution.status === 'running'
+              ? 'border-cyan-500/40 bg-cyan-500/10'
+              : mlExecution.status === 'trained'
+                ? 'border-emerald-500/40 bg-emerald-500/10'
+                : mlExecution.status === 'error'
+                  ? 'border-red-500/40 bg-red-500/10'
+                  : 'border-amber-500/40 bg-amber-500/10'
           )}>
-            <div className="flex flex-col gap-0.5">
-              <span>
-                {verifyState.status === 'conectado' ? `Motor Quant conectado con datos utiles para: ${verifyState.symbol}`
-                  : verifyState.status === 'consultando' ? `Consultando Python para: ${verifyState.symbol}...`
-                  : verifyState.status === 'parcial' ? `Motor respondio para ${verifyState.symbol}, pero el analisis es parcial`
-                  : verifyState.status === 'fallo' ? `Motor respondio para ${verifyState.symbol}, pero el analisis fallo`
-                  : verifyState.status === 'modo_basico' ? `Python no disponible para ${verifyState.symbol}, usando modo básico`
-                  : `Error en consulta para: ${verifyState.symbol}`}
-              </span>
-              {verifyState.errorMessage && (
-                <span className="text-[10px] text-red-400 font-mono mt-0.5 bg-red-950/20 px-1.5 py-0.5 rounded border border-red-900/30">
-                  Real Error: {verifyState.errorMessage}
-                </span>
-              )}
-            </div>
-            <span className="text-[10px] opacity-75 font-mono">{verifyState.timestamp}</span>
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-gray-900/30 p-3 rounded-lg border border-gray-800/60 space-y-2.5">
-            <div>
-              <p className="text-[10px] text-gray-500 uppercase font-semibold">Estado de conexión</p>
-              <div className="flex items-center gap-2 mt-1">
-                <span className={cn(
-                  "w-2 h-2 rounded-full",
-                  verifyState.status === 'conectado' ? "bg-emerald-400" :
-                  verifyState.status === 'consultando' ? "bg-amber-400 animate-ping" :
-                  verifyState.status === 'parcial' ? "bg-amber-400" :
-                  verifyState.status === 'fallo' ? "bg-red-400" :
-                  verifyState.status === 'error' ? "bg-red-400" :
-                  verifyState.status === 'modo_basico' ? "bg-amber-500" : "bg-gray-600"
-                )} />
-                <span className={cn(
-                  "text-xs font-bold font-mono",
-                  verifyState.status === 'conectado' ? "text-emerald-400" :
-                  verifyState.status === 'consultando' ? "text-amber-400" :
-                  verifyState.status === 'parcial' ? "text-amber-400" :
-                  verifyState.status === 'fallo' ? "text-red-400" :
-                  verifyState.status === 'error' ? "text-red-400" :
-                  verifyState.status === 'modo_basico' ? "text-amber-500" : "text-gray-400"
-                )}>
-                  {verifyState.status === 'conectado' ? 'Motor Quant OK' :
-                   verifyState.status === 'consultando' ? 'Consultando' :
-                   verifyState.status === 'parcial' ? 'Motor parcial' :
-                   verifyState.status === 'fallo' ? 'Motor fallo' :
-                   verifyState.status === 'error' ? 'Error' :
-                   verifyState.status === 'modo_basico' ? 'Modo básico' : 'Sin iniciar'}
-                </span>
-              </div>
-              {verifyState.httpStatus !== null && (
-                <p className="text-[10px] text-gray-400 font-mono mt-1">
-                  Response Code: <span className="font-semibold text-white">HTTP {verifyState.httpStatus}</span>
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                {mlExecution.status === 'running'
+                  ? <Loader2 className="w-3.5 h-3.5 animate-spin text-cyan-300" />
+                  : <Zap className="w-3.5 h-3.5 text-cyan-300" />}
+                <p className="font-semibold text-white">
+                  {mlExecution.status === 'trained' ? 'LightGBM real conectado' : 'Fallback tecnico activo'}
                 </p>
-              )}
-            </div>
-          </div>
-
-          <div className="bg-gray-900/30 p-3 rounded-lg border border-gray-800/60 space-y-1">
-            <p className="text-[10px] text-gray-500 uppercase font-semibold mb-2">Última consulta realizada</p>
-            <div className="flex justify-between text-xs font-mono text-gray-400">
-              <span>Símbolo:</span><span className="text-white">{verifyState.symbol || '—'}</span>
-            </div>
-            <div className="flex justify-between text-xs font-mono text-gray-400">
-              <span>Fuente:</span>
-              <span className="text-white font-semibold">
-                {verifyState.status === 'conectado' ? 'Python quant-engine' : verifyState.source || '—'}
-              </span>
-            </div>
-            <div className="flex justify-between text-xs font-mono text-gray-400">
-              <span>Latencia:</span>
-              <span className={cn("text-white", verifyState.latency && verifyState.latency > 3000 ? "text-amber-400" : "text-emerald-400")}>
-                {verifyState.latency ? `${verifyState.latency} ms` : '—'}
-              </span>
-            </div>
-          </div>
-
-          <div className="bg-gray-900/30 p-3 rounded-lg border border-gray-800/60 space-y-1">
-            <p className="text-[10px] text-gray-500 uppercase font-semibold mb-2">Resultado Python</p>
-            {(verifyState.status === 'conectado' || verifyState.status === 'parcial' || verifyState.status === 'fallo') && verifyState.data ? (
-              <div className="space-y-1 text-[11px] font-mono">
-                <div className="grid grid-cols-2 gap-x-2 gap-y-0.5">
-                  <div className="text-gray-400">Acción:</div>
-                  <div className={cn("font-bold text-right", verifyState.data.action === 'BUY' ? 'text-emerald-400' : verifyState.data.action === 'SELL' ? 'text-red-400' : 'text-amber-400')}>{verifyState.data.action}</div>
-                  <div className="text-gray-400">Confianza:</div>
-                  <div className="text-white text-right">{verifyState.data.confidence}%</div>
-                </div>
-                <div className={cn(
-                  "text-[9px] text-center font-bold mt-1 border rounded py-0.5",
-                  verifyState.status === 'conectado'
-                    ? "text-emerald-400 bg-emerald-950/20 border-emerald-900/30"
-                    : verifyState.status === 'parcial'
-                      ? "text-amber-300 bg-amber-950/20 border-amber-900/30"
-                      : "text-red-300 bg-red-950/20 border-red-900/30"
-                )}>
-                  {verifyState.status === 'conectado'
-                    ? 'Resultado util desde Python'
-                    : verifyState.status === 'parcial'
-                      ? 'Respuesta parcial desde Python'
-                      : 'Respuesta fallida desde Python'}
-                </div>
               </div>
-            ) : (
-              <div className="flex items-center justify-center h-12 text-xs text-gray-500 font-mono italic">Sin datos</div>
+              <span className="font-mono uppercase text-gray-300">{mlExecution.status}</span>
+            </div>
+            <div className="mt-2 grid grid-cols-1 md:grid-cols-3 gap-2 font-mono text-gray-300">
+              <p>Etapa: <span className="text-white">{mlExecution.stage}</span></p>
+              <p>Activos enviados: <span className="text-white">{mlExecution.symbols ?? '-'}</span></p>
+              <p>Activos entrenados: <span className="text-white">{mlExecution.trainingSymbols ?? '-'}</span></p>
+              <p>Prefiltro ML: <span className="text-white">{mlExecution.prefilter ? `${mlExecution.prefilter.selected_symbols}/${mlExecution.prefilter.universe_symbols}` : '-'}</span></p>
+              <p>Inicio: <span className="text-white">{mlExecution.startedAt ?? '-'}</span></p>
+              <p>Fin: <span className="text-white">{mlExecution.finishedAt ?? '-'}</span></p>
+              <p>Modelo: <span className="text-white">{mlExecution.modelStatus ?? '-'}</span></p>
+            </div>
+            {mlExecution.modelPath && (
+              <p className="mt-2 truncate font-mono text-[10px] text-emerald-300" title={mlExecution.modelPath}>
+                Modelo local: {mlExecution.modelPath}
+              </p>
             )}
-          </div>
-        </div>
-
-        {/* Panel de Noticias Leídas por FinBERT */}
-        {(verifyState.status === 'conectado' || verifyState.status === 'parcial' || verifyState.status === 'fallo') && verifyState.data?.news_articles && (
-          <div className="bg-gray-900/30 p-3 rounded-lg border border-gray-800/60 mt-4 space-y-2">
-            <p className="text-[10px] text-gray-500 uppercase font-semibold">
-              Titulares leídos por FinBERT <span className={cn('ml-1 px-1.5 py-0.5 rounded text-[9px]', verifyState.data.news_sentiment === 'POSITIVE' ? 'bg-emerald-500/20 text-emerald-400' : verifyState.data.news_sentiment === 'NEGATIVE' ? 'bg-red-500/20 text-red-400' : 'bg-gray-800 text-gray-400')}>{verifyState.data.news_sentiment}</span>
-            </p>
-            {verifyState.data.news_articles.length > 0 ? (
-              <ul className="text-[11px] text-gray-300 space-y-2 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
-                {verifyState.data.news_articles.map((news, idx) => (
-                  <li key={idx} className="border-b border-gray-800/50 pb-1.5 last:border-0 leading-relaxed font-mono">
-                    <span className="text-emerald-500 mr-2">›</span>{news}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <div className="text-[11px] text-gray-500 font-mono italic py-2">
-                No se encontraron noticias recientes o Yahoo Finance bloqueó la consulta (Rate Limit).
-              </div>
+            {mlExecution.warning && (
+              <p className="mt-2 text-[10px] text-amber-300">
+                Aviso: {formatQuantEngineWarning(mlExecution.warning)}
+              </p>
             )}
           </div>
         )}
+
+        {scanAudit && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-[11px]">
+            <div className="bg-gray-900/30 p-3 rounded-lg border border-gray-800/60">
+              <p className="text-[10px] text-gray-500 uppercase font-semibold">Lectura universo</p>
+              <p className="font-mono text-white mt-1">
+                {scanAudit.quote_found}/{scanAudit.universe_requested} precios
+              </p>
+              <p className="text-gray-400 font-mono">
+                TA {scanAudit.candles_usable_for_ta} · ML {scanAudit.candles_usable_for_ml}
+              </p>
+            </div>
+            <div className="bg-gray-900/30 p-3 rounded-lg border border-gray-800/60">
+              <p className="text-[10px] text-gray-500 uppercase font-semibold">Motor Python</p>
+              <p className="font-mono text-white mt-1">
+                {scanAudit.python_candidates_count}/{scanAudit.python_candidate_limit} enviados
+              </p>
+              <p className="text-gray-400 font-mono">
+                cache {scanAudit.quant_cache_hits} · vivo {scanAudit.quant_live_requests}
+              </p>
+            </div>
+            <div className="bg-gray-900/30 p-3 rounded-lg border border-gray-800/60">
+              <p className="text-[10px] text-gray-500 uppercase font-semibold">Python bruto</p>
+              <p className="font-mono text-white mt-1">
+                BUY {scanAudit.raw_python_buy} · SELL {scanAudit.raw_python_sell}
+              </p>
+              <p className="text-gray-400 font-mono">HOLD {scanAudit.raw_python_hold}</p>
+            </div>
+            <div className="bg-gray-900/30 p-3 rounded-lg border border-gray-800/60">
+              <p className="text-[10px] text-gray-500 uppercase font-semibold">Señal final</p>
+              <p className="font-mono text-white mt-1">
+                BUY {scanAudit.final_buy} · SELL {scanAudit.final_sell}
+              </p>
+              <p className="text-gray-400 font-mono">
+                HOLD {scanAudit.final_hold} · excluidos {scanAudit.deprioritized_leveraged_or_inverse}
+              </p>
+            </div>
+          </div>
+        )}
+
       </div>
 
       {/* Category tabs */}
@@ -815,7 +988,7 @@ export function ScreenerClient() {
         {categories.map((cat) => (
           <button
             key={cat.id}
-            onClick={() => { setCategory(cat.id); setSelectedSymbol(null) }}
+            onClick={() => setCategory(cat.id)}
             className={cn('px-3 py-1.5 text-sm font-medium rounded-lg transition-all', category === cat.id ? 'bg-emerald-500 text-white' : 'text-gray-400 hover:text-white bg-gray-800/50')}
           >
             {cat.name} <span className={cn('ml-1 text-xs', category === cat.id ? 'opacity-70' : 'opacity-50')}>{cat.symbols.length}</span>
@@ -862,7 +1035,6 @@ export function ScreenerClient() {
                   onClick={() => handleSelectSymbol(r.symbol, r.market, r)}
                   className={cn(
                     'hover:bg-gray-800/20 transition-colors cursor-pointer',
-                    selectedSymbol === r.symbol ? 'bg-emerald-500/5' : ''
                   )}
                 >
                   <td className="px-4 py-3">
