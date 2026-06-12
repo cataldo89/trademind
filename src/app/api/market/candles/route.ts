@@ -14,16 +14,18 @@ import {
   normalizeChartRange,
 } from '@/lib/chart-ranges'
 import { yahooFinance } from '@/lib/yahoo-finance'
-import { getYahooSymbol } from '@/lib/market-data'
+import { fetchAlphaVantageIntraday, fetchFinnhubCandles, getYahooSymbol } from '@/lib/market-data'
 import { normalizeSymbol, parseMarketOrLegacy } from '@/lib/domain/market'
 import { checkRateLimit, getClientIp } from '@/lib/api/rate-limit'
 import { getCached } from '@/lib/api/memory-cache'
 import { getDurableMarketData } from '@/lib/api/market-data-cache'
+import type { Market } from '@/types'
 
 const VALID_TIMEFRAMES = new Set<Timeframe>(['1m', '5m', '15m', '30m', '1h', '4h', '1d', '1w'])
 const RATE_LIMIT = 90
 const RATE_WINDOW_MS = 60_000
 const CANDLES_TTL_MS = 60_000
+type CandleProvider = 'alpha-vantage' | 'finnhub' | 'yahoo'
 
 const ONE_DAY_LOOKBACK_DAYS = 5
 const US_MARKET_TIMEZONE = 'America/New_York'
@@ -58,6 +60,19 @@ function getEasternSessionInfo(time: number) {
 
 function isCryptoSymbol(symbol: string) {
   return /-USD$/i.test(symbol)
+}
+
+function configuredProvidersSupported(symbol: string, market: Market) {
+  return market === 'US' && !isCryptoSymbol(symbol)
+}
+
+function candleProviderOrder(): CandleProvider[] {
+  const configured = (process.env.MARKET_DATA_CANDLE_PROVIDER_ORDER || 'alpha-vantage,finnhub,yahoo')
+    .split(',')
+    .map((provider) => provider.trim().toLowerCase())
+    .filter((provider): provider is CandleProvider => ['alpha-vantage', 'finnhub', 'yahoo'].includes(provider))
+
+  return Array.from(new Set(configured.length > 0 ? configured : ['alpha-vantage', 'finnhub', 'yahoo']))
 }
 
 function isRegularSessionCandle(candle: Candle) {
@@ -123,6 +138,21 @@ function getRangeForTimeframe(timeframe: Timeframe): string {
   }
 }
 
+function yahooIntervalToTimeframe(interval: YahooChartInterval): Timeframe {
+  const map: Record<YahooChartInterval, Timeframe> = {
+    '1m': '1m',
+    '5m': '5m',
+    '15m': '15m',
+    '30m': '30m',
+    '1h': '1h',
+    '1d': '1d',
+    '1wk': '1w',
+    '1mo': '1w',
+  }
+
+  return map[interval] || '1d'
+}
+
 type YahooQuote = {
   date?: Date | string
   open?: number | null
@@ -165,7 +195,26 @@ function normalizeYahooCandle(q: YahooQuote, time: number): Candle | null {
   }
 }
 
-async function fetchCandles(symbol: string, interval: YahooChartInterval, period1: Date): Promise<Candle[]> {
+function filterCandlesFrom(candles: Candle[], period1: Date) {
+  const from = Math.floor(period1.getTime() / 1000)
+  return candles.filter((candle) => candle.time >= from)
+}
+
+function cleanProviderCandles(candles: Candle[]) {
+  const uniqueTimes = new Set<number>()
+
+  return candles
+    .map((candle) => normalizeYahooCandle(candle, candle.time))
+    .filter((candle): candle is Candle => {
+      if (!candle) return false
+      if (uniqueTimes.has(candle.time)) return false
+      uniqueTimes.add(candle.time)
+      return true
+    })
+    .sort((a, b) => a.time - b.time)
+}
+
+async function fetchYahooCandles(symbol: string, interval: YahooChartInterval, period1: Date): Promise<Candle[]> {
   const result = await yahooFinance.chart(symbol, {
     interval,
     period1,
@@ -202,13 +251,42 @@ async function fetchCandles(symbol: string, interval: YahooChartInterval, period
     .sort((a, b) => a.time - b.time)
 }
 
-async function fetchCandlesForRange(symbol: string, requestedRange: ChartRange) {
+async function fetchConfiguredCandles(symbol: string, market: Market, timeframe: Timeframe, period1: Date): Promise<{ data: Candle[]; provider: CandleProvider }> {
+  if (configuredProvidersSupported(symbol, market)) {
+    const from = Math.floor(period1.getTime() / 1000)
+    const to = Math.floor(Date.now() / 1000)
+
+    for (const provider of candleProviderOrder()) {
+      if (provider === 'yahoo') continue
+
+      try {
+        if (provider === 'alpha-vantage' && process.env.ALPHA_VANTAGE_API_KEY) {
+          const candles = cleanProviderCandles(await fetchAlphaVantageIntraday(symbol, timeframe, process.env.ALPHA_VANTAGE_API_KEY))
+          const filtered = filterCandlesFrom(candles, period1)
+          if (filtered.length > 0) return { data: filtered, provider }
+        }
+
+        if (provider === 'finnhub' && process.env.FINNHUB_API_KEY) {
+          const candles = cleanProviderCandles(await fetchFinnhubCandles(symbol, timeframe, process.env.FINNHUB_API_KEY, from, to))
+          if (candles.length > 0) return { data: candles, provider }
+        }
+      } catch (error) {
+        console.warn(`[Market Candles] ${provider} failed for ${symbol}:`, error)
+      }
+    }
+  }
+
+  return { data: await fetchYahooCandles(symbol, getYahooInterval(timeframe), period1), provider: 'yahoo' }
+}
+
+async function fetchCandlesForRange(symbol: string, market: Market, requestedRange: ChartRange) {
   const fallbackRanges = getFallbackChartRanges(requestedRange)
 
   for (const range of fallbackRanges) {
     const config = getChartRangeConfig(range)
     const period1 = range === '1D' ? subtractDays(new Date(), ONE_DAY_LOOKBACK_DAYS) : config.period1
-    const rawCandles = await fetchCandles(symbol, config.interval, period1)
+    const response = await fetchConfiguredCandles(symbol, market, yahooIntervalToTimeframe(config.interval), period1)
+    const rawCandles = response.data
     const candles = isCryptoSymbol(symbol)
       ? rawCandles
       : range === '1D'
@@ -226,6 +304,7 @@ async function fetchCandlesForRange(symbol: string, requestedRange: ChartRange) 
 
       return {
         data: candles,
+        provider: response.provider,
         range,
         requestedRange,
         interval: config.interval,
@@ -241,6 +320,7 @@ async function fetchCandlesForRange(symbol: string, requestedRange: ChartRange) 
 
   return {
     data: [],
+    provider: 'yahoo' as CandleProvider,
     range: requestedRange,
     requestedRange,
     interval: config.interval,
@@ -274,14 +354,15 @@ export async function GET(request: NextRequest) {
     if (rangeParam) {
       const requestedRange = normalizeChartRange(rangeParam)
       const response = await getCached(
-        `candles:${symbol}:range:${requestedRange}`,
+        `candles:v2:${symbol}:range:${requestedRange}`,
         CANDLES_TTL_MS,
         () => getDurableMarketData({
           symbol: rawSymbol,
           market,
           range: `range:${requestedRange}`,
           ttlMs: CANDLES_TTL_MS,
-          loader: () => fetchCandlesForRange(symbol, requestedRange),
+          provider: 'configured-market-data',
+          loader: () => fetchCandlesForRange(symbol, market, requestedRange),
         })
       )
 
@@ -293,21 +374,21 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    const interval = getYahooInterval(timeframe)
     const daysAgo = getRangeForTimeframe(timeframe)
 
     const period1 = new Date()
     period1.setDate(period1.getDate() - (daysAgo === '5d' ? 5 : daysAgo === '1mo' ? 30 : daysAgo === '3mo' ? 90 : daysAgo === '6mo' ? 180 : daysAgo === '1y' ? 365 : daysAgo === '2y' ? 730 : daysAgo === '5y' ? 1825 : 30))
 
     const candles = await getCached(
-      `candles:${symbol}:timeframe:${timeframe}`,
+      `candles:v2:${symbol}:timeframe:${timeframe}`,
       CANDLES_TTL_MS,
       () => getDurableMarketData({
         symbol: rawSymbol,
         market,
         range: `timeframe:${timeframe}`,
         ttlMs: CANDLES_TTL_MS,
-        loader: () => fetchCandles(symbol, interval, period1),
+        provider: 'configured-market-data',
+        loader: () => fetchConfiguredCandles(symbol, market, timeframe, period1).then((response) => response.data),
       })
     )
 

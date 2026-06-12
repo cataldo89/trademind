@@ -135,3 +135,67 @@ export async function getDurableMarketData<T>({
     throw error
   }
 }
+
+// ---- Quant Results Cache ----
+
+export async function readQuantResultsCache<T>(
+  symbol: string,
+  market: Market
+): Promise<T | null> {
+  const client = createCacheClient()
+  if (!client) return null
+
+  try {
+    const { data, error } = await client
+      .from('quant_results_cache')
+      .select('result, expires_at')
+      .eq('symbol', symbol.toUpperCase())
+      .eq('market', market)
+      .gt('expires_at', new Date().toISOString())
+      .limit(1)
+      .maybeSingle()
+
+    if (error) {
+      console.warn('[Quant Results Cache] Read failed:', error.message)
+      return null
+    }
+
+    return data?.result ?? null
+  } catch (error) {
+    console.warn('[Quant Results Cache] Read exception:', error)
+    return null
+  }
+}
+
+export async function writeQuantResultsCache<T>(
+  symbol: string,
+  market: Market,
+  result: T,
+  ttlMs: number = 24 * 60 * 60 * 1000 // 24 hours default
+) {
+  const client = createCacheClient()
+  if (!client) return
+
+  try {
+    const now = new Date()
+    const expiresAt = new Date(now.getTime() + ttlMs)
+
+    const { error } = await client
+      .from('quant_results_cache')
+      .upsert({
+        symbol: symbol.toUpperCase(),
+        market,
+        result,
+        fetched_at: now.toISOString(),
+        expires_at: expiresAt.toISOString(),
+      }, {
+        onConflict: 'symbol,market',
+      })
+
+    if (error) {
+      console.warn('[Quant Results Cache] Write failed:', error.message)
+    }
+  } catch (error) {
+    console.warn('[Quant Results Cache] Write exception:', error)
+  }
+}

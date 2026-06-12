@@ -11,8 +11,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Configuración de API Keys
-ALPHA_VANTAGE_KEY = os.getenv("ALPHA_VANTAGE_API_KEY", "FEKS6XUB6WLOA45A")
-FINNHUB_KEY = os.getenv("FINNHUB_API_KEY", "d8f6pm9r01qub7kg4k20d8f6pm9r01qub7kg4k2g")
+ALPHA_VANTAGE_KEY = os.getenv("ALPHA_VANTAGE_API_KEY")
+FINNHUB_KEY = os.getenv("FINNHUB_API_KEY")
 
 # Registro del historial de peticiones para control de Rate Limits
 # Alpha Vantage: 5 por minuto (limite rolling window de 60 segundos)
@@ -149,9 +149,9 @@ class LoadBalancer:
     def __init__(self):
         # Registro de proveedores disponibles en orden
         self.providers = [
-            {"name": "yahoo-finance", "fetcher": fetch_from_yahoo},
             {"name": "alpha-vantage", "fetcher": fetch_from_alpha_vantage},
-            {"name": "finnhub", "fetcher": fetch_from_finnhub}
+            {"name": "finnhub", "fetcher": fetch_from_finnhub},
+            {"name": "yahoo-finance", "fetcher": fetch_from_yahoo}
         ]
         self.current_provider_index = 0
 

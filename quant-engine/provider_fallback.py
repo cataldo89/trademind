@@ -56,28 +56,33 @@ def _fetch_yfinance(symbol: str, timeframe: str, range_: Optional[str], *_: Any)
     return frame.rename(columns={"Open": "open", "High": "high", "Low": "low", "Close": "close", "Volume": "volume"})
 
 
-def _fetch_stooq(symbol: str, timeframe: str, range_: Optional[str], market: str) -> pd.DataFrame:
-    if timeframe.lower() not in {"1d", "daily"}:
-        raise RuntimeError("Stooq free CSV supports daily data in this skill")
-
-    stooq_symbol = _normalize_symbol_for_stooq(symbol, market)
-    url = f"https://stooq.com/q/d/l/?s={urllib.parse.quote(stooq_symbol)}&i=d"
-    request = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 TradeMind Quant Engine"})
-    with urllib.request.urlopen(request, timeout=15) as response:
-        text = response.read().decode("utf-8", errors="replace")
-
-    rows = list(csv.DictReader(text.splitlines()))
-    if not rows or "Date" not in rows[0]:
-        return _empty_frame()
-
-    cutoff_days = _range_to_days(range_)
-    cutoff = pd.Timestamp(datetime.now(timezone.utc)) - pd.Timedelta(days=cutoff_days)
-    frame = pd.DataFrame(rows)
-    frame["time"] = pd.to_datetime(frame["Date"], utc=True, errors="coerce")
-    for src, dst in (("Open", "open"), ("High", "high"), ("Low", "low"), ("Close", "close"), ("Volume", "volume")):
-        frame[dst] = pd.to_numeric(frame.get(src), errors="coerce")
-    frame = frame[frame["time"] >= cutoff]
-    return frame[["time", "open", "high", "low", "close", "volume"]].dropna(subset=["close"])
+def _fetch_finnhub(symbol: str, timeframe: str, range_: Optional[str], *_: Any) -> pd.DataFrame:
+    api_key = os.getenv("FINNHUB_API_KEY")
+    if not api_key:
+        raise ProviderNotConfigured("FINNHUB_API_KEY is not configured")
+        
+    formatted_symbol = symbol.upper().replace("-", ".")
+    url = f"https://finnhub.io/api/v1/quote?symbol={formatted_symbol}&token={api_key}"
+    
+    request = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 TradeMind Quant'})
+    with urllib.request.urlopen(request, timeout=10) as response:
+        payload = __import__("json").loads(response.read().decode('utf-8'))
+        
+    if "c" not in payload or payload["c"] == 0:
+        raise RuntimeError(f"Respuesta inesperada de Finnhub o ticker inexistente: {payload}")
+        
+    price = float(payload["c"])
+    timestamp = pd.to_datetime(payload.get("t", __import__("time").time()), unit="s", utc=True)
+    
+    frame = pd.DataFrame([{
+        "time": timestamp,
+        "open": price,
+        "high": price,
+        "low": price,
+        "close": price,
+        "volume": 0
+    }])
+    return frame
 
 
 def _fetch_alpha_vantage(symbol: str, timeframe: str, range_: Optional[str], *_: Any) -> pd.DataFrame:
@@ -89,7 +94,7 @@ def _fetch_alpha_vantage(symbol: str, timeframe: str, range_: Optional[str], *_:
 
     params = urllib.parse.urlencode(
         {
-            "function": "TIME_SERIES_DAILY_ADJUSTED",
+            "function": "TIME_SERIES_DAILY",
             "symbol": symbol.upper(),
             "outputsize": "full",
             "apikey": api_key,
@@ -119,8 +124,8 @@ def _fetch_alpha_vantage(symbol: str, timeframe: str, range_: Optional[str], *_:
                 "open": values.get("1. open"),
                 "high": values.get("2. high"),
                 "low": values.get("3. low"),
-                "close": values.get("5. adjusted close") or values.get("4. close"),
-                "volume": values.get("6. volume"),
+                "close": values.get("4. close"),
+                "volume": values.get("5. volume"),
             }
         )
     frame = pd.DataFrame(rows)
@@ -141,12 +146,10 @@ class ProviderRateLimited(RuntimeError):
 
 def _provider_registry() -> List[Dict[str, Any]]:
     return [
+        {"name": "alpha-vantage", "kind": "ohlcv", "configured": bool(os.getenv("ALPHA_VANTAGE_API_KEY")), "fetch": _fetch_alpha_vantage},
+        {"name": "finnhub", "kind": "ohlcv", "configured": bool(os.getenv("FINNHUB_API_KEY")), "fetch": _fetch_finnhub},
         {"name": "yahoo-chart", "kind": "ohlcv", "configured": True, "fetch": _fetch_yahoo_chart},
         {"name": "yfinance", "kind": "ohlcv", "configured": True, "fetch": _fetch_yfinance},
-        {"name": "stooq", "kind": "ohlcv", "configured": True, "fetch": _fetch_stooq},
-        {"name": "alpha-vantage", "kind": "ohlcv", "configured": bool(os.getenv("ALPHA_VANTAGE_API_KEY")), "fetch": _fetch_alpha_vantage},
-        {"name": "finnhub", "kind": "news_only", "configured": bool(os.getenv("FINNHUB_API_KEY")), "fetch": None},
-        {"name": "fmp", "kind": "ohlcv", "configured": bool(os.getenv("FMP_API_KEY")), "fetch": None},
     ]
 
 
