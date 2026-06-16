@@ -25,6 +25,14 @@ type DisplayDecision = {
   details: string[]
 }
 
+type SentimentExecution = {
+  status: 'idle' | 'running' | 'applied' | 'cache' | 'not_applied' | 'partial' | 'error'
+  message: string
+  processed?: number
+  skippedCached?: number
+  finishedAt?: string
+}
+
 function isPythonLightGbmReady(body: any) {
   return body?.model_status === 'loaded'
     && body?.python_execution?.quant_engine_ready === true
@@ -35,13 +43,48 @@ function isPythonLightGbmReady(body: any) {
 function formatQuantEngineWarning(value: unknown) {
   const message = typeof value === 'string' ? value : ''
   if (!message || message === 'Quant engine request failed') {
-    return 'Modo fallback tecnico: Ranking LightGBM no respondio para esta ejecucion. El ranking visible usa datos tecnicos locales.'
+    return 'Modo fallback tecnico: el Ranking ML rapido no respondio para esta ejecucion. El ranking visible usa datos tecnicos locales.'
+  }
+  return message
+}
+
+function formatSentimentWarning(value: unknown) {
+  const message = typeof value === 'string' ? value : ''
+  if (!message || message === 'Quant engine request failed') {
+    return 'Error de conexion con el motor: no se aplico sentimiento nuevo y se ignoro cualquier cache obsoleto.'
   }
   return message
 }
 
 function toMarket(value: string | Market | undefined): Market {
   return value === 'CL' ? 'CL' : 'US'
+}
+
+export function translateReason(reason: string | undefined | null): string {
+  if (!reason) return ''
+  const trimmed = reason.trim()
+  const dictionary: Record<string, string> = {
+    'strong_momentum': 'Fuerte impulso alcista',
+    'above_sma_20': 'Precio sobre SMA 20 (tendencia alcista)',
+    'low_drawdown': 'Baja caída reciente (Drawdown bajo)',
+    'crypto_policy_blocks_lightgbm': 'Política de riesgo bloquea LightGBM',
+    'Extremely short history: disable gradient boosting to avoid overfit.': 'Historial muy corto: bloquea ML avanzado para evitar sobreajuste',
+    'Short history: prefer Ridge, Elastic Net, logistic or defensive technical models.': 'Historial corto: prefiere modelos técnicos defensivos',
+    'Moderate history: use regularized validation, not unconstrained boosting.': 'Historial moderado: requiere validación regularizada',
+    'oversold': 'Sobrevendido (RSI bajo)',
+    'insufficient_data': 'Datos insuficientes',
+    'local_heuristic': 'Heurística cuantitativa local',
+    'positive_5d_momentum': 'Impulso positivo a 5 días',
+    'positive_20d_momentum': 'Impulso positivo a 20 días',
+    'Alpaca CRXL reports many zero-volume midpoint bars; liquidity heuristic limits confidence.': 'Alpaca reporta muchas barras sin volumen; liquidez limita confianza',
+    'Zero-volume midpoint bars detected; confidence reduced.': 'Barras sin volumen detectadas; confianza reducida',
+    'Non-crypto asset; standard workflow applies.': 'Activo tradicional (no cripto)',
+    'No policy found for this crypto symbol; using technical defensive fallback.': 'Sin política específica; usando fallback técnico defensivo',
+    'Stablecoin: model peg deviation, liquidity, spread and depeg risk, not directional trend.': 'Establecoin: riesgo de paridad y liquidez, sin tendencia direccional',
+    'SKY requires MKR history transfer adjusted by 1:24000 before robust boosting.': 'SKY requiere transferencia de historial MKR antes de boosting',
+    'Market data quality blocks ML.': 'La calidad de datos bloquea ML avanzado',
+  }
+  return dictionary[trimmed] || reason
 }
 
 export function ScreenerClient() {
@@ -53,9 +96,15 @@ export function ScreenerClient() {
   const [isRanking, setIsRanking] = useState(false)
   const [mlRankings, setMlRankings] = useState<any[]>([])
   const [mlExecution, setMlExecution] = useState<any>(null)
+  const [sentimentExecution, setSentimentExecution] = useState<SentimentExecution>({
+    status: 'idle',
+    message: 'Sin actualizacion manual en esta sesion.',
+  })
   const [isQuantScanEnabled, setIsQuantScanEnabled] = useState(false)
   const [forceQuantRefreshNonce, setForceQuantRefreshNonce] = useState(0)
+  const [forceQuantRefreshCategory, setForceQuantRefreshCategory] = useState<string | null>(null)
   const [marketStatus, setMarketStatus] = useState(() => getUSMarketStatus())
+  const [showPipelineInspector, setShowPipelineInspector] = useState(true)
   const queryClient = useQueryClient()
 
   useEffect(() => {
@@ -77,6 +126,10 @@ export function ScreenerClient() {
 
   const triggerManualSentimentScan = async () => {
     setIsScanningSentiment(true)
+    setSentimentExecution({
+      status: 'running',
+      message: `Revisando cache y noticias para hasta ${SENTIMENT_SCAN_SYMBOL_LIMIT} activos...`,
+    })
     toast.info(`Revisando cache y noticias para hasta ${SENTIMENT_SCAN_SYMBOL_LIMIT} activos...`)
     try {
       const rankedSymbols = scanResults
@@ -90,10 +143,22 @@ export function ScreenerClient() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ symbols, freshnessMs: TOP_SENTIMENT_FRESHNESS_MS }),
       })
+      const contentType = res.headers.get('content-type') || ''
+      if (!contentType.includes('application/json')) {
+        throw new Error('La sesion expiro o la API devolvio una pagina HTML. Vuelve a iniciar sesion y reintenta.')
+      }
       const body = await res.json().catch(() => null)
       if (!res.ok) throw new Error(body?.error || 'Falló el escaneo de sentimiento')
       if (body?.degraded && Number(body?.processed || 0) === 0) {
-        toast.warning(body.warning || 'FinBERT no se actualizo porque el quant-engine no esta disponible.')
+        const warning = formatSentimentWarning(body.warning || body.rawWarning)
+        setSentimentExecution({
+          status: 'error',
+          message: warning,
+          processed: 0,
+          skippedCached: Number(body?.skippedCached || 0),
+          finishedAt: new Date().toLocaleTimeString(),
+        })
+        toast.error(warning)
         return
       }
       const processed = Number(body?.processed || 0)
@@ -103,16 +168,30 @@ export function ScreenerClient() {
         ? `FinBERT actualizÃ³ ${processed} activo(s); ${skippedCached} ya tenÃ­an cache fresco${suffix}.`
         : `${skippedCached} activo(s) ya tenÃ­an sentimiento fresco.`
       if (body?.degraded) {
-        toast.warning(body.warning || 'FinBERT actualizo parcialmente el lote.')
+        toast.warning(formatSentimentWarning(body.warning || body.rawWarning) || 'FinBERT actualizo parcialmente el lote.')
       }
       toast.success(`${scanMessage} Recalculando ranking...`)
       await queryClient.invalidateQueries({ queryKey: ['screener-quant-scan', category] })
       await queryClient.refetchQueries({ queryKey: ['screener-quant-scan', category], type: 'active' })
+      setSentimentExecution({
+        status: processed > 0 ? (body?.degraded ? 'partial' : 'applied') : 'cache',
+        message: processed > 0
+          ? `${scanMessage} Ranking recalculado con sentimiento vigente.`
+          : 'No se pidieron noticias nuevas: todos los activos del lote ya tenian cache fresco.',
+        processed,
+        skippedCached,
+        finishedAt: new Date().toLocaleTimeString(),
+      })
       toast.success('Top Activos recalculado con el sentimiento vigente.')
 
       // Si el usuario ya tenía el motor abierto para un símbolo, re-evaluarlo para mostrar las noticias frescas
     } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : String(e)
+      const message = formatSentimentWarning(e instanceof Error ? e.message : String(e))
+      setSentimentExecution({
+        status: 'error',
+        message: 'Noticias no actualizadas: ' + message,
+        finishedAt: new Date().toLocaleTimeString(),
+      })
       toast.warning('Noticias no actualizadas: ' + message)
     } finally {
       setIsScanningSentiment(false)
@@ -128,7 +207,7 @@ export function ScreenerClient() {
       startedAt,
       symbols: scanSymbols.length,
     })
-    toast.info('Entrenando modelo local y rankeando activos con LightGBM...')
+    toast.info('Entrenando Ranking ML rapido con LightGBM...')
     try {
       const symbols = scanSymbols.map((s) => s.symbol)
       const res = await fetch('/api/quant/asset-rank', {
@@ -165,7 +244,7 @@ export function ScreenerClient() {
             trainOk: Boolean(body.train_result?.ok),
             warning: formatQuantEngineWarning(body.warning || body.error),
           })
-          toast.warning(`Ranking tecnico fallback para ${fallbackRankings.length} activos. LightGBM sigue bloqueado hasta que Cloudflare/FastAPI respondan.`)
+          toast.warning(`Ranking tecnico fallback para ${fallbackRankings.length} activos. El Ranking ML rapido sigue bloqueado hasta que Cloudflare/FastAPI respondan.`)
           return
         }
         throw new Error(body?.error || 'Falló el ranking')
@@ -188,7 +267,7 @@ export function ScreenerClient() {
           trainOk: Boolean(body.train_result?.ok),
           warning: formatQuantEngineWarning(body.warning || body.train_result?.error),
         })
-        toast.error('LightGBM no esta listo: el ranking quedo bloqueado porque el quant-engine esta en fallback.')
+        toast.error('Ranking ML rapido no esta listo: el resultado quedo bloqueado porque el quant-engine esta en fallback.')
         return
       }
 
@@ -208,7 +287,7 @@ export function ScreenerClient() {
         warning: body.warning || body.train_result?.error,
       })
       setIsQuantScanEnabled(true)
-      toast.success(`Ranking LightGBM completado para ${body.count} activos.`)
+      toast.success(`Ranking ML rapido completado para ${body.count} activos.`)
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : String(e)
       setIsQuantScanEnabled(false)
@@ -236,17 +315,27 @@ export function ScreenerClient() {
   const scanSymbols = (selectedCategory?.symbols ?? [])
     .slice(0, 500)
     .map((s) => ({ ...s, market: getZestySymbolMarket(s.symbol) }))
+  const normalizedSearch = search.trim().toLowerCase()
+  const detailedScanSymbols = normalizedSearch
+    ? scanSymbols.filter((item) =>
+      item.symbol.toLowerCase().includes(normalizedSearch) ||
+      item.name.toLowerCase().includes(normalizedSearch)
+    )
+    : scanSymbols
+  const shouldRunDetailedScan = detailedScanSymbols.length > 0
+    && forceQuantRefreshNonce > 0
+    && forceQuantRefreshCategory === category
 
   const { data: scanResponse, isFetching: scanLoading, isError: scanIsError, error: scanError } = useQuery({
-    queryKey: ['screener-quant-scan', category, forceQuantRefreshNonce],
+    queryKey: ['screener-quant-scan', category, normalizedSearch, forceQuantRefreshCategory, forceQuantRefreshNonce],
     queryFn: async () => {
-      const symbols = Array.from(new Set(scanSymbols.map((s) => s.symbol).filter(Boolean)))
+      const symbols = Array.from(new Set(detailedScanSymbols.map((s) => s.symbol).filter(Boolean)))
       if (symbols.length === 0) return null
 
       const symbolMap: Record<string, string> = {}
       const symbolMarkets: Record<string, Market> = {}
-      scanSymbols.forEach(s => { symbolMap[s.symbol] = s.name })
-      scanSymbols.forEach(s => { symbolMarkets[s.symbol] = s.market })
+      detailedScanSymbols.forEach(s => { symbolMap[s.symbol] = s.name })
+      detailedScanSymbols.forEach(s => { symbolMarkets[s.symbol] = s.market })
 
       const controller = new AbortController()
       const timeoutId = window.setTimeout(() => controller.abort(), 60000)
@@ -271,12 +360,17 @@ export function ScreenerClient() {
     staleTime: 5 * 60 * 1000,
     refetchInterval: 10 * 60 * 1000,
     retry: false,
-    enabled: lightgbmUiReady && forceQuantRefreshNonce > 0,
+    enabled: shouldRunDetailedScan,
   })
 
   const scanResults: FinalQuantScore[] = scanResponse?.results || []
   const scanAudit = scanResponse?.scan_audit
   const isRegularMarketOpen = marketStatus.isOpen && marketStatus.session === 'regular'
+  const isCryptoCategory = selectedCategory?.id === 'zesty-alpaca-crypto'
+    || (scanSymbols.length > 0 && scanSymbols.every((s) => s.symbol.endsWith('-USD')))
+  const isMarketActionable = isCryptoCategory || isRegularMarketOpen
+  const showCatalogFallback = !scanLoading && scanResults.length === 0 && scanSymbols.length > 0
+  const hasFastRanking = mlRankings.length > 0
 
   const isMarketDataBlocked = (r: FinalQuantScore) => {
     return r.noData || r.marketDataQuality?.status === 'FAILED' || r.marketDataQuality?.usable_for_ml === false
@@ -297,6 +391,15 @@ export function ScreenerClient() {
       return r.symbol.toLowerCase().includes(search.toLowerCase()) || r.name.toLowerCase().includes(search.toLowerCase())
     })
     .slice(0, 50) // Limitar la tabla a 50 resultados para evitar scroll infinito
+
+  const catalogFallbackRows = showCatalogFallback
+    ? scanSymbols
+      .filter((item) => {
+        if (!search) return true
+        return item.symbol.toLowerCase().includes(search.toLowerCase()) || item.name.toLowerCase().includes(search.toLowerCase())
+      })
+      .slice(0, 50)
+    : []
 
   const hasUsableQuantData = (r: FinalQuantScore) => {
     if (isMarketDataBlocked(r)) return false
@@ -326,6 +429,23 @@ export function ScreenerClient() {
       return { label: 'Python fallo', className: 'bg-red-500/15 text-red-300' }
     }
     return { label: 'Python recibido', className: 'bg-indigo-500/20 text-indigo-300' }
+  }
+
+  const getCryptoModelBadge = (r: FinalQuantScore) => {
+    const decision = r.cryptoMlDecision || r.quant?.crypto_ml_decision
+    if (!decision?.isCrypto) return null
+    if (decision.lightgbmAllowed) {
+      return { label: 'LightGBM apto', className: 'bg-emerald-500/20 text-emerald-300' }
+    }
+    if (decision.isStablecoin) {
+      return { label: 'Paridad', className: 'bg-cyan-500/15 text-cyan-300' }
+    }
+    const label = decision.modelFamily === 'technical_defensive'
+      ? 'Técnico defensivo'
+      : decision.modelFamily === 'transfer_learning'
+      ? 'Transfer learning'
+      : decision.modelFamily
+    return { label, className: 'bg-amber-500/20 text-amber-300' }
   }
 
   const formatConfidence = (value: unknown) => {
@@ -378,6 +498,8 @@ export function ScreenerClient() {
     const details = [
       `Score tecnico ${r.finalScore.toFixed(0)}`,
       r.quant ? `Quant ${r.quant.action || 'N/A'} ${Number(r.quant.confidence ?? 0)}%` : 'Sin respuesta quant usable',
+      r.cryptoMlDecision?.isCrypto ? `Modelo ${r.cryptoMlDecision.model}` : null,
+      r.cryptoMlDecision?.isCrypto ? `Historial ${r.cryptoMlDecision.historyCandles} velas` : null,
       r.rsi !== null ? `RSI ${r.rsi.toFixed(1)}` : 'RSI sin datos',
       r.macdSignal !== 'Sin datos' ? `MACD ${r.macdSignal}` : 'MACD sin datos',
       r.quant?.market_regime ? `Regimen ${r.quant.market_regime}` : null,
@@ -467,6 +589,22 @@ export function ScreenerClient() {
   const getDisplayAction = (r: FinalQuantScore) => {
     if (isMarketDataBlocked(r)) return 'HOLD'
     return getDisplayDecision(r).action
+  }
+
+  const getActionPillClass = (action: string) => {
+    const normalized = action.toUpperCase()
+    if (normalized.startsWith('BUY')) return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+    if (normalized.startsWith('SELL')) return 'bg-red-500/20 text-red-300 border-red-500/30'
+    if (normalized.startsWith('HOLD')) return 'bg-orange-500/20 text-orange-300 border-orange-500/30'
+    return 'bg-gray-800 text-gray-300 border-gray-700'
+  }
+
+  const getActionTextClass = (action: string) => {
+    const normalized = action.toUpperCase()
+    if (normalized.startsWith('BUY')) return 'text-emerald-300'
+    if (normalized.startsWith('SELL')) return 'text-red-300'
+    if (normalized.startsWith('HOLD')) return 'text-orange-300'
+    return 'text-gray-300'
   }
 
   const getDecisionScore = (r: FinalQuantScore) => {
@@ -560,6 +698,41 @@ export function ScreenerClient() {
     bestRecommendation.result.quant?.weekend_sentiment?.sentiment === 'NEGATIVE' ? 'Sentimiento negativo' : null,
   ].filter(Boolean) : []
 
+  const previewSymbols = detailedScanSymbols.slice(0, 12).map((s) => s.symbol)
+  const detailedScanStatus = scanLoading
+    ? 'running'
+    : scanIsError
+      ? 'timeout/error'
+      : scanResponse
+        ? 'done'
+        : 'idle'
+  const rankingPayloadPreview = {
+    endpoint: '/api/quant/asset-rank',
+    symbols: scanSymbols.slice(0, 12).map((s) => s.symbol),
+    total_symbols: scanSymbols.length,
+    market: 'US',
+    range: '1y',
+    use_model: true,
+    train_local: true,
+    horizon_days: 5,
+  }
+  const detailedPayloadPreview = {
+    endpoint: '/api/quant/scan',
+    symbols: previewSymbols,
+    total_symbols: detailedScanSymbols.length,
+    universe_symbols: scanSymbols.length,
+    search: search.trim() || null,
+    category,
+    market: 'US',
+    forceQuantRefresh: forceQuantRefreshNonce > 0,
+  }
+  const sentimentPayloadPreview = {
+    endpoint: '/api/quant/sentiment',
+    symbols: previewSymbols.slice(0, SENTIMENT_SCAN_SYMBOL_LIMIT),
+    limit: SENTIMENT_SCAN_SYMBOL_LIMIT,
+    freshnessMs: TOP_SENTIMENT_FRESHNESS_MS,
+  }
+
   const isBullishCard = (r: FinalQuantScore) => {
     const action = getDisplayAction(r)
     return action === 'BUY' || action === 'BUY (Tech)'
@@ -576,13 +749,19 @@ export function ScreenerClient() {
       <div>
         <h1 className="text-2xl font-bold text-white">TradeMind Intelligence</h1>
         <p className="text-sm text-gray-400 mt-1">
-          {lightgbmUiReady ? 'Escaneo Quant' : 'Esperando entrenamiento LightGBM'} de {scanSymbols.length} activos en {selectedCategory?.name ?? 'Zesty'}
+          {lightgbmUiReady ? 'Escaneo Quant + LightGBM' : 'Escaneo Quant'} de {scanSymbols.length} activos en {selectedCategory?.name ?? 'Zesty'}
           {scanResponse && ` · Python top ${scanResponse.quant_processed}`}
           {scanResponse && ` · usable ${scanResponse.quant_usable ?? 0} / parcial ${scanResponse.quant_partial ?? 0} / fallo ${scanResponse.quant_failed ?? 0}`}
         </p>
       </div>
 
-      {!isRegularMarketOpen && (
+      {isCryptoCategory && (
+        <div className="border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">
+          Cripto 24/7 activo. Las senales se pueden revisar sin depender del horario regular del mercado US.
+        </div>
+      )}
+
+      {!isCryptoCategory && !isRegularMarketOpen && (
         <div className="border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
           Mercado US cerrado
           {marketStatus.session === 'pre' ? ' en pre-market' : marketStatus.session === 'after' ? ' en after-hours' : ''}
@@ -591,7 +770,7 @@ export function ScreenerClient() {
       )}
 
       {/* Automatic recommendation */}
-      {!scanLoading && scanResults.length > 0 && (
+      {!scanLoading && scanResults.length > 0 && !hasFastRanking && (
         <div className={cn(
           'border p-5 space-y-4',
           bestRecommendation
@@ -612,7 +791,7 @@ export function ScreenerClient() {
                       <span className="ml-2 text-sm font-medium text-gray-400">{bestRecommendation.result.name}</span>
                     </h2>
                     <p className="text-sm text-gray-300 mt-1">
-                      {isRegularMarketOpen
+                      {isMarketActionable
                         ? 'Mejor oportunidad actual del screener por decision cuantitativa ajustada por riesgo.'
                         : 'Mejor candidato para revisar al abrir mercado regular; no se marca como entrada confirmada mientras el mercado este cerrado.'}
                     </p>
@@ -630,7 +809,7 @@ export function ScreenerClient() {
                     onClick={() => handleSelectSymbol(bestRecommendation.result.symbol, bestRecommendation.result.market, bestRecommendation.result)}
                     className="px-4 py-2 text-sm font-semibold bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-colors"
                   >
-                    {isRegularMarketOpen ? 'Analizar' : 'Revisar'}
+                    {isMarketActionable ? 'Analizar' : 'Revisar'}
                   </button>
                 </div>
               </div>
@@ -638,7 +817,9 @@ export function ScreenerClient() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <div className="bg-gray-950/30 border border-gray-800/70 rounded-lg p-3">
                   <p className="text-[10px] text-gray-500 uppercase font-semibold">Senal</p>
-                  <p className="text-sm font-bold text-emerald-300 mt-1">{getDisplayAction(bestRecommendation.result)}</p>
+                  <p className={cn('text-sm font-bold mt-1', getActionTextClass(getDisplayAction(bestRecommendation.result)))}>
+                    {getDisplayAction(bestRecommendation.result)}
+                  </p>
                 </div>
                 <div className="bg-gray-950/30 border border-gray-800/70 rounded-lg p-3">
                   <p className="text-[10px] text-gray-500 uppercase font-semibold">Precio</p>
@@ -693,11 +874,11 @@ export function ScreenerClient() {
       )}
 
       {/* Top Cards Panel */}
-      {topCards.length > 0 && (
+      {topCards.length > 0 && !hasFastRanking && (
         <div className="space-y-3">
           <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-2">
             <Zap className="w-3.5 h-3.5 text-emerald-400" />
-            Top Activos (Quant Engine)
+            Auditoria detallada por activo
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {topCards.map((r, i) => {
@@ -718,10 +899,8 @@ export function ScreenerClient() {
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex flex-col gap-1">
                     <span className={cn(
-                      'text-[10px] font-bold px-1.5 py-0.5 rounded leading-none w-fit',
-                      isBullishCard(r) ? 'bg-emerald-500/20 text-emerald-400'
-                        : isBearishCard(r) ? 'bg-red-500/20 text-red-400'
-                        : 'bg-gray-700 text-gray-300'
+                      'text-[10px] font-bold px-1.5 py-0.5 rounded leading-none w-fit border',
+                      getActionPillClass(decision.action)
                     )}>
                       {decision.action}
                     </span>
@@ -764,6 +943,11 @@ export function ScreenerClient() {
                       [FinBERT Negativo]
                     </span>
                   )}
+                  {getCryptoModelBadge(r) && (
+                    <span className={cn('px-1.5 py-0.5 text-[9px] font-bold rounded', getCryptoModelBadge(r)?.className)}>
+                      [{getCryptoModelBadge(r)?.label}]
+                    </span>
+                  )}
                 </div>
 
                 {r.quant && (
@@ -778,6 +962,14 @@ export function ScreenerClient() {
                          {String(r.quant.market_regime || '').toLowerCase() === 'unknown' ? 'Sin datos HMM' : r.quant.market_regime}
                        </span>
                      </div>
+                     {r.cryptoMlDecision?.isCrypto && (
+                       <div className="flex justify-between gap-2">
+                         <span>Modelo:</span>
+                         <span className="text-white truncate max-w-[130px]" title={r.cryptoMlDecision.model}>
+                           {r.cryptoMlDecision.model}
+                         </span>
+                       </div>
+                     )}
                    </div>
                 )}
                 {!r.quant && r.suggestions.length > 0 && (
@@ -792,11 +984,11 @@ export function ScreenerClient() {
                     <span className="font-mono text-gray-300">{decision.source} · {decision.status}</span>
                   </div>
                   <p className="mt-1 line-clamp-2 text-gray-300" title={decision.details.join(' | ')}>
-                    {decision.primaryReason}
+                    {translateReason(decision.primaryReason)}
                   </p>
                   {getProviderSummary(r) && (
                     <p className="mt-1 truncate font-mono text-[9px] text-cyan-300/80" title={getProviderSummary(r) || undefined}>
-                      DATA {getProviderSummary(r)}
+                      MERCADO {getProviderSummary(r)}
                     </p>
                   )}
                 </div>
@@ -816,42 +1008,57 @@ export function ScreenerClient() {
         <div className="space-y-3">
           <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-2">
             <Zap className={cn('w-3.5 h-3.5', lightgbmUiReady ? 'text-emerald-400' : 'text-amber-300')} />
-            {lightgbmUiReady ? 'Top Ranking (ML LightGBM)' : 'Top Ranking tecnico (fallback)'}
+            {lightgbmUiReady ? 'Ranking ML rapido' : 'Ranking tecnico rapido (fallback)'}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {mlRankings.slice(0, 9).map((r, i) => (
-              <div
-                key={i}
-                className={cn(
-                  'p-4 rounded-xl border',
-                  lightgbmUiReady ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-amber-500/10 border-amber-500/30'
-                )}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold text-white">{r.symbol}</span>
-                  <span className="text-[10px] text-gray-500">Rank: #{r.rank}</span>
-                </div>
-                <div className="text-[10px] text-gray-400 space-y-1">
-                  <p>Score ML: <span className="text-white font-mono">{Number(r.score).toFixed(4)}</span></p>
-                  <p>Action: <span className="text-emerald-400 font-bold">{r.signal}</span></p>
-                  {r.main_reasons?.map((reason: string, idx: number) => (
-                    <p key={idx} className="truncate text-gray-500" title={reason}>- {reason}</p>
-                  ))}
-                </div>
-              </div>
-            ))}
+            {mlRankings.slice(0, 9).map((r, i) => {
+              const matchingResult = scanResults.find((sr) => sr.symbol === r.symbol)
+              const href = matchingResult
+                ? buildAnalysisHref(matchingResult)
+                : `/analysis?symbol=${encodeURIComponent(r.symbol)}&market=${encodeURIComponent(getZestySymbolMarket(r.symbol))}`
+              return (
+                <a
+                  key={i}
+                  href={href}
+                  className={cn(
+                    'p-4 rounded-xl border transition-all hover:scale-[1.02] block cursor-pointer select-none',
+                    lightgbmUiReady 
+                      ? 'bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/15' 
+                      : 'bg-amber-500/10 border-amber-500/30 hover:bg-amber-500/15'
+                  )}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-white">{r.symbol}</span>
+                    <span className="text-[10px] text-gray-500">Rank: #{r.rank}</span>
+                  </div>
+                  <div className="text-[10px] text-gray-400 space-y-1">
+                    <p>Score ML: <span className="text-white font-mono">{Number(r.score).toFixed(4)}</span></p>
+                    <p>Action: <span className={cn('font-bold', getActionTextClass(String(r.signal || 'HOLD')))}>{r.signal}</span></p>
+                    {r.main_reasons?.map((reason: string, idx: number) => (
+                      <p key={idx} className="truncate text-gray-500" title={translateReason(reason)}>- {translateReason(reason)}</p>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-1 text-xs text-gray-500 mt-2 border-t border-gray-800/50 pt-2">
+                    <Eye className="w-3 h-3" />
+                    <span>Ver análisis</span>
+                    <ChevronRight className="w-3 h-3 ml-auto" />
+                  </div>
+                </a>
+              )
+            })}
           </div>
         </div>
       )}
 
-      {scanLoading && (
+      {scanLoading && !hasFastRanking && (
         <div className="p-8 text-center rounded-xl border border-gray-800 bg-gray-900/30">
           <Loader2 className="w-8 h-8 text-emerald-500 animate-spin mx-auto mb-2" />
-          <p className="text-sm text-gray-500">Escaneando mercado con el quant-engine conectado...</p>
+          <p className="text-sm text-gray-500">Escaneo detallado por activo: validando datos, TA y workflow Python...</p>
+          <p className="text-xs text-gray-600 mt-1">El ranking LightGBM es batch y puede terminar antes.</p>
         </div>
       )}
 
-      {scanIsError && !scanLoading && (
+      {scanIsError && !scanLoading && !hasFastRanking && (
         <div className="p-6 text-center rounded-xl border border-red-500/25 bg-red-500/10">
           <AlertTriangle className="w-7 h-7 text-red-300 mx-auto mb-2" />
           <p className="text-sm font-semibold text-white">El escaneo cuantitativo no respondió a tiempo</p>
@@ -869,23 +1076,26 @@ export function ScreenerClient() {
           <div className="flex items-center gap-2">
             <Activity className="w-4 h-4 text-emerald-400" />
             <h2 className="text-sm font-semibold text-white uppercase tracking-wider">
-              Estado del Motor Cuant
+              Motor Cuant: ranking, auditoria y noticias
             </h2>
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setForceQuantRefreshNonce(Date.now())}
-              disabled={scanLoading || !lightgbmUiReady}
+              onClick={() => {
+                setForceQuantRefreshCategory(category)
+                setForceQuantRefreshNonce(Date.now())
+              }}
+              disabled={scanLoading}
               className="px-3 py-1.5 text-xs font-semibold bg-gray-700 hover:bg-gray-600 disabled:opacity-50 text-white rounded-lg transition-all"
             >
-              Recalcular sin cache quant
+              {normalizedSearch ? `Escanear ${detailedScanSymbols.length}` : 'Escaneo detallado'}
             </button>
             <button
               onClick={triggerManualSentimentScan}
               disabled={isScanningSentiment}
               className="px-3 py-1.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-lg transition-all"
             >
-              {isScanningSentiment ? 'Actualizando sentimiento...' : 'Escanear Noticias (FinBERT)'}
+              {isScanningSentiment ? 'Actualizando sentimiento...' : 'Actualizar sentimiento'}
             </button>
             <button
               onClick={triggerMLRanking}
@@ -893,9 +1103,106 @@ export function ScreenerClient() {
               className="px-3 py-1.5 text-xs font-semibold bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 text-white rounded-lg transition-all flex items-center gap-1"
             >
               <Zap className="w-3 h-3" />
-              {isRanking ? 'Rankeando...' : 'Ranking LightGBM'}
+              {isRanking ? 'Rankeando...' : 'Ranking ML rapido'}
             </button>
           </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-[11px]">
+          <div className="rounded-lg border border-cyan-500/25 bg-cyan-500/10 p-3">
+            <p className="font-semibold text-cyan-200">Ranking ML rapido</p>
+            <p className="mt-1 text-gray-300">Ordena todo el universo en batch. Sirve para descubrir candidatos y es el flujo rapido.</p>
+          </div>
+          <div className="rounded-lg border border-emerald-500/25 bg-emerald-500/10 p-3">
+            <p className="font-semibold text-emerald-200">Auditoria detallada</p>
+            <p className="mt-1 text-gray-300">Valida activo por activo: proveedor, calidad de velas, RSI, MACD, workflow Python y bloqueos.</p>
+          </div>
+        </div>
+
+        <div className={cn(
+          'rounded-lg border p-3 text-[11px]',
+          sentimentExecution.status === 'applied' || sentimentExecution.status === 'cache'
+            ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-100'
+            : sentimentExecution.status === 'partial' || sentimentExecution.status === 'not_applied'
+              ? 'border-amber-500/30 bg-amber-500/10 text-amber-100'
+              : sentimentExecution.status === 'error'
+                ? 'border-red-500/30 bg-red-500/10 text-red-100'
+                : sentimentExecution.status === 'running'
+                  ? 'border-indigo-500/30 bg-indigo-500/10 text-indigo-100'
+                  : 'border-gray-800/70 bg-gray-950/40 text-gray-300'
+        )}>
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+            <p className="font-semibold">
+              Sentimiento FinBERT: <span className="font-mono uppercase">{sentimentExecution.status}</span>
+            </p>
+            {sentimentExecution.finishedAt && (
+              <p className="font-mono text-[10px] opacity-80">Ultimo intento {sentimentExecution.finishedAt}</p>
+            )}
+          </div>
+          <p className="mt-1 text-[11px] opacity-90">{sentimentExecution.message}</p>
+          {(typeof sentimentExecution.processed === 'number' || typeof sentimentExecution.skippedCached === 'number') && (
+            <p className="mt-1 font-mono text-[10px] opacity-80">
+              procesados {sentimentExecution.processed ?? '-'} | cache fresco {sentimentExecution.skippedCached ?? '-'}
+            </p>
+          )}
+        </div>
+
+        <div className="rounded-lg border border-gray-800/70 bg-gray-950/30">
+          <button
+            type="button"
+            onClick={() => setShowPipelineInspector((value) => !value)}
+            className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-xs font-semibold text-gray-200 hover:bg-gray-900/60"
+          >
+            <span>Inspector de ejecucion: endpoints, botones y activos</span>
+            <span className="font-mono text-[10px] text-gray-500">{showPipelineInspector ? 'VISIBLE' : 'OCULTO'}</span>
+          </button>
+
+          {showPipelineInspector && (
+            <div className="space-y-3 border-t border-gray-800/70 p-3 text-[11px]">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                <div className="rounded-lg border border-cyan-500/20 bg-cyan-500/10 p-3">
+                  <p className="font-semibold text-cyan-200">1. Ranking ML rapido</p>
+                  <p className="mt-1 font-mono text-gray-300">POST /api/quant/asset-rank</p>
+                  <p className="mt-1 text-gray-400">Boton: Ranking ML rapido. Resultado visible: tarjetas superiores.</p>
+                  <p className="mt-1 text-gray-400">Estado: <span className="font-mono text-white">{mlExecution?.status ?? 'idle'}</span></p>
+                  <p className="text-gray-400">Enviados: <span className="font-mono text-white">{scanSymbols.length}</span> / entrenados: <span className="font-mono text-white">{mlExecution?.trainingSymbols ?? '-'}</span></p>
+                </div>
+                <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-3">
+                  <p className="font-semibold text-emerald-200">2. Auditoria detallada</p>
+                  <p className="mt-1 font-mono text-gray-300">POST /api/quant/scan</p>
+                  <p className="mt-1 text-gray-400">Boton: Escaneo detallado. Resultado visible: diagnostico y tabla.</p>
+                  <p className="mt-1 text-gray-400">Estado: <span className="font-mono text-white">{detailedScanStatus}</span></p>
+                  <p className="text-gray-400">Entran al escaneo: <span className="font-mono text-white">{detailedScanSymbols.length}</span> / universo <span className="font-mono text-white">{scanSymbols.length}</span></p>
+                  <p className="text-gray-400">Procesados: <span className="font-mono text-white">{scanResponse?.quant_processed ?? '-'}</span></p>
+                </div>
+                <div className="rounded-lg border border-indigo-500/20 bg-indigo-500/10 p-3">
+                  <p className="font-semibold text-indigo-200">3. Sentimiento FinBERT</p>
+                  <p className="mt-1 font-mono text-gray-300">POST /api/quant/sentiment</p>
+                  <p className="mt-1 text-gray-400">Boton: Actualizar sentimiento. No rankea solo; actualiza una feature.</p>
+                  <p className="mt-1 text-gray-400">Estado: <span className="font-mono text-white">{sentimentExecution.status}</span></p>
+                  <p className="mt-1 text-gray-400">Fuente default: Alpaca News. Yahoo solo si se activa por env.</p>
+                  <p className="text-gray-400">Lote: <span className="font-mono text-white">{SENTIMENT_SCAN_SYMBOL_LIMIT}</span> activos.</p>
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-gray-800/70 bg-gray-950/50 p-3">
+                <p className="font-semibold text-gray-200">Activos seleccionados</p>
+                <p className="mt-1 font-mono text-cyan-200 truncate" title={scanSymbols.map((s) => s.symbol).join(', ')}>
+                  {previewSymbols.join(', ')}{scanSymbols.length > previewSymbols.length ? ` ... +${scanSymbols.length - previewSymbols.length}` : ''}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                <pre className="overflow-auto rounded-lg border border-gray-800/70 bg-black/30 p-3 font-mono text-[10px] text-gray-300">{JSON.stringify(rankingPayloadPreview, null, 2)}</pre>
+                <pre className="overflow-auto rounded-lg border border-gray-800/70 bg-black/30 p-3 font-mono text-[10px] text-gray-300">{JSON.stringify(detailedPayloadPreview, null, 2)}</pre>
+                <pre className="overflow-auto rounded-lg border border-gray-800/70 bg-black/30 p-3 font-mono text-[10px] text-gray-300">{JSON.stringify(sentimentPayloadPreview, null, 2)}</pre>
+              </div>
+
+              <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-3 text-amber-100">
+                LightGBM todavia no hace toda la tuberia solo: Next prepara el universo/OHLCV y Python entrena-rankea. La deuda tecnica visible es mover la descarga y feature engineering completa al quant-engine y dejar el front solo como orquestador.
+              </div>
+            </div>
+          )}
         </div>
 
         {mlExecution && (
@@ -1029,10 +1336,74 @@ export function ScreenerClient() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-800/50">
-              {!scanLoading && filtered.map((r) => (
+              {showCatalogFallback && (
+                <tr>
+                  <td colSpan={9} className="px-4 py-3 text-xs text-amber-300 bg-amber-500/5">
+                    Mostrando catalogo de activos. Todavia no hay metricas: pulsa {normalizedSearch ? 'Escanear resultados filtrados' : 'Escaneo detallado'} para enviarlos a /api/quant/scan.
+                  </td>
+                </tr>
+              )}
+              {catalogFallbackRows.map((item) => {
+                const analysisHref = `/analysis?symbol=${encodeURIComponent(item.symbol)}&market=${encodeURIComponent(toMarket(item.market))}`
+                return (
+                  <tr
+                    key={`catalog-${item.symbol}`}
+                    onClick={() => router.push(analysisHref)}
+                    className="hover:bg-gray-800/20 transition-colors cursor-pointer"
+                  >
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-gray-800 flex items-center justify-center flex-shrink-0">
+                          <span className="text-xs font-bold text-gray-400">{item.symbol.slice(0, 2)}</span>
+                        </div>
+                        <div>
+                          <Link
+                            href={analysisHref}
+                            onClick={(e) => e.stopPropagation()}
+                            className="font-mono font-semibold text-white hover:text-emerald-300 transition-colors"
+                          >
+                            {item.symbol}
+                          </Link>
+                          <p className="text-xs text-gray-500 max-w-36 truncate">{item.name}</p>
+                          <p className="text-[10px] text-cyan-300/80 max-w-36 truncate">
+                            MERCADO: sin escaneo
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-right font-mono text-gray-500">-</td>
+                    <td className="px-4 py-3 text-right font-mono text-gray-500">-</td>
+                    <td className="px-4 py-3 text-right font-mono text-gray-500">-</td>
+                    <td className="px-4 py-3 text-right">
+                      <span className="text-xs font-bold px-2 py-1 rounded bg-gray-800 text-gray-400">
+                        SIN ESCANEO
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right font-mono text-gray-500">-</td>
+                    <td className="px-4 py-3 text-right text-gray-500">-</td>
+                    <td className="px-4 py-3 text-center">
+                      <Link
+                        href={analysisHref}
+                        onClick={(e) => e.stopPropagation()}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-full border bg-gray-800 text-gray-300 border-gray-700 transition-colors hover:brightness-125"
+                      >
+                        Revisar
+                      </Link>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <Link href={analysisHref} onClick={(e) => e.stopPropagation()} className="text-gray-500 hover:text-emerald-400 transition-colors">
+                        <ArrowRightLeft className="w-4 h-4" />
+                      </Link>
+                    </td>
+                  </tr>
+                )
+              })}
+              {!scanLoading && filtered.map((r) => {
+                const analysisHref = buildAnalysisHref(r)
+                return (
                 <tr
                   key={r.symbol}
-                  onClick={() => handleSelectSymbol(r.symbol, r.market, r)}
+                  onClick={() => router.push(analysisHref)}
                   className={cn(
                     'hover:bg-gray-800/20 transition-colors cursor-pointer',
                   )}
@@ -1043,12 +1414,24 @@ export function ScreenerClient() {
                         <span className="text-xs font-bold text-gray-400">{r.symbol.slice(0, 2)}</span>
                       </div>
                       <div>
-                        <p className="font-mono font-semibold text-white">{r.symbol}</p>
+                        <Link
+                          href={analysisHref}
+                          onClick={(e) => e.stopPropagation()}
+                          className="font-mono font-semibold text-white hover:text-emerald-300 transition-colors"
+                        >
+                          {r.symbol}
+                        </Link>
                         <p className="text-xs text-gray-500 max-w-36 truncate">{r.name}</p>
                         {r.marketDataQuality?.provider ? (
                           <p className="text-[10px] text-cyan-300/80 max-w-36 truncate">
-                            DATA: {r.marketDataQuality.provider}
+                            {/* DATA: {r.marketDataQuality.provider} legacy contract; visible label is market-data specific. */}
+                            MERCADO: {r.marketDataQuality.provider}
                             {r.providerFallback?.fallback_used ? ' fallback' : ''}
+                          </p>
+                        ) : null}
+                        {r.cryptoMlDecision?.isCrypto ? (
+                          <p className="text-[10px] text-amber-300/80 max-w-36 truncate" title={r.cryptoMlDecision.model}>
+                            ML: {r.cryptoMlDecision.engineLabel}
                           </p>
                         ) : null}
                       </div>
@@ -1084,7 +1467,7 @@ export function ScreenerClient() {
                         {r.signalQuality.signal_status}
                       </span>
                     ) : r.quant ? (
-                      <span className={cn('text-xs font-bold px-2 py-1 rounded', r.quant.action === 'BUY' ? 'bg-emerald-500/20 text-emerald-400' : r.quant.action === 'SELL' ? 'bg-red-500/20 text-red-400' : 'bg-gray-800 text-gray-400')}>
+                      <span className={cn('text-xs font-bold px-2 py-1 rounded border', getActionPillClass(hasIncompleteQuantData(r) ? 'HOLD' : String(r.quant.action || 'HOLD')))}>
                         {hasIncompleteQuantData(r) ? 'PARCIAL' : r.quant.action}
                       </span>
                     ) : r.marketDataQuality && !r.marketDataQuality.usable_for_ml ? (
@@ -1094,7 +1477,7 @@ export function ScreenerClient() {
                           ? 'bg-amber-500/15 text-amber-300'
                           : 'bg-red-500/15 text-red-300'
                       )}>
-                        DATA
+                        MERCADO
                       </span>
                     ) : (
                       <span className="text-[10px] text-gray-600">N/A</span>
@@ -1107,19 +1490,29 @@ export function ScreenerClient() {
                     {r.noData || r.macdSignal === 'Sin datos' ? <span className="text-gray-500">—</span> : <span className={cn('text-xs font-semibold', r.macdSignal.includes('alcista') || r.macdSignal === 'Positivo' ? 'text-emerald-400' : 'text-red-400')}>{r.macdSignal}</span>}
                   </td>
                   <td className="px-4 py-3 text-center">
-                    {r.noData ? <span className="text-gray-500">—</span> : r.suggestions.length > 0 ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium rounded-full bg-gray-800 text-gray-300">
-                        {r.suggestions.length} señal(es)
-                      </span>
-                    ) : <span className="text-xs text-gray-600">—</span>}
+                    {r.noData ? <span className="text-gray-500">—</span> : (
+                      <Link
+                        href={analysisHref}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                        }}
+                        className={cn(
+                          'inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-full border transition-colors hover:brightness-125',
+                          getActionPillClass(getDisplayAction(r))
+                        )}
+                      >
+                        {getDisplayAction(r)}
+                        {r.suggestions.length > 0 ? ` · ${r.suggestions.length}` : ''}
+                      </Link>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <Link href={buildAnalysisHref(r)} onClick={(e) => e.stopPropagation()} className="text-gray-500 hover:text-emerald-400 transition-colors">
+                    <Link href={analysisHref} onClick={(e) => e.stopPropagation()} className="text-gray-500 hover:text-emerald-400 transition-colors">
                       <ArrowRightLeft className="w-4 h-4" />
                     </Link>
                   </td>
                 </tr>
-              ))}
+              )})}
             </tbody>
           </table>
         </div>
