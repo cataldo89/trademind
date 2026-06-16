@@ -216,6 +216,7 @@ ${reasons}`
     prompt += `\n\nIMPORTANTE: el screener llego a HOLD con decision baja. No conviertas esto en COMPRAR CON CAUTELA salvo que expliques una contradiccion nueva y fuerte contra el motivo del screener. Prioriza MANTENER si el motivo fue datos parciales, baja confianza, bloqueo, conflicto o riesgo.`
   }
   prompt += `\n\nFormato obligatorio: responde entre 120 y 220 palabras, con una recomendacion en negrita y exactamente 3 bullets utiles. Explica la razon principal del screener si existe. Tono sereno, practico y proporcional: no uses lenguaje alarmista como "prudencia extrema", "alto riesgo" o "socavar rapidamente" salvo que haya una senal SELL clara. Si el regimen HMM es Bear o Unknown, mencionarlo como condicion a vigilar, no como veto automatico. Cierra con una accion concreta: entrada gradual, mantener observacion o esperar confirmacion.`
+  prompt += `\n\nREGLA CRÍTICA DE LEGIBILIDAD: No utilices tecnicismos complejos o siglas de indicadores de forma directa (como MACD, RSI, FinBERT, HMM, o términos como 'decisión 35') en tus viñetas. Explica la información de forma simple y amigable en español cotidiano para que cualquier inversor retail pueda entenderla de un vistazo (por ejemplo: en lugar de 'RSI 63.9 alcista', di 'la fuerza del mercado es saludable'; en lugar de 'FinBERT neutral', di 'el sentimiento en las noticias es estable').`
   return prompt
 }
 
@@ -238,7 +239,7 @@ async function generateOpenAISuggestion(prompt: string, model: string) {
         messages: [
           {
             role: 'system',
-            content: 'Eres un asesor financiero equilibrado y sereno. Das confianza mediante claridad, escenarios y acciones concretas. No prometes resultados, pero evitas lenguaje alarmista si los datos no lo justifican.',
+            content: 'Eres un asesor financiero equilibrado y sereno. Das confianza mediante claridad, escenarios y acciones concretas en español sencillo y amigable. No prometes resultados, evitas el lenguaje alarmista y NO utilizas tecnicismos de indicadores de forma directa (como MACD, RSI, FinBERT o puntuaciones numéricas de decisión) en tu respuesta, explicándolos de forma intuitiva.',
           },
           { role: 'user', content: prompt },
         ],
@@ -268,7 +269,7 @@ async function generateGeminiSuggestion(prompt: string, model: string) {
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const geminiModel = genAI.getGenerativeModel({
       model,
-      systemInstruction: 'Eres un asesor financiero equilibrado y sereno. Das confianza mediante claridad, escenarios y acciones concretas. No prometes resultados, pero evitas lenguaje alarmista si los datos no lo justifican.',
+      systemInstruction: 'Eres un asesor financiero equilibrado y sereno. Das confianza mediante claridad, escenarios y acciones concretas en español sencillo y amigable. No prometes resultados, evitas el lenguaje alarmista y NO utilizas tecnicismos de indicadores de forma directa (como MACD, RSI, FinBERT o puntuaciones numéricas de decisión) en tu respuesta, explicándolos de forma intuitiva.',
       generationConfig: {
         temperature: 0.3,
         maxOutputTokens: 520,
@@ -345,21 +346,18 @@ function buildGroundedSuggestion(
       : 'MANTENER'
   const change = formatPercent(quote.regularMarketChangePercent)
   const screenerReason = context?.decisionReason || technicalSignal?.reasons?.[0] || 'no hay ventaja clara suficiente para tomar mas riesgo.'
-  const signalText = context?.displayAction
-    ? `${context.displayAction}${typeof decisionScore === 'number' ? ` con decision ${decisionScore.toFixed(0)}` : ''}`
-    : `${technicalSignal?.type || 'HOLD'}${technicalSignal?.strength ? ` con fuerza ${technicalSignal.strength}%` : ''}`
-  const indicators = [
-    typeof context?.rsi === 'number' ? `RSI ${context.rsi.toFixed(1)}` : null,
-    context?.macd ? `MACD ${context.macd}` : null,
-    context?.sentiment ? `FinBERT ${context.sentiment}` : null,
-    context?.regime ? `regimen ${context.regime}` : null,
-  ].filter(Boolean).join(', ') || 'indicadores mixtos o incompletos'
+
+  const reasonSpanish = screenerReason
+    .replace(/recent_ipo_short_history/g, 'historial corto por salida reciente a bolsa (IPO)')
+    .replace(/long_term_indicators_disabled/g, 'indicadores de largo plazo desactivados por falta de historial')
+    .replace(/positive_immediate_change/g, 'variación positiva reciente en el precio')
+    .replace(/valid_day_volume/g, 'volumen de negociación diario saludable')
 
   return `**${recommendation}**
 
-- El screener marco ${signalText}; la razon principal fue: ${screenerReason}
-- Precio actual ${formatCurrency(quote.regularMarketPrice)} con cambio diario ${change}; lectura complementaria: ${indicators}.
-- Accion sugerida: mantener observacion y esperar confirmacion con volumen/precio antes de ejecutar una entrada nueva.`
+- El análisis del screener sugiere considerar esta acción debido a: ${reasonSpanish}.
+- La variación de precio actual es de ${change} cotizando a ${formatCurrency(quote.regularMarketPrice)}, con condiciones que invitan a la prudencia.
+- Acción sugerida: mantener bajo observación activa y esperar señales claras de volumen y precio antes de tomar decisiones operativas.`
 }
 
 function hasBullishScreenerContext(
@@ -407,16 +405,11 @@ function buildAlignedScreenerSuggestion(
   quote: YahooQuote,
   context: AdvisorScreenerContext
 ) {
-  const action = context.displayAction || 'BUY'
-  const decision = typeof context.decisionScore === 'number' ? context.decisionScore.toFixed(0) : 'N/A'
-  const rsi = typeof context.rsi === 'number' ? context.rsi.toFixed(1) : 'N/A'
-  const sentiment = context.sentiment ? context.sentiment.toLowerCase() : 'sin dato fresco'
-
   return `**COMPRAR CON CAUTELA**
 
-- ${symbol} (${market}) sube ${formatPercent(quote.regularMarketChangePercent)} y el screener lo marco ${action} con decision ${decision}.
-- La lectura integrada mantiene momentum: MACD ${context.macd || 'sin dato'}, RSI ${rsi} y FinBERT ${sentiment}.
-- Entrada gradual; confirmar continuidad intradia y evitar aumentar si pierde soporte/VWAP.`
+- El activo ${symbol} (${market}) muestra un rendimiento diario de ${formatPercent(quote.regularMarketChangePercent)}, y nuestro motor cuantitativo ha detectado condiciones favorables para considerar compras graduales.
+- El momentum de precios y el volumen de transacciones apoyan la idea de acumulación de posiciones de forma controlada.
+- Se recomienda una entrada pausada, evitando compras apresuradas y esperando confirmación de estabilidad en la sesión actual.`
 }
 
 function alignSuggestionWithScreener(
