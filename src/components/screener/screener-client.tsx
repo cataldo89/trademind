@@ -670,6 +670,33 @@ export function ScreenerClient() {
     return `/analysis?${params.toString()}`
   }
 
+  const buildAnalysisHrefFromMlRanking = (r: any) => {
+    const params = new URLSearchParams()
+    const market = getZestySymbolMarket(r.symbol)
+    
+    params.set('symbol', r.symbol)
+    params.set('market', toMarket(market))
+    params.set('from', 'screener')
+    
+    // Mapeamos AVOID a SELL para displayAction
+    const action = r.signal === 'AVOID' ? 'SELL' : r.signal
+    params.set('screenerAction', action)
+    params.set('screenerScore', Number(r.score || 0).toFixed(0))
+    params.set('decisionScore', Number(r.score || 0).toFixed(0))
+    params.set('decisionSource', 'quant_engine')
+    params.set('decisionStatus', 'ML Fast')
+    
+    const reason = Array.isArray(r.main_reasons) && r.main_reasons.length > 0
+      ? r.main_reasons.map((reasonStr: string) => translateReason(reasonStr)).join(', ')
+      : 'Señal del motor de Machine Learning rápido'
+    params.set('decisionReason', reason.slice(0, 220))
+    
+    params.set('quantAction', r.signal)
+    params.set('confidence', Number(Math.min(100, Math.max(0, Math.abs(r.score || 0)))).toFixed(0))
+    
+    return `/analysis?${params.toString()}`
+  }
+
   const bestRecommendation = useMemo(() => {
     const candidates = scanResults
       .filter((r) => !isMarketDataBlocked(r))
@@ -1015,9 +1042,9 @@ export function ScreenerClient() {
               const matchingResult = scanResults.find((sr) => sr.symbol === r.symbol)
               const href = matchingResult
                 ? buildAnalysisHref(matchingResult)
-                : `/analysis?symbol=${encodeURIComponent(r.symbol)}&market=${encodeURIComponent(getZestySymbolMarket(r.symbol))}`
+                : buildAnalysisHrefFromMlRanking(r)
               return (
-                <a
+                <Link
                   key={i}
                   href={href}
                   className={cn(
@@ -1043,7 +1070,7 @@ export function ScreenerClient() {
                     <span>Ver análisis</span>
                     <ChevronRight className="w-3 h-3 ml-auto" />
                   </div>
-                </a>
+                </Link>
               )
             })}
           </div>

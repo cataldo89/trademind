@@ -110,6 +110,9 @@ function sanitizeScreenerContext(value: unknown, symbol: string, market: Market)
     macd: optionalString(candidate.macd),
     rsi: finiteNumber(candidate.rsi),
     changePercent: finiteNumber(candidate.changePercent),
+    decisionSource: optionalString(candidate.decisionSource),
+    decisionStatus: optionalString(candidate.decisionStatus),
+    decisionReason: optionalString(candidate.decisionReason),
   }
 }
 
@@ -166,7 +169,9 @@ ${newsHeadlines}`
     - MACD visto por screener: ${screenerContext.macd || 'No disponible'}
     - FinBERT visto por screener: ${screenerContext.sentiment || 'No disponible'}${typeof screenerContext.sentimentScore === 'number' ? ` (score ${screenerContext.sentimentScore})` : ''}
     - Quant local en screener: ${screenerContext.quantAction || 'No disponible'}${typeof screenerContext.confidence === 'number' ? ` con confianza ${screenerContext.confidence}%` : ''}
-    - Regimen HMM en screener: ${screenerContext.regime || 'No disponible'}`
+    - Regimen HMM en screener: ${screenerContext.regime || 'No disponible'}
+    - Origen de decision screener: ${screenerContext.decisionSource || 'No disponible'}${screenerContext.decisionStatus ? ` (${screenerContext.decisionStatus})` : ''}
+    - Motivo de decision screener: ${screenerContext.decisionReason || 'No disponible'}`
   }
 
   if (quantData) {
@@ -193,9 +198,24 @@ ${reasons}`
     prompt += `\n\n- Análisis de Sentimiento Local (FinBERT): El sentimiento general de las noticias en la base de datos es ${sentimentData.sentiment} (Score: ${sentimentData.score}).`
   }
 
+  const isInsufficientCandles = technicalSignal?.reasons?.some((r) =>
+    r.toLowerCase().includes('insuficiente') ||
+    r.toLowerCase().includes('velas') ||
+    r.toLowerCase().includes('historial')
+  ) || false
+
+  if (isInsufficientCandles) {
+    prompt += `\n\nATENCIÓN - DATOS HISTÓRICOS INSUFICIENTES PARA INDICADORES LOCALES:
+    La señal técnica local es HOLD debido a la falta de suficientes velas en el gráfico (mínimo 50 velas).
+    En este caso de datos insuficientes, debes IGNORAR el HOLD técnico local y PRIORIZAR el análisis y lógica del motor Quant/ML local (LightGBM) que se muestra en el contexto del Screener (por ejemplo, si el ML/Screener sugiere BUY/COMPRAR, tu sugerencia principal debe ser COMPRAR CON CAUTELA, no MANTENER). Explica de forma clara y directa al usuario que aunque falten velas para indicadores tradicionales, el motor cuantitativo ML proporciona una señal válida basada en su lógica de clasificación (como IPO reciente, cambio positivo inmediato, volumen válido, etc.).`
+  }
+
   prompt += `\n\nUsa estos datos cuantitativos, técnicos y de sentimiento para justificar tu respuesta. Si el ML dice HOLD con confianza baja o neutral, no lo trates como veto automático contra una señal técnica BUY; en ese caso prefiere COMPRAR CON CAUTELA si no hay riesgos claros. Empieza la respuesta con la recomendación principal en negrita.`
   prompt += `\n\nSi el contexto del Screener muestra BUY o BUY (Tech), FinBERT positivo y momentum alcista, no respondas MANTENER salvo que exista una contradiccion explicita en precio, noticias o tecnica.`
-  prompt += `\n\nFormato obligatorio: responde en maximo 120 palabras, con una recomendacion en negrita y 3 bullets cortos. Tono sereno, practico y proporcional: no uses lenguaje alarmista como "prudencia extrema", "alto riesgo" o "socavar rapidamente" salvo que haya una senal SELL clara. Si el regimen HMM es Bear o Unknown, mencionarlo como condicion a vigilar, no como veto automatico. Cierra con una accion concreta: entrada gradual, mantener observacion o esperar confirmacion.`
+  if (screenerContext?.displayAction?.toUpperCase().includes('HOLD') && (screenerContext.decisionScore ?? 100) < 50) {
+    prompt += `\n\nIMPORTANTE: el screener llego a HOLD con decision baja. No conviertas esto en COMPRAR CON CAUTELA salvo que expliques una contradiccion nueva y fuerte contra el motivo del screener. Prioriza MANTENER si el motivo fue datos parciales, baja confianza, bloqueo, conflicto o riesgo.`
+  }
+  prompt += `\n\nFormato obligatorio: responde entre 120 y 220 palabras, con una recomendacion en negrita y exactamente 3 bullets utiles. Explica la razon principal del screener si existe. Tono sereno, practico y proporcional: no uses lenguaje alarmista como "prudencia extrema", "alto riesgo" o "socavar rapidamente" salvo que haya una senal SELL clara. Si el regimen HMM es Bear o Unknown, mencionarlo como condicion a vigilar, no como veto automatico. Cierra con una accion concreta: entrada gradual, mantener observacion o esperar confirmacion.`
   return prompt
 }
 
@@ -223,7 +243,7 @@ async function generateOpenAISuggestion(prompt: string, model: string) {
           { role: 'user', content: prompt },
         ],
         temperature: 0.3,
-        max_tokens: 220,
+        max_tokens: 450,
       }),
     })
 
@@ -251,7 +271,7 @@ async function generateGeminiSuggestion(prompt: string, model: string) {
       systemInstruction: 'Eres un asesor financiero equilibrado y sereno. Das confianza mediante claridad, escenarios y acciones concretas. No prometes resultados, pero evitas lenguaje alarmista si los datos no lo justifican.',
       generationConfig: {
         temperature: 0.3,
-        maxOutputTokens: 260,
+        maxOutputTokens: 520,
       }
     });
 
@@ -309,6 +329,39 @@ Titulares recientes considerados:
 ${newsHeadlines}`
 }
 
+function buildGroundedSuggestion(
+  symbol: string,
+  market: Market,
+  quote: YahooQuote,
+  technicalSignal?: { type: 'BUY' | 'SELL' | 'HOLD'; strength?: number; reasons?: string[] },
+  context?: AdvisorScreenerContext
+) {
+  const contextAction = (context?.displayAction || technicalSignal?.type || 'HOLD').toUpperCase()
+  const decisionScore = typeof context?.decisionScore === 'number' ? context.decisionScore : undefined
+  const recommendation = contextAction.includes('BUY') && (decisionScore ?? 75) >= 60
+    ? 'COMPRAR CON CAUTELA'
+    : contextAction.includes('SELL')
+      ? 'EVITAR / VENDER'
+      : 'MANTENER'
+  const change = formatPercent(quote.regularMarketChangePercent)
+  const screenerReason = context?.decisionReason || technicalSignal?.reasons?.[0] || 'no hay ventaja clara suficiente para tomar mas riesgo.'
+  const signalText = context?.displayAction
+    ? `${context.displayAction}${typeof decisionScore === 'number' ? ` con decision ${decisionScore.toFixed(0)}` : ''}`
+    : `${technicalSignal?.type || 'HOLD'}${technicalSignal?.strength ? ` con fuerza ${technicalSignal.strength}%` : ''}`
+  const indicators = [
+    typeof context?.rsi === 'number' ? `RSI ${context.rsi.toFixed(1)}` : null,
+    context?.macd ? `MACD ${context.macd}` : null,
+    context?.sentiment ? `FinBERT ${context.sentiment}` : null,
+    context?.regime ? `regimen ${context.regime}` : null,
+  ].filter(Boolean).join(', ') || 'indicadores mixtos o incompletos'
+
+  return `**${recommendation}**
+
+- El screener marco ${signalText}; la razon principal fue: ${screenerReason}
+- Precio actual ${formatCurrency(quote.regularMarketPrice)} con cambio diario ${change}; lectura complementaria: ${indicators}.
+- Accion sugerida: mantener observacion y esperar confirmacion con volumen/precio antes de ejecutar una entrada nueva.`
+}
+
 function hasBullishScreenerContext(
   context: AdvisorScreenerContext | undefined,
   technicalSignal?: { type: 'BUY' | 'SELL' | 'HOLD'; strength?: number; reasons?: string[] }
@@ -318,12 +371,23 @@ function hasBullishScreenerContext(
   const sentiment = (context.sentiment || '').toUpperCase()
   const macd = (context.macd || '').toLowerCase()
 
-  return action.includes('BUY') &&
-    (technicalSignal?.type === 'BUY' || macd.includes('alcista') || macd.includes('positivo')) &&
-    sentiment !== 'NEGATIVE' &&
-    (context.finalScore ?? 0) >= 70 &&
-    (context.decisionScore ?? 0) >= 75 &&
-    (context.changePercent ?? 0) >= 0
+  const isInsufficientCandles = technicalSignal?.reasons?.some((r) =>
+    r.toLowerCase().includes('insuficiente') ||
+    r.toLowerCase().includes('velas') ||
+    r.toLowerCase().includes('historial')
+  ) || false
+
+  if (action.includes('BUY') && sentiment !== 'NEGATIVE') {
+    if (isInsufficientCandles) {
+      // Si faltan velas pero el quant es alcista, confiamos en el quant
+      return true
+    }
+    return (technicalSignal?.type === 'BUY' || macd.includes('alcista') || macd.includes('positivo')) &&
+      (context.finalScore ?? 0) >= 70 &&
+      (context.decisionScore ?? 0) >= 75 &&
+      (context.changePercent ?? 0) >= 0
+  }
+  return false
 }
 
 function startsWithHoldRecommendation(text: string) {
@@ -369,6 +433,21 @@ function alignSuggestionWithScreener(
   return buildAlignedScreenerSuggestion(symbol, market, quote, context)
 }
 
+function normalizeSuggestion(
+  suggestion: string,
+  symbol: string,
+  market: Market,
+  quote: YahooQuote,
+  context: AdvisorScreenerContext | undefined,
+  technicalSignal?: { type: 'BUY' | 'SELL' | 'HOLD'; strength?: number; reasons?: string[] }
+) {
+  const aligned = alignSuggestionWithScreener(suggestion, symbol, market, quote, context, technicalSignal)
+  if (isIncompleteSuggestion(aligned)) {
+    return buildGroundedSuggestion(symbol, market, quote, technicalSignal, context)
+  }
+  return aligned
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as AnalyzeRequestBody
@@ -401,12 +480,29 @@ export async function POST(request: NextRequest) {
     const quantRes = await quantClient.runWorkflow(yahooSymbol)
     const quantData = quantRes.success ? quantRes.data?.workflow_result as QuantPromptData | undefined : null
 
+    // Generar un screenerContext de fallback basado en quantData si no viene de la UI
+    let finalScreenerContext = screenerContext
+    if (!finalScreenerContext && quantData) {
+      finalScreenerContext = {
+        source: 'screener',
+        symbol,
+        market,
+        displayAction: quantData.action,
+        quantAction: quantData.action,
+        confidence: quantData.confidence,
+        decisionScore: quantData.confidence,
+        regime: quantData.market_regime,
+        decisionSource: 'quant_engine',
+        decisionReason: `Análisis cuantitativo de Machine Learning (LightGBM). Régimen de mercado: ${quantData.market_regime || 'Desconocido'}`
+      }
+    }
+
     const sentRes = await quantClient.getSentimentCache()
     const sentimentData = sentRes.success && sentRes.data
       ? lookupSentiment(sentRes.data as UnknownRecord, symbol, yahooSymbol)
       : null
 
-    const prompt = buildPrompt(symbol, market, quote, newsHeadlines, quantData, sentimentData, technicalSignal, range, screenerContext)
+    const prompt = buildPrompt(symbol, market, quote, newsHeadlines, quantData, sentimentData, technicalSignal, range, finalScreenerContext)
     const model = process.env.OPENAI_MODEL || 'gpt-4o-mini'
 
     if (process.env.GEMINI_API_KEY) {
@@ -414,7 +510,7 @@ export async function POST(request: NextRequest) {
       const suggestion = await generateGeminiSuggestion(prompt, geminiModelStr)
 
       if (suggestion) {
-        const alignedSuggestion = alignSuggestionWithScreener(suggestion, symbol, market, quote, screenerContext, technicalSignal)
+        const alignedSuggestion = normalizeSuggestion(suggestion, symbol, market, quote, finalScreenerContext, technicalSignal)
         return NextResponse.json({
           data: {
             suggestion: alignedSuggestion,
@@ -428,7 +524,7 @@ export async function POST(request: NextRequest) {
       const suggestion = await generateOpenAISuggestion(prompt, model)
 
       if (suggestion) {
-        const alignedSuggestion = alignSuggestionWithScreener(suggestion, symbol, market, quote, screenerContext, technicalSignal)
+        const alignedSuggestion = normalizeSuggestion(suggestion, symbol, market, quote, finalScreenerContext, technicalSignal)
         return NextResponse.json({
           data: {
             suggestion: alignedSuggestion,
@@ -441,7 +537,7 @@ export async function POST(request: NextRequest) {
     }
 
     const suggestion = buildDeterministicSuggestion(symbol, market, quote, newsHeadlines, technicalSignal)
-    const alignedSuggestion = alignSuggestionWithScreener(suggestion, symbol, market, quote, screenerContext, technicalSignal)
+    const alignedSuggestion = normalizeSuggestion(suggestion, symbol, market, quote, finalScreenerContext, technicalSignal)
 
     return NextResponse.json({
       data: {
