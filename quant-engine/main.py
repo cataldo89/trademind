@@ -413,6 +413,21 @@ def train_asset_ranker(req: TrainAssetRankerRequest):
     )
 
 
+@app.post("/ml/validate_asset_ranker")
+def validate_asset_ranker_endpoint(req: TrainAssetRankerRequest):
+    import sys
+    import os
+    sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+    from asset_ranker import train_lightgbm_asset_ranker
+    
+    return train_lightgbm_asset_ranker(
+        historical_data_by_symbol=req.historical_data_by_symbol,
+        horizon_days=req.horizon_days,
+        model_version=req.model_version
+    )
+
+
+
 @app.post("/ml/rank_assets")
 def rank_assets_endpoint(req: RankAssetsRequest):
     import sys
@@ -452,12 +467,41 @@ from typing import List
 class BatchSymbolRequest(BaseModel):
     symbols: List[str]
 
+class SentimentUpdateRequest(BaseModel):
+    symbols: List[str]
+    horizon_days: List[int] = Field(default_factory=lambda: [1, 5, 20])
+
+@app.post("/quant/sentiment/update")
+def update_news_sentiment(req: SentimentUpdateRequest):
+    import sys
+    import os
+    sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+    from news_sentiment_pipeline import run_news_sentiment_update
+
+    horizons = [
+        int(horizon)
+        for horizon in req.horizon_days
+        if isinstance(horizon, int) or str(horizon).isdigit()
+    ]
+    result = run_news_sentiment_update(req.symbols, horizons or [1, 5, 20])
+    return {
+        "status": "completed",
+        "updated_symbols": result["updated_symbols"],
+        "requested": result["requested_symbols"],
+        "processed": result["processed_symbols"],
+        "truncated": result["truncated"],
+        "limit": result["limit"],
+        "horizons": result["horizons"],
+        "articles_used": result["articles_used"],
+        "provider_errors": result["provider_errors"],
+    }
+
 @app.post("/ml/trigger_sentiment_scan")
 def trigger_sentiment_scan(req: BatchSymbolRequest):
     import sys
     import os
     sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-    from sentiment_models import run_daily_sentiment_job
+    from news_sentiment_pipeline import run_news_sentiment_update
     
     unique_symbols = []
     seen_symbols = set()
@@ -468,13 +512,15 @@ def trigger_sentiment_scan(req: BatchSymbolRequest):
             unique_symbols.append(normalized)
 
     limited_symbols = unique_symbols[:SENTIMENT_SCAN_MAX_SYMBOLS]
-    data = run_daily_sentiment_job(limited_symbols)
+    data = run_news_sentiment_update(limited_symbols, [1, 5, 20])
     return {
         "status": "completed",
         "requested": len(unique_symbols),
-        "processed": len(data),
+        "processed": data.get("processed_symbols", len(limited_symbols)),
         "truncated": len(unique_symbols) > len(limited_symbols),
         "limit": SENTIMENT_SCAN_MAX_SYMBOLS,
+        "articles_used": data.get("articles_used", 0),
+        "provider_errors": data.get("provider_errors", {}),
     }
 
 @app.get("/ml/sentiment_cache")

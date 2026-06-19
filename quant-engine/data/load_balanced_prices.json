@@ -1,0 +1,38 @@
+[
+    {
+        "ticker": "AAPL",
+        "fecha": "2026-06-01",
+        "precio_cierre": 306.31,
+        "fuente_utilizada": "alpha-vantage"
+    },
+    {
+        "ticker": "MSFT",
+        "fecha": "2026-06-01",
+        "precio_cierre": 460.52,
+        "fuente_utilizada": "finnhub"
+    },
+    {
+        "ticker": "GOOGL",
+        "fecha": "2026-06-01",
+        "precio_cierre": 376.37,
+        "fuente_utilizada": "alpha-vantage"
+    },
+    {
+        "ticker": "COLO",
+        "fecha": "2026-06-01",
+        "precio_cierre": 41.74,
+        "fuente_utilizada": "finnhub"
+    },
+    {
+        "ticker": "PLTR",
+        "fecha": "2026-06-01",
+        "precio_cierre": 160.65,
+        "fuente_utilizada": "alpha-vantage"
+    },
+    {
+        "ticker": "TSLA",
+        "fecha": "2026-06-01",
+        "precio_cierre": 415.88,
+        "fuente_utilizada": "finnhub"
+    }
+]

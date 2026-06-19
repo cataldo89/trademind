@@ -4,6 +4,12 @@
  * Fallback: Finnhub (API key required - 60 req/min free)
  * Yahoo Finance via proxy: No key required for basic quotes
  *
+/**
+ * Market Data Service
+ * Primary: Alpha Vantage (API key required - 25 req/day free, 500 req/day premium)
+ * Fallback: Finnhub (API key required - 60 req/min free)
+ * Yahoo Finance via proxy: No key required for basic quotes
+ *
  * US Markets: NYSE, NASDAQ — symbols standard (AAPL, MSFT, etc.)
  */
 
@@ -11,6 +17,24 @@ import { Candle, Quote, MarketMover, Market, Timeframe } from '@/types'
 
 // Category mapping for Zesty symbols (from Antecedentes PDFs)
 export const SYMBOL_CATEGORY_MAP: Record<string, string> = {
+  // Cripto Mercado Pago
+  'MUSD-USD': 'crypto-mercado-pago',
+  'BTC-USD': 'crypto-mercado-pago',
+  'ETH-USD': 'crypto-mercado-pago',
+  'XRP-USD': 'crypto-mercado-pago',
+  'SOL-USD': 'crypto-mercado-pago',
+  'PAXG-USD': 'crypto-mercado-pago',
+  'ADA-USD': 'crypto-mercado-pago',
+  'LINK-USD': 'crypto-mercado-pago',
+  'SUI-USD': 'crypto-mercado-pago',
+  'XLM-USD': 'crypto-mercado-pago',
+  'AVAX-USD': 'crypto-mercado-pago',
+  'LTC-USD': 'crypto-mercado-pago',
+  'DOT-USD': 'crypto-mercado-pago',
+  'UNI-USD': 'crypto-mercado-pago',
+  'NEAR-USD': 'crypto-mercado-pago',
+  'AAVE-USD': 'crypto-mercado-pago',
+
   // Bitcoin & Crypto
   'BITX': 'bitcoin',
   'BABA': 'ia', // Alibaba in AI/Tech
@@ -165,6 +189,7 @@ export const SYMBOL_CATEGORY_MAP: Record<string, string> = {
   
   // Acciones Populares/50 más populares
   'AMZN': 'acciones-pop',
+  'SPCX': 'acciones-pop',
   'TSLA': 'acciones-pop',
   'COST': 'acciones-pop',
   'JPM': 'acciones-pop',
@@ -494,6 +519,7 @@ export const POPULAR_US_SYMBOLS = [
   { symbol: 'AMZN', name: 'Amazon.com Inc.' },
   { symbol: 'GOOGL', name: 'Alphabet Inc.' },
   { symbol: 'META', name: 'Meta Platforms' },
+  { symbol: 'SPCX', name: 'Space Exploration Technologies Corp.' },
   { symbol: 'TSLA', name: 'Tesla Inc.' },
   { symbol: 'BRK.B', name: 'Berkshire Hathaway' },
   { symbol: 'JPM', name: 'JPMorgan Chase' },
@@ -514,6 +540,7 @@ export const AI_TECH_SYMBOLS = [
   { symbol: 'SMCI', name: 'Super Micro Computer' },
   { symbol: 'ARM', name: 'ARM Holdings' },
   { symbol: 'PLTR', name: 'Palantir Technologies' },
+  { symbol: 'SPCX', name: 'Space Exploration Technologies Corp.' },
   { symbol: 'AI', name: 'C3.ai Inc.' },
   { symbol: 'SOUN', name: 'SoundHound AI' },
 ]
@@ -543,6 +570,62 @@ export interface ZestyCategory {
   name: string
   symbols: { symbol: string; name: string }[]
 }
+
+export const ZESTY_ALPACA_CRYPTO_SYMBOLS = [
+  { symbol: 'AAVE-USD', name: 'Aave' },
+  { symbol: 'ADA-USD', name: 'Cardano' },
+  { symbol: 'ARB-USD', name: 'Arbitrum' },
+  { symbol: 'AVAX-USD', name: 'Avalanche' },
+  { symbol: 'BAT-USD', name: 'Basic Attention Token' },
+  { symbol: 'BCH-USD', name: 'Bitcoin Cash' },
+  { symbol: 'BONK-USD', name: 'Bonk' },
+  { symbol: 'BTC-USD', name: 'Bitcoin' },
+  { symbol: 'CRV-USD', name: 'Curve' },
+  { symbol: 'DOGE-USD', name: 'Dogecoin' },
+  { symbol: 'DOT-USD', name: 'Polkadot' },
+  { symbol: 'ETH-USD', name: 'Ethereum' },
+  { symbol: 'FIL-USD', name: 'Filecoin' },
+  { symbol: 'GRT-USD', name: 'The Graph' },
+  { symbol: 'HYPE-USD', name: 'Hyperliquid' },
+  { symbol: 'LDO-USD', name: 'Lido DAO' },
+  { symbol: 'LINK-USD', name: 'Chainlink' },
+  { symbol: 'LTC-USD', name: 'Litecoin' },
+  { symbol: 'ONDO-USD', name: 'Ondo' },
+  { symbol: 'PAXG-USD', name: 'Pax Gold' },
+  { symbol: 'PEPE-USD', name: 'Pepe' },
+  { symbol: 'POL-USD', name: 'Polygon' },
+  { symbol: 'RENDER-USD', name: 'Render' },
+  { symbol: 'SHIB-USD', name: 'Shiba Inu' },
+  { symbol: 'SKY-USD', name: 'Sky' },
+  { symbol: 'SOL-USD', name: 'Solana' },
+  { symbol: 'SUSHI-USD', name: 'SushiSwap' },
+  { symbol: 'TRUMP-USD', name: 'Trump' },
+  { symbol: 'UNI-USD', name: 'Uniswap' },
+  { symbol: 'USDC-USD', name: 'USD Coin' },
+  { symbol: 'USDG-USD', name: 'Global Dollar' },
+  { symbol: 'USDT-USD', name: 'Tether' },
+  { symbol: 'WIF-USD', name: 'dogwifhat' },
+  { symbol: 'XRP-USD', name: 'Ripple' },
+]
+
+export const CRYPTO_MERCADO_PAGO_SYMBOLS = [
+  { symbol: 'MUSD-USD', name: 'Meli Dólar' },
+  { symbol: 'BTC-USD', name: 'Bitcoin' },
+  { symbol: 'ETH-USD', name: 'Ethereum' },
+  { symbol: 'XRP-USD', name: 'XRP' },
+  { symbol: 'SOL-USD', name: 'Solana' },
+  { symbol: 'PAXG-USD', name: 'Pax Gold' },
+  { symbol: 'ADA-USD', name: 'Cardano' },
+  { symbol: 'LINK-USD', name: 'Chainlink' },
+  { symbol: 'SUI-USD', name: 'Sui' },
+  { symbol: 'XLM-USD', name: 'Stellar' },
+  { symbol: 'AVAX-USD', name: 'Avalanche' },
+  { symbol: 'LTC-USD', name: 'Litecoin' },
+  { symbol: 'DOT-USD', name: 'Polkadot' },
+  { symbol: 'UNI-USD', name: 'Uniswap' },
+  { symbol: 'NEAR-USD', name: 'Near Protocol' },
+  { symbol: 'AAVE-USD', name: 'Aave' },
+]
 
 export const ZESTY_SYMBOLS = [
   { symbol: 'BITX', name: '2x Bitcoin Strategy ETF' },
@@ -762,7 +845,7 @@ export const ZESTY_SYMBOLS = [
   { symbol: 'FLEE', name: 'Franklin FTSE Europe ETF' },
   { symbol: 'FLEU', name: 'Franklin FTSE Eurozone ETF' },
   { symbol: 'FLGR', name: 'Franklin FTSE Germany ETF' },
-  { symbol: 'FLHK', name: 'Franklin FTSE Hong Kong ETF' },
+  { symbol: 'FLHY', name: 'Franklin High Yield Corporate ETF' },
   { symbol: 'FLIN', name: 'Franklin FTSE India ETF' },
   { symbol: 'FLJP', name: 'Franklin FTSE Japan ETF' },
   { symbol: 'FLJH', name: 'Franklin FTSE Japan Hedged ETF' },
@@ -949,6 +1032,7 @@ export const ZESTY_SYMBOLS = [
   { symbol: 'SNAP', name: 'Snap Inc.' },
   { symbol: 'TAN', name: 'Solar Invesco ETF' },
   { symbol: 'SOLV', name: 'Solventum Corporation' },
+  { symbol: 'SPCX', name: 'Space Exploration Technologies Corp. Class A' },
   { symbol: 'BIL', name: 'SPDR Bloomberg 1-3 Month T-Bill ETF' },
   { symbol: 'RWR', name: 'SPDR DJ Wilshire REIT ETF' },
   { symbol: 'KOMP', name: 'SPDR Kensho New Economies Composite ETF' },
@@ -1017,10 +1101,13 @@ export const ZESTY_SYMBOLS = [
   { symbol: 'USSG', name: 'Xtrackers MSCI USA ESG Leaders Equity ETF' },
   { symbol: 'CRSH', name: 'YieldMax Short TSLA Option Income Strategy ETF' },
   { symbol: 'ZTS', name: 'Zoetis' },
+  ...CRYPTO_MERCADO_PAGO_SYMBOLS,
 ]
 
 export function getCategorizedZestySymbols(): ZestyCategory[] {
   const categories: Record<string, ZestyCategory> = {
+    'zesty-alpaca-crypto': { id: 'zesty-alpaca-crypto', name: 'Cripto Zesty Alpaca', symbols: [...ZESTY_ALPACA_CRYPTO_SYMBOLS] },
+    'crypto-mercado-pago': { id: 'crypto-mercado-pago', name: 'Cripto Mercado Pago', symbols: [...CRYPTO_MERCADO_PAGO_SYMBOLS] },
     'zesty-all': { id: 'zesty-all', name: 'Zesty All', symbols: [] },
     'acciones-pop': { id: 'acciones-pop', name: 'Acciones Populares', symbols: [] },
     'altos-div': { id: 'altos-div', name: 'Altos dividendos', symbols: [] },
@@ -1108,30 +1195,31 @@ export function getCategorizedZestySymbols(): ZestyCategory[] {
     const priority: Record<string, number> = {
       'zesty-all': 1,
       'acciones-pop': 2,
-      'tecnologia': 3,
-      'semiconductores': 4,
-      'ia': 5,
-      'sp500': 6,
-      'etf-sp500': 7,
-      'etf-paises': 8,
-      'etf-populares': 9,
-      'etf-apalancados': 10,
-      'etf-inversos': 11,
-      'biotecnologia': 12,
-      'salud': 13,
-      'altos-div': 14,
-      'renta-fija': 15,
-      'materias-primas': 16,
-      'gaming': 17,
-      'sustentabilidad': 18,
-      'moda': 19,
-      'bajo-riesgo': 20,
-      'bitcoin': 21,
-      'ethereum': 22,
-      'etf-balanceados': 23,
-      'otros': 24,
+      'zesty-alpaca-crypto': 3,
+      'crypto-mercado-pago': 4,
+      'tecnologia': 5,
+      'semiconductores': 6,
+      'ia': 7,
+      'sp500': 8,
+      'etf-sp500': 9,
+      'etf-paises': 10,
+      'etf-populares': 11,
+      'etf-apalancados': 12,
+      'etf-inversos': 13,
+      'biotecnologia': 14,
+      'salud': 15,
+      'altos-div': 16,
+      'renta-fija': 17,
+      'materias-primas': 18,
+      'gaming': 19,
+      'sustentabilidad': 20,
+      'moda': 21,
+      'bajo-riesgo': 22,
+      'bitcoin': 23,
+      'ethereum': 24,
+      'etf-balanceados': 25,
+      'otros': 26,
     }
     return (priority[a.id] || 999) - (priority[b.id] || 999)
   })
 }
-

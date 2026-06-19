@@ -11,12 +11,28 @@ export function formatCurrency(
   currency = 'USD',
   locale = 'es-CL'
 ): string {
-  return new Intl.NumberFormat(locale, {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value)
+  return formatPrice(value, currency, locale)
+}
+
+// Format price raw (without currency symbol)
+export function formatPriceRaw(price: number, locale = 'es-CL'): string {
+  const absVal = Math.abs(price)
+  let decimals = 2
+  if (absVal > 0 && absVal < 1) {
+    if (absVal < 0.001) {
+      decimals = 8
+    } else if (absVal < 0.1) {
+      decimals = 6
+    } else {
+      decimals = 4
+    }
+  } else if (absVal < 10) {
+    decimals = 3
+  }
+  return price.toLocaleString(locale, {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  })
 }
 
 // Format percentage
@@ -40,7 +56,19 @@ export function formatLargeNumber(value: number, locale = 'es-CL'): string {
 
 // Format price with dynamic decimals
 export function formatPrice(price: number, currency = 'USD', locale = 'es-CL'): string {
-  const decimals = price < 1 ? 4 : price < 10 ? 3 : 2
+  const absVal = Math.abs(price)
+  let decimals = 2
+  if (absVal > 0 && absVal < 1) {
+    if (absVal < 0.001) {
+      decimals = 8
+    } else if (absVal < 0.1) {
+      decimals = 6
+    } else {
+      decimals = 4
+    }
+  } else if (absVal < 10) {
+    decimals = 3
+  }
   return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency,

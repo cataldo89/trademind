@@ -1,16 +1,17 @@
 'use client'
 
 import { useCallback, useState, useMemo, useEffect } from 'react'
-import { useSearchParams } from 'next/navigation'
-import { getCategorizedZestySymbols } from '@/lib/market-data'
+import { useSearchParams, useRouter, usePathname } from 'next/navigation'
+import { getCategorizedZestySymbols, getZestySymbolMarket } from '@/lib/market-data'
 import { CHART_RANGES, normalizeChartRange, type ChartRange } from '@/lib/chart-ranges'
 import { Market } from '@/types'
+import type { AdvisorScreenerContext } from '@/lib/ai-advisor-context'
 import { CandlestickChart } from '@/components/analysis/candlestick-chart'
 import { TechnicalSummary } from '@/components/analysis/technical-summary'
 import { QuoteHeader } from '@/components/analysis/quote-header'
 import { cn } from '@/lib/utils'
 import { Search, Activity, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen } from 'lucide-react'
-import { isMarketOpen } from '@/lib/market-schedule'
+import { useMarketStatus } from '@/hooks/useMarketStatus'
 
 type ZestySymbol = { symbol: string; name: string }
 
@@ -24,6 +25,7 @@ const SYMBOL_ALIASES: Record<string, string[]> = {
   GOOGL: ['google', 'alphabet'],
   META: ['facebook', 'instagram'],
   AMZN: ['amazon', 'aws'],
+  SPCX: ['spacex', 'space x', 'space exploration technologies', 'starlink', 'elon musk', 'rocket', 'aerospace'],
   QQQ: ['nasdaq', 'nasdaq 100'],
   SPY: ['s&p500', 's&p 500', 'sp500'],
 }
@@ -32,6 +34,7 @@ const QUICK_SYMBOLS = [
   { symbol: 'NVDA', label: 'Nvidia' },
   { symbol: 'AAPL', label: 'Apple' },
   { symbol: 'MSFT', label: 'Microsoft' },
+  { symbol: 'SPCX', label: 'SpaceX' },
   { symbol: 'TSLA', label: 'Tesla' },
   { symbol: 'SPY', label: 'S&P 500' },
   { symbol: 'QQQ', label: 'Nasdaq' },
@@ -56,6 +59,40 @@ function startsWithSearchTerm(value: string, query: string) {
   return getSearchTokens(value).some((token) => token.startsWith(query))
 }
 
+function parseFiniteNumber(value: string | null) {
+  if (value === null || value.trim() === '') return undefined
+  const number = Number(value)
+  return Number.isFinite(number) ? number : undefined
+}
+
+function buildScreenerContext(
+  params: Pick<URLSearchParams, 'get'>,
+  symbol: string,
+  market: Market
+): AdvisorScreenerContext | undefined {
+  if (params.get('from') !== 'screener') return undefined
+
+  return {
+    source: 'screener',
+    symbol: symbol.toUpperCase(),
+    market,
+    displayAction: params.get('screenerAction') || undefined,
+    finalScore: parseFiniteNumber(params.get('screenerScore')),
+    decisionScore: parseFiniteNumber(params.get('decisionScore')),
+    sentiment: params.get('sentiment') || undefined,
+    sentimentScore: parseFiniteNumber(params.get('sentimentScore')),
+    regime: params.get('regime') || undefined,
+    quantAction: params.get('quantAction') || undefined,
+    confidence: parseFiniteNumber(params.get('confidence')),
+    macd: params.get('macd') || undefined,
+    rsi: parseFiniteNumber(params.get('rsi')),
+    changePercent: parseFiniteNumber(params.get('change')),
+    decisionSource: params.get('decisionSource') || undefined,
+    decisionStatus: params.get('decisionStatus') || undefined,
+    decisionReason: params.get('decisionReason') || undefined,
+  }
+}
+
 function getSearchScore(item: ZestySymbol, query: string) {
   const normalizedSymbol = normalizeSearchText(item.symbol)
   const normalizedName = normalizeSearchText(item.name)
@@ -75,6 +112,8 @@ function getSearchScore(item: ZestySymbol, query: string) {
 
 export function ZestyWorkspace() {
   const searchParams = useSearchParams()
+  const router = useRouter()
+  const pathname = usePathname()
   const categories = useMemo(() => getCategorizedZestySymbols(), [])
   const initialSymbol = searchParams.get('symbol')?.trim().toUpperCase() || categories[0]?.symbols[0]?.symbol || 'SPY'
   const initialMarket = (searchParams.get('market') || 'US') as Market
@@ -86,10 +125,18 @@ export function ZestyWorkspace() {
   const [market, setMarket] = useState<Market>(initialMarket)
   const [chartRange, setChartRange] = useState<ChartRange>(initialRange)
   const [effectiveRange, setEffectiveRange] = useState<ChartRange>(initialRange)
-  const [marketOpen, setMarketOpen] = useState(false)
+  const statuses = useMarketStatus()
+  const marketOpen = statuses[market]?.isOpen ?? false
   const [categoriesOpen, setCategoriesOpen] = useState(true)
   const [symbolsOpen, setSymbolsOpen] = useState(!searchParams.get('symbol'))
   const [summaryOpen, setSummaryOpen] = useState(true)
+  const screenerContext = useMemo(
+    () => buildScreenerContext(searchParams, initialSymbol, initialMarket),
+    [searchParams, initialSymbol, initialMarket]
+  )
+  const activeScreenerContext = screenerContext?.symbol === symbol.toUpperCase() && screenerContext.market === market
+    ? screenerContext
+    : undefined
 
   // Sync with URL params
   useEffect(() => {
@@ -102,13 +149,7 @@ export function ZestyWorkspace() {
     }
   }, [searchParams, symbol, chartRange])
 
-  // Check market status
-  useEffect(() => {
-    const check = () => setMarketOpen(isMarketOpen(market))
-    check()
-    const interval = setInterval(check, 60000)
-    return () => clearInterval(interval)
-  }, [market])
+
 
   useEffect(() => {
     const nextSymbol = searchParams.get('symbol')?.trim().toUpperCase()
@@ -134,15 +175,25 @@ export function ZestyWorkspace() {
   const isSearching = normalizedSearchQuery.length > 0
 
   const handleSymbolSelect = useCallback((nextSymbol: string) => {
+    const nextMarket = getZestySymbolMarket(nextSymbol)
     setSymbol(nextSymbol)
-    setMarket('US')
+    setMarket(nextMarket)
     setSymbolsOpen(false)
-  }, [])
+
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('symbol', nextSymbol)
+    params.set('market', nextMarket)
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+  }, [pathname, router, searchParams])
 
   const handleRangeSelect = useCallback((nextRange: ChartRange) => {
     setChartRange(nextRange)
     setEffectiveRange(nextRange)
-  }, [])
+
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('range', nextRange)
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+  }, [pathname, router, searchParams])
 
   const handleChartMetadataChange = useCallback((metadata: { range: ChartRange } | undefined) => {
     setEffectiveRange(metadata?.range ?? chartRange)
@@ -390,12 +441,6 @@ export function ZestyWorkspace() {
             {/* Chart */}
             <div className="flex-1 flex flex-col min-w-0 p-4 h-[50vh] lg:h-[65vh]">
               <div className="flex-1 glass border-y lg:border-x border-gray-800 relative overflow-hidden">
-                <div className="absolute bottom-3 right-3 z-20 flex items-center gap-2 bg-gray-900/80 backdrop-blur border border-gray-800 px-3 py-1.5 rounded-full">
-                  <span className={`w-2 h-2 rounded-full ${marketOpen ? 'bg-emerald-500 animate-pulse' : 'bg-gray-500'}`} />
-                  <span className={`text-xs font-medium ${marketOpen ? 'text-emerald-400' : 'text-gray-400'}`}>{marketOpen ? 'EN VIVO' : 'CERRADO'}</span>
-                  <span className="text-xs text-gray-500 mx-1">•</span>
-                  <span className="text-xs text-gray-400">{CHART_RANGES.find((item) => item.range === effectiveRange)?.label ?? effectiveRange}</span>
-                </div>
                 <CandlestickChart
                   symbol={symbol}
                   market={market}
@@ -421,7 +466,7 @@ export function ZestyWorkspace() {
                 </button>
               )}
               {summaryOpen && (
-                <TechnicalSummary symbol={symbol} market={market} range={chartRange} />
+                <TechnicalSummary symbol={symbol} market={market} range={chartRange} screenerContext={activeScreenerContext} />
               )}
             </div>
           </div>

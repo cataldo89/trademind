@@ -128,7 +128,7 @@ export function WatchlistWidget() {
             value={addingSymbol}
             onChange={(e) => setAddingSymbol(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleAddSymbol()}
-            placeholder="AAPL, MSFT…"
+            placeholder="SPCX, AAPL..."
             className="h-7 px-3 text-xs bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-600 outline-none focus:border-emerald-500 w-32"
           />
           <button
@@ -150,7 +150,7 @@ export function WatchlistWidget() {
         <div className="py-10 text-center">
           <Star className="w-8 h-8 text-gray-700 mx-auto mb-2" />
           <p className="text-sm text-gray-500">Tu watchlist está vacía</p>
-          <p className="text-xs text-gray-600 mt-1">Agrega símbolos como AAPL, MSFT</p>
+          <p className="text-xs text-gray-600 mt-1">Agrega símbolos como SPCX, AAPL</p>
         </div>
       ) : (
         <div className="divide-y divide-gray-800/50">
@@ -201,4 +201,4 @@ export function WatchlistWidget() {
     </div>
   )
 }
-
+

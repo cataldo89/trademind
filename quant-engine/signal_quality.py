@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from typing import Any, Dict, List, Optional
 
 
@@ -72,6 +73,7 @@ def evaluate_signal_quality(
     sentiment_label = str(sentiment.get("sentiment") or sentiment.get("label") or "NEUTRAL").upper()
     graham_passed = graham.get("passed", graham.get("graham_passed"))
     graham_reason = str(graham.get("reason") or graham.get("graham_reason") or "")
+    graham_inconclusive = bool(re.search(r"error|invalid|missing|could not retrieve|no evaluado|insuficient", graham_reason, re.I))
 
     if ml_value > 0.01:
         supporting.append("ML positivo")
@@ -87,9 +89,11 @@ def evaluate_signal_quality(
         supporting.append(f"Riesgo controlado VaR={var_95}")
         signal_score += 5
 
-    if graham_passed is False:
+    if graham_passed is False and not graham_inconclusive:
         contradicting.append(f"Graham negativo: {graham_reason or 'sin margen de seguridad'}")
         signal_score -= 15
+    elif graham_passed is False and graham_inconclusive:
+        warnings.append(f"Graham no concluyente: {graham_reason or 'sin metricas fundamentales confiables'}")
     elif graham_passed is True:
         supporting.append("Graham positivo")
         signal_score += 5
@@ -113,7 +117,7 @@ def evaluate_signal_quality(
 
     if action == "BUY" and high_risk:
         contradicting.append("Workflow BUY contradicho por riesgo alto")
-    if action == "BUY" and graham_passed is False:
+    if action == "BUY" and graham_passed is False and not graham_inconclusive:
         contradicting.append("Workflow BUY contradicho por Graham negativo")
 
     if blocking:
@@ -123,7 +127,7 @@ def evaluate_signal_quality(
         signal_score = 0
     else:
         signal_score = _clamp(signal_score)
-        if action == "BUY" and (high_risk or graham_passed is False or len(contradicting) >= 2):
+        if action == "BUY" and (high_risk or (graham_passed is False and not graham_inconclusive) or len(contradicting) >= 2):
             final_action = "HOLD"
             final_confidence = min(confidence, 49)
             signal_status = "CONFLICTED"

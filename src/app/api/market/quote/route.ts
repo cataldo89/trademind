@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { yahooFinance } from '@/lib/yahoo-finance'
 import { fetchAlphaVantageQuote, fetchFinnhubQuote, getYahooSymbol } from '@/lib/market-data'
+import { fetchAlpacaCryptoQuotes, isUsdCryptoSymbol } from '@/lib/alpaca/market-data'
 import { normalizeSymbol, parseMarketOrLegacy } from '@/lib/domain/market'
 import { checkRateLimit, getClientIp } from '@/lib/api/rate-limit'
 import { getCached } from '@/lib/api/memory-cache'
@@ -16,7 +17,7 @@ const RATE_WINDOW_MS = 60_000
 const QUOTE_TTL_MS = 30_000
 
 type YahooQuote = Record<string, unknown>
-type QuoteProvider = 'finnhub' | 'alpha-vantage' | 'yahoo'
+type QuoteProvider = 'alpaca' | 'finnhub' | 'alpha-vantage' | 'yahoo'
 
 function normalizeQuote(quote: YahooQuote, market: string, originalSymbol?: string) {
   return {
@@ -43,7 +44,7 @@ function normalizeQuote(quote: YahooQuote, market: string, originalSymbol?: stri
 type NormalizedQuote = ReturnType<typeof normalizeQuote> & { provider?: QuoteProvider }
 
 function isConfiguredProviderSupported(symbol: string, market: Market) {
-  return market === 'US' && !/-USD$/i.test(symbol)
+  return market === 'US' && !isUsdCryptoSymbol(symbol)
 }
 
 function providerOrder(): QuoteProvider[] {
@@ -129,8 +130,26 @@ async function fetchYahooQuotes(symbols: string[]) {
 async function fetchQuotes(symbols: string[], market: Market, symbolMap: Map<string, string>) {
   const results: Array<NormalizedQuote | (Quote & { provider: QuoteProvider })> = []
   const yahooSymbolsToFetch: string[] = []
+  const cryptoSymbols = market === 'US' ? symbols.filter(isUsdCryptoSymbol) : []
+  const alpacaCryptoQuotes = cryptoSymbols.length > 0
+    ? await fetchAlpacaCryptoQuotes(cryptoSymbols).catch((error) => {
+      console.warn('[Market Quote] Alpaca crypto quote failed:', error)
+      return new Map<string, Quote & { provider: 'alpaca' }>()
+    })
+    : new Map<string, Quote & { provider: 'alpaca' }>()
 
   for (const symbol of symbols) {
+    const alpacaQuote = alpacaCryptoQuotes.get(symbol.toUpperCase())
+    if (alpacaQuote) {
+      results.push(alpacaQuote)
+      continue
+    }
+
+    if (market === 'US' && isUsdCryptoSymbol(symbol)) {
+      console.warn(`[Market Quote] Alpaca-only crypto quote unavailable for ${symbol}`)
+      continue
+    }
+
     const configuredQuote = await fetchConfiguredQuote(symbol, market)
     if (configuredQuote) {
       results.push(configuredQuote)

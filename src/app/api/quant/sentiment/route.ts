@@ -5,6 +5,7 @@ import { getYahooSymbol, getZestySymbolMarket } from '@/lib/market-data'
 const MAX_SENTIMENT_SCAN_SYMBOLS = Number(process.env.SENTIMENT_SCAN_MAX_SYMBOLS || 5)
 const SENTIMENT_SCAN_BATCH_SIZE = Number(process.env.SENTIMENT_SCAN_BATCH_SIZE || 5)
 const DEFAULT_CACHE_FRESHNESS_MS = Number(process.env.SENTIMENT_CACHE_FRESHNESS_MS || 12 * 60 * 60 * 1000)
+const QUANT_UNAVAILABLE_WARNING = 'Error de conexion con el motor: no se aplico sentimiento nuevo y se ignoro cualquier cache obsoleto.'
 
 function isFreshCachedSentiment(value: unknown, freshnessMs: number) {
   if (!value || typeof value !== 'object') return false
@@ -53,6 +54,7 @@ export async function POST(request: NextRequest) {
 
     const quantSymbols = Array.from(new Set(symbols.map((symbol) => getYahooSymbol(symbol, getZestySymbolMarket(symbol)))))
     const cacheRes = await quantClient.getSentimentCache()
+    const cacheAvailable = cacheRes.success && cacheRes.data && typeof cacheRes.data === 'object'
     const cache = cacheRes.success && cacheRes.data && typeof cacheRes.data === 'object'
       ? cacheRes.data as Record<string, unknown>
       : {}
@@ -64,6 +66,8 @@ export async function POST(request: NextRequest) {
     if (limitedSymbols.length === 0) {
       return NextResponse.json({
         success: true,
+        applied: true,
+        usedCachedSentiment: true,
         requested: symbols.length,
         processed: 0,
         skippedCached: quantSymbols.length,
@@ -78,21 +82,29 @@ export async function POST(request: NextRequest) {
 
     let processed = 0
     const warnings: string[] = []
+    let articlesUsed = 0
+    const providerErrors: Record<string, string> = {}
 
     for (const batch of chunkSymbols(limitedSymbols, SENTIMENT_SCAN_BATCH_SIZE)) {
-      const res = await quantClient.triggerSentimentScan(batch)
+      const res = await quantClient.triggerSentimentUpdate(batch, [1, 5, 20])
 
       if (!res.success) {
-        warnings.push(res.error || 'Quant engine unavailable; sentiment scan skipped')
+        warnings.push(res.error || QUANT_UNAVAILABLE_WARNING)
         continue
       }
 
-      processed += res.data?.processed ?? batch.length
+      processed += res.data?.processed ?? res.data?.updated_symbols?.length ?? batch.length
+      articlesUsed += Number(res.data?.articles_used ?? 0)
+      Object.assign(providerErrors, res.data?.provider_errors || {})
     }
 
     if (processed === 0) {
       return NextResponse.json({
         success: true,
+        applied: false,
+        usedCachedSentiment: false,
+        staleCacheIgnored: true,
+        cacheStatus: cacheAvailable ? 'available' : 'engine_unavailable',
         degraded: true,
         requested: symbols.length,
         processed: 0,
@@ -103,14 +115,19 @@ export async function POST(request: NextRequest) {
         limit: MAX_SENTIMENT_SCAN_SYMBOLS,
         symbols,
         quantSymbols: limitedSymbols,
-        warning: warnings[0] || 'Quant engine unavailable; sentiment scan skipped',
+        warning: QUANT_UNAVAILABLE_WARNING,
+        rawWarning: warnings[0],
       })
     }
 
     return NextResponse.json({
       success: true,
+      applied: true,
+      usedCachedSentiment: false,
       requested: symbols.length,
       processed,
+      articlesUsed,
+      providerErrors,
       skippedCached: quantSymbols.length - missingOrStaleSymbols.length,
       freshnessMs,
       refreshedRanking: true,
@@ -119,7 +136,8 @@ export async function POST(request: NextRequest) {
       symbols,
       quantSymbols: limitedSymbols,
       degraded: warnings.length > 0,
-      warning: warnings[0],
+      warning: warnings.length > 0 ? 'FinBERT actualizo parcialmente el lote; algunos activos quedaron con cache anterior.' : undefined,
+      rawWarning: warnings[0],
     })
   } catch (error: unknown) {
     console.error('[API/Quant/Sentiment] Error:', error)

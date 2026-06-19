@@ -1,4 +1,4 @@
-﻿# ESTADO ACTUAL DEL PROYECTO - TradeMind CV
+# ESTADO ACTUAL DEL PROYECTO - TradeMind CV
 
 Fecha de auditoria: 2026-05-25  
 Rol: memoria tecnica maestra para agentes IA  
@@ -56,6 +56,17 @@ Cambios aplicados despues de la auditoria inicial:
 - Se archivo el historial F0-F6 en `docs/archive/fases-f0-f6-historial.md`; los archivos de la carpeta local `Fases/` ya no son plan vivo.
 - `FASES_CHECKLIST.md` no existe en la raiz actual; si reaparece, debe archivarse en `docs/archive/` o sustituirse por la Fase 7 viva.
 - `SKILL.md` y `SECURITY.md` asociados a dotenv/dotenvx solo existen dentro de `node_modules/`, no estan versionados y no deben copiarse a la raiz.
+
+## Actualizacion Asesor AI y Usabilidad Screener - 2026-06-16
+
+- **Screener interactivo con enlaces a Análisis (ML Ranking Cards):** Se habilitó la interactividad en las tarjetas del Ranking de Machine Learning rápido (LightGBM). Ahora son componentes `Link` de Next.js clicables que redirigen instantáneamente a `/analysis` sin refresco de página completo (SPA).
+- **Traspaso de contexto de screening al análisis:** Al hacer clic en una tarjeta de ML, se propagan todos los parámetros cuantitativos mediante query params (`symbol`, `market`, `screenerAction`, `screenerScore`/`decisionScore`, `decisionSource` = `'quant_engine'`, `decisionStatus` = `'ML Fast'`, `decisionReason`, `quantAction` y `confidence`). Esto garantiza que el panel de análisis cuente con el contexto exacto.
+- **Asesor Financiero amigable y legible para retail:** Se reconfiguraron los prompts del sistema de OpenAI y Google Gemini para evitar tecnicismos complejos de indicadores técnicos (MACD, RSI, FinBERT, decisión score numérico) en las viñetas expuestas. Ahora la información técnica se traduce a español cotidiano comprensible.
+- **Robustez de Fallback en el Asesor AI:**
+  - Se corrigió el comportamiento ante activos con historial corto de velas (ej. salidas recientes a bolsa o IPOs). En estos casos, el prompt instruye al modelo a ignorar la señal de `HOLD` técnica y priorizar la predicción del motor cuantitativo (`BUY` / `SELL`).
+  - Se habilitó la generación de un `screenerContext` virtual de fallback en el backend (`/api/ai/analyze`) cuando la petición no procede directamente de la UI, construyéndolo con el análisis en tiempo real de `quantClient.runWorkflow`.
+- **Validación del Stack:** El typecheck (`npm run typecheck`) pasa limpiamente. Los problemas específicos de tipos `any` introducidos durante el desarrollo en `screener-client.tsx` y `route.ts` fueron resueltos en su totalidad para cumplir con las reglas de linting del repositorio.
+
 ## 1. Stack verificado
 
 | Area | Estado actual |

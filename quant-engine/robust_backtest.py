@@ -78,6 +78,7 @@ def run_robust_backtest(
     quality = market_data_quality or {}
     signal = signal_quality or {}
     params = strategy_params or {}
+    strategy = (strategy_type or "buy_and_hold").lower()
 
     if not quality.get("usable_for_backtest"):
         return _empty_result(symbol, "BLOCKED", "market_data_quality.usable_for_backtest=false")
@@ -120,15 +121,15 @@ def run_robust_backtest(
         status = "WEAK"
         usable = False
 
-    if trades_count < 5:
+    if trades_count < 5 and strategy != "buy_and_hold":
         warnings.append("Too few trades for statistically robust inference.")
         status = "WEAK"
-    if trades_count < 3:
+    if trades_count < 3 and strategy != "buy_and_hold":
         usable = False
-    if abs(sharpe_ratio) > 5 and (trades_count < 10 or volatility < 0.02):
+    if abs(sharpe_ratio) > 5 and ((trades_count < 10 and strategy != "buy_and_hold") or volatility < 0.02):
         warnings.append("UNSTABLE_SHARPE: Sharpe ratio is unstable due to low variance or too few trades.")
         status = "WEAK" if status == "OK" else status
-    if max_drawdown == 0 and trades_count < 5:
+    if max_drawdown == 0 and trades_count < 5 and strategy != "buy_and_hold":
         warnings.append("INSUFFICIENT_DRAWDOWN_EVIDENCE: zero drawdown with too few trades is not robust evidence.")
         status = "WEAK" if status == "OK" else status
 
@@ -143,7 +144,7 @@ def run_robust_backtest(
         warnings.append("Negative total return.")
         status = "WEAK" if status != "FAILED" else status
 
-    robustness_note = " Not statistically robust due to too few trades." if trades_count < 5 else ""
+    robustness_note = " Not statistically robust due to too few trades." if trades_count < 5 and strategy != "buy_and_hold" else ""
     explanation = (
         f"Backtest {status}: return {total_return:.2%}, Sharpe {sharpe_ratio:.2f}, "
         f"drawdown {max_drawdown:.2%}, trades {trades_count}.{robustness_note} "

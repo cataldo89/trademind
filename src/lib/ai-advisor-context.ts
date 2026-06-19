@@ -15,4 +15,7 @@ export interface AdvisorScreenerContext {
   macd?: string
   rsi?: number
   changePercent?: number
+  decisionSource?: string
+  decisionStatus?: string
+  decisionReason?: string
 }

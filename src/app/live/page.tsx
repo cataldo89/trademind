@@ -48,6 +48,7 @@ const SYMBOL_UNIVERSE = [
   'NVDA',
   'AMD',
   'TSLA',
+  'SPCX',
   'AAPL',
   'MSFT',
   'AMZN',

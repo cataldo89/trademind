@@ -11,6 +11,7 @@ import {
   Search,
   Settings,
   Shield,
+  PlugZap,
   TrendingUp,
   ChevronLeft,
   ChevronRight,
@@ -198,4 +199,4 @@ export function AppSidebar({ user }: AppSidebarProps) {
     </aside>
   )
 }
-
+

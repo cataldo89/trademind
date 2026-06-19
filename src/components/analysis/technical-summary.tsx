@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Market, Candle } from '@/types'
@@ -8,7 +8,7 @@ import {
   calculateSMA, calculateVWAP, generateSignal, interpretRSI
 } from '@/lib/indicators'
 import { Loader2, TrendingUp, TrendingDown, Minus, ChevronRight, Zap } from 'lucide-react'
-import { cn, formatCurrency } from '@/lib/utils'
+import { cn, formatCurrency, formatPriceRaw } from '@/lib/utils'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { useState } from 'react'
@@ -77,9 +77,14 @@ function buildAdvisorSignal(baseSignal: TradingSignal, context?: AdvisorScreener
   const contextType = screenerActionToSignalType(context?.displayAction, context?.quantAction)
   if (!context || !contextType) return baseSignal
 
-  const contextStrength = Math.round(Math.min(100, Math.max(50, context.finalScore ?? context.decisionScore ?? baseSignal.strength)))
+  const rawContextStrength = context.decisionScore ?? context.finalScore ?? baseSignal.strength
+  const contextStrength = contextType === 'HOLD'
+    ? Math.round(Math.min(49, Math.max(0, rawContextStrength)))
+    : Math.round(Math.min(100, Math.max(50, rawContextStrength)))
   const contextReasons = [
     context.displayAction ? `Screener: ${context.displayAction}` : null,
+    context.decisionReason ? `Motivo screener: ${context.decisionReason}` : null,
+    context.decisionSource ? `Origen decision: ${context.decisionSource}${context.decisionStatus ? ` (${context.decisionStatus})` : ''}` : null,
     typeof context.decisionScore === 'number' ? `Decision screener ${context.decisionScore.toFixed(0)}` : null,
     typeof context.finalScore === 'number' ? `Score tecnico ${context.finalScore.toFixed(0)}/100` : null,
     context.macd ? `MACD: ${context.macd}` : null,
@@ -294,7 +299,7 @@ export function TechnicalSummary({ symbol, market, range, screenerContext }: Tec
         {lastMACD && (
           <IndicatorRow
             label="MACD"
-            value={lastMACD.macd.toFixed(4)}
+            value={formatPriceRaw(lastMACD.macd)}
             signal={lastMACD.histogram >= 0 ? 'Alcista' : 'Bajista'}
             signalColor={lastMACD.histogram >= 0 ? 'text-emerald-400' : 'text-red-400'}
           />
@@ -304,7 +309,7 @@ export function TechnicalSummary({ symbol, market, range, screenerContext }: Tec
         {lastMA20 !== undefined && (
           <IndicatorRow
             label="MA 20"
-            value={lastMA20.toFixed(2)}
+            value={formatPriceRaw(lastMA20)}
             signal={lastCandle.close > lastMA20 ? 'Sobre' : 'Bajo'}
             signalColor={lastCandle.close > lastMA20 ? 'text-emerald-400' : 'text-red-400'}
           />
@@ -314,7 +319,7 @@ export function TechnicalSummary({ symbol, market, range, screenerContext }: Tec
         {lastMA50 !== undefined && (
           <IndicatorRow
             label="MA 50"
-            value={lastMA50.toFixed(2)}
+            value={formatPriceRaw(lastMA50)}
             signal={lastCandle.close > lastMA50 ? 'Sobre' : 'Bajo'}
             signalColor={lastCandle.close > lastMA50 ? 'text-emerald-400' : 'text-red-400'}
           />
@@ -323,9 +328,9 @@ export function TechnicalSummary({ symbol, market, range, screenerContext }: Tec
         {/* Bollinger Bands */}
         {lastBB && (
           <>
-            <IndicatorRow label="BB Superior" value={lastBB.upper.toFixed(2)} />
-            <IndicatorRow label="BB Media" value={lastBB.middle.toFixed(2)} />
-            <IndicatorRow label="BB Inferior" value={lastBB.lower.toFixed(2)} />
+            <IndicatorRow label="BB Superior" value={formatPriceRaw(lastBB.upper)} />
+            <IndicatorRow label="BB Media" value={formatPriceRaw(lastBB.middle)} />
+            <IndicatorRow label="BB Inferior" value={formatPriceRaw(lastBB.lower)} />
           </>
         )}
 
@@ -333,7 +338,7 @@ export function TechnicalSummary({ symbol, market, range, screenerContext }: Tec
         {lastVWAP !== undefined && (
           <IndicatorRow
             label="VWAP"
-            value={lastVWAP.toFixed(2)}
+            value={formatPriceRaw(lastVWAP)}
             signal={lastCandle.close > lastVWAP ? 'Sobre' : 'Bajo'}
             signalColor={lastCandle.close > lastVWAP ? 'text-emerald-400' : 'text-red-400'}
           />

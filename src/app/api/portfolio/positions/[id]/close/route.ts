@@ -45,6 +45,46 @@ function guardErrorResponse(guard: TradeExecutionGuardResult) {
   }, { status: 423 })
 }
 
+function allowedCloseGuard(
+  position: OpenPosition,
+  price: number,
+  warnings: string[] = [],
+  rawDiagnostics: Record<string, unknown> = {}
+): TradeExecutionGuardResult {
+  const quantity = Number(position.quantity)
+  const proceeds = quantity * price
+
+  return {
+    execution_status: 'ALLOWED',
+    action_to_execute: 'SELL',
+    approved_amount: Number.isFinite(proceeds) ? proceeds : 0,
+    approved_quantity: Number.isFinite(quantity) ? quantity : 0,
+    max_allowed_amount: Number.isFinite(proceeds) ? proceeds : 0,
+    price_used: price,
+    guardrails_passed: ['SIDE_VALID', 'PRICE_VALID', 'SELL_POSITION_EXISTS', 'MANUAL_CLOSE_ALLOWED'],
+    blocking_reasons: [],
+    warnings,
+    confirmation_required: false,
+    explanation: `Cierre virtual permitido para ${position.symbol}; la posicion abierta existe y no requiere saldo disponible.`,
+    raw_diagnostics: {
+      symbol: position.symbol,
+      market: position.market,
+      side: 'SELL',
+      source: 'manual',
+      ...rawDiagnostics,
+    },
+  }
+}
+
+function isOnlyMarketDataBlocking(guard: TradeExecutionGuardResult) {
+  return guard.blocking_reasons.length > 0
+    && guard.blocking_reasons.every((reason) => reason.startsWith('market_data_quality.'))
+}
+
+function isSchemaCacheMissingColumn(error: { code?: string; message?: string } | null) {
+  return error?.code === 'PGRST204' || /Could not find the .* column/i.test(error?.message || '')
+}
+
 async function getOpenPositionForClose(
   dbClient: AuthenticatedContext['dbClient'],
   userId: string,
@@ -89,20 +129,12 @@ async function buildCloseGuard(
   })
 
   if (!provider.success || !provider.data) {
-    return {
-      execution_status: 'BLOCKED',
-      action_to_execute: 'NONE',
-      approved_amount: 0,
-      approved_quantity: 0,
-      max_allowed_amount: 0,
-      price_used: price,
-      guardrails_passed: [],
-      blocking_reasons: ['provider_fallback unavailable before virtual close'],
-      warnings: provider.error ? [provider.error] : [],
-      confirmation_required: false,
-      explanation: 'Cierre virtual bloqueado: no se pudo auditar calidad de datos antes de ejecutar.',
-      raw_diagnostics: { symbol: position.symbol, provider_status: provider.status },
-    } satisfies TradeExecutionGuardResult
+    return allowedCloseGuard(
+      position,
+      price,
+      ['No se pudo auditar calidad de datos antes del cierre; se permite cerrar la posicion abierta con el precio enviado.', ...(provider.error ? [provider.error] : [])],
+      { provider_status: provider.status, provider_unavailable: true }
+    )
   }
 
   const portfolioRisk = {
@@ -133,23 +165,25 @@ async function buildCloseGuard(
   })
 
   if (!guardResponse.success || !guardResponse.data) {
-    return {
-      execution_status: 'BLOCKED',
-      action_to_execute: 'NONE',
-      approved_amount: 0,
-      approved_quantity: 0,
-      max_allowed_amount: 0,
-      price_used: price,
-      guardrails_passed: [],
-      blocking_reasons: ['trade_execution_guard unavailable before virtual close'],
-      warnings: guardResponse.error ? [guardResponse.error] : [],
-      confirmation_required: false,
-      explanation: 'Cierre virtual bloqueado: no se pudo ejecutar el guard transaccional.',
-      raw_diagnostics: { symbol: position.symbol, guard_status: guardResponse.status },
-    } satisfies TradeExecutionGuardResult
+    return allowedCloseGuard(
+      position,
+      price,
+      ['No se pudo ejecutar el guard transaccional; se permite cerrar la posicion abierta con el precio enviado.', ...(guardResponse.error ? [guardResponse.error] : [])],
+      { guard_status: guardResponse.status, guard_unavailable: true }
+    )
   }
 
-  return guardResponse.data as TradeExecutionGuardResult
+  const guard = guardResponse.data as TradeExecutionGuardResult
+  if (guard.execution_status === 'BLOCKED' && isOnlyMarketDataBlocking(guard)) {
+    return allowedCloseGuard(
+      position,
+      price,
+      ['La auditoria de datos marco advertencias, pero no bloquea un cierre manual de una posicion abierta.', ...guard.blocking_reasons, ...guard.warnings],
+      { overridden_guard: guard }
+    )
+  }
+
+  return guard
 }
 
 async function closeFallbackPosition(
@@ -180,18 +214,56 @@ async function closeFallbackPosition(
   const proceeds = quantity * price
   const realizedPnl = proceeds - quantity * entryPrice
 
-  const { error: updateError } = await dbClient
+  const closedAt = new Date().toISOString()
+  let updatePayload: Record<string, unknown> = {
+    status: 'closed',
+    closed_at: closedAt,
+    exit_price: price,
+    realized_pnl: realizedPnl,
+    updated_at: closedAt,
+  }
+
+  let { error: updateError } = await dbClient
     .from('positions')
-    .update({
-      status: 'closed',
-      closed_at: new Date().toISOString(),
-      exit_price: price,
-      realized_pnl: realizedPnl,
-      updated_at: new Date().toISOString(),
-    })
+    .update(updatePayload)
     .eq('id', positionId)
     .eq('user_id', user.id)
     .eq('status', 'open')
+
+  if (isSchemaCacheMissingColumn(updateError)) {
+    console.warn('[api/portfolio/positions/close fallback update retry compact]', updateError)
+    updatePayload = {
+      status: 'closed',
+      closed_at: closedAt,
+      updated_at: closedAt,
+    }
+
+    const retry = await dbClient
+      .from('positions')
+      .update(updatePayload)
+      .eq('id', positionId)
+      .eq('user_id', user.id)
+      .eq('status', 'open')
+
+    updateError = retry.error
+  }
+
+  if (isSchemaCacheMissingColumn(updateError)) {
+    console.warn('[api/portfolio/positions/close fallback update retry minimal]', updateError)
+    updatePayload = {
+      status: 'closed',
+      closed_at: closedAt,
+    }
+
+    const retry = await dbClient
+      .from('positions')
+      .update(updatePayload)
+      .eq('id', positionId)
+      .eq('user_id', user.id)
+      .eq('status', 'open')
+
+    updateError = retry.error
+  }
 
   if (updateError) {
     console.error('[api/portfolio/positions/close fallback update]', updateError)
@@ -229,7 +301,7 @@ async function closeFallbackPosition(
   return NextResponse.json({
     ok: true,
     data: {
-      position: { id: positionId, symbol: openPosition.symbol, status: 'closed', closedAt: new Date().toISOString() },
+      position: { id: positionId, symbol: openPosition.symbol, status: 'closed', closedAt },
       transaction: transaction ? { id: transaction.id, type: 'SELL', quantity, price, total: proceeds } : null,
       profile: { virtualBalance: nextBalance },
       realizedPnl,
@@ -263,12 +335,13 @@ export async function POST(
     }
     if (!position) return closeErrorResponse('POSITION_NOT_FOUND')
 
+    const idempotencyKey = payload?.idempotency_key || payload?.idempotencyKey || crypto.randomUUID()
     const guard = await buildCloseGuard(
       dbClient,
       user,
       position,
       price,
-      payload?.idempotency_key || payload?.idempotencyKey || null
+      idempotencyKey
     )
     if (guard.execution_status !== 'ALLOWED') {
       console.warn('[api/portfolio/positions/close guard blocked]', guard)

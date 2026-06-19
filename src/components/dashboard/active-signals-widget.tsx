@@ -1,7 +1,6 @@
 'use client'
 
 import { useQuery } from '@tanstack/react-query'
-import { createClient } from '@/lib/supabase/client'
 import { TrendingUp, TrendingDown, Minus, Loader2, Zap } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -15,22 +14,17 @@ interface Signal {
   market: string
   timeframe: string
   created_at: string
+  status?: string
 }
 
 async function fetchActiveSignals(): Promise<Signal[]> {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return []
-
-  const { data } = await supabase
-    .from('signals')
-    .select('*')
-    .eq('user_id', user.id)
-    .eq('status', 'active')
-    .order('created_at', { ascending: false })
-    .limit(6)
-
-  return data || []
+  const res = await fetch('/api/signals', { cache: 'no-store' })
+  if (!res.ok) return []
+  const body = await res.json().catch(() => null)
+  const signals = Array.isArray(body?.data) ? body.data as Signal[] : []
+  return signals
+    .filter((signal) => signal.status === 'active')
+    .slice(0, 6)
 }
 
 const signalConfig = {
@@ -128,4 +122,4 @@ export function ActiveSignalsWidget() {
     </div>
   )
 }
-
+

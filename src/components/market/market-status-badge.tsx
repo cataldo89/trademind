@@ -1,8 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Market, MarketStatus } from '@/types'
-import { getUSMarketStatus } from '@/lib/market-schedule'
+import { Market } from '@/types'
+import { useMarketStatus } from '@/hooks/useMarketStatus'
 import { cn } from '@/lib/utils'
 
 interface MarketStatusBadgeProps {
@@ -10,16 +10,15 @@ interface MarketStatusBadgeProps {
 }
 
 export function MarketStatusBadge({ market }: MarketStatusBadgeProps) {
-  const [status, setStatus] = useState<MarketStatus | null>(null)
+  const statuses = useMarketStatus()
+  const status = statuses[market]
   const [currentTime, setCurrentTime] = useState('')
 
   useEffect(() => {
+    if (!status) return
     const update = () => {
-      const s = getUSMarketStatus()
-      setStatus(s)
-
       // Get current time in market timezone
-      const tz = s.timezone
+      const tz = status.timezone
       const time = new Date().toLocaleTimeString('en-US', {
         timeZone: tz,
         hour: '2-digit',
@@ -32,7 +31,7 @@ export function MarketStatusBadge({ market }: MarketStatusBadgeProps) {
     update()
     const interval = setInterval(update, 30000) // Update every 30s
     return () => clearInterval(interval)
-  }, [market])
+  }, [market, status])
 
   if (!status) return null
 

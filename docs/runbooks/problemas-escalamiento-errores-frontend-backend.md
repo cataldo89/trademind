@@ -439,3 +439,44 @@ El sistema puede considerarse listo para escalar solo cuando:
 [ ] Service role no se usa en rutas de usuario sin justificacion y tests de aislamiento.
 [ ] Frontend muestra errores accionables cuando backend falla.
 ```
+
+## 11. Incidente SPCX / IPO reciente / sentimiento no aplicado
+
+Fecha de registro: 2026-06-15.
+
+Sintoma observado:
+
+- `SPCX` aparecia en ticker/catalogo con precio vivo, pero en screener quedaba como `PENDIENTE`/sin metricas.
+- Al actualizar sentimiento aparecia `Quant engine request failed`, sin claridad de si FinBERT se aplico.
+- La seccion de senales podia depender de consultas frontend dispersas en vez del contrato BFF unico.
+
+Causa raiz:
+
+- Se agrego el simbolo al ecosistema, pero el escaneo detallado no filtraba el universo por busqueda; el simbolo buscado podia quedarse como fila de catalogo.
+- `market_data_quality`, `/api/quant/asset-rank` y LightGBM asumian que pocas velas equivalen a `insufficient_history`. Para IPO/listing reciente como `SPCX`, eso convertia un activo con quote real en `HOLD` generico o rank 9999.
+- El flujo de sentimiento podia mostrar cache/estado degradado de forma ambigua cuando el quant-engine no respondia.
+
+Correccion aplicada:
+
+- Screener: la busqueda `SPCX` alimenta `/api/quant/scan` con el subconjunto filtrado.
+- Ranking: se agrego `recent_ipo_fallback`, `indicatorMode='recent_ipo_short_history'` y `historyCandles`. Con menos de 50 velas y quote valido, MA50/MACD se desactivan y el score usa volumen del dia, cambio inmediato y sentimiento disponible.
+- Asset ranker local y Python: historia corta con al menos 2 cierres ya no cae en `insufficient_history`; usa fallback IPO reciente.
+- Sentimiento: fallo/timeouts del quant-engine devuelven `Error de conexion con el motor`, `applied:false`, `staleCacheIgnored:true` y `refreshedRanking:false`.
+- Senales: el widget activo consume `/api/signals`; no mantiene query Supabase paralela ni filtros de expiracion ocultos.
+
+Regla para futuras LLM:
+
+```text
+No diagnosticar IPOs recientes como "sin datos" si hay quote vivo y al menos velas minimas para cambio inmediato.
+No usar cache de sentimiento obsoleto para decir que FinBERT se aplico.
+No crear queries frontend nuevas contra public.signals si /api/signals ya cubre el contrato.
+```
+
+Verificacion minima:
+
+```text
+npm run typecheck
+npm run test:contracts
+Buscar en /api/quant/scan: recent_ipo_fallback=true para SPCX cuando tenga <50 velas.
+Buscar en UI: sentimiento fallido debe decir "Error de conexion con el motor".
+```

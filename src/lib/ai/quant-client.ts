@@ -282,6 +282,20 @@ export class QuantClient {
     }>('/ml/trigger_sentiment_scan', { symbols }, 120000) // 2 min timeout
   }
 
+  async triggerSentimentUpdate(symbols: string[], horizonDays = [1, 5, 20]) {
+    return this.callEndpoint<{
+      status: string
+      updated_symbols?: string[]
+      requested?: number
+      processed?: number
+      truncated?: boolean
+      limit?: number
+      horizons?: number[]
+      articles_used?: number
+      provider_errors?: Record<string, string>
+    }>('/quant/sentiment/update', { symbols, horizon_days: horizonDays }, 120000)
+  }
+
   async getSentimentCache(timeoutMs = 5000) {
     if (this.configurationError || !this.serverUrl) {
       return { success: false, data: null, error: this.configurationError }

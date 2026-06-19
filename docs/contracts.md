@@ -58,6 +58,7 @@ Backend llama `trade_execution_guard` antes del RPC `execute_virtual_trade`. Si 
 - Salida: `status`, `usable_for_chart`, `usable_for_ta`, `usable_for_ml`, `usable_for_backtest`, `quality_score`, `issues`, `warnings`, `blocking_errors`, `recommendation` y `raw_diagnostics`.
 - Si `usable_for_ml=false`, el workflow cuantitativo no debe ejecutar modelos ML y debe devolver neutral/error controlado por datos insuficientes.
 - Si `quality_score < 60`, se considera calidad baja y tambien se bloquea ML en workflow/screener.
+- Excepcion acotada: si `usable_for_chart=true`, existe quote vivo y el simbolo tiene menos de 50 velas por IPO/listing reciente, el screener puede usar `recent_ipo_fallback`. En ese modo MA50/MACD quedan desactivados, no se devuelve `HOLD` generico por falta de datos, y el score se basa en volumen del dia, cambio inmediato y sentimiento disponible.
 - Si `usable_for_backtest=false`, no se debe ejecutar backtesting robusto.
 - El screener valida esta skill antes de calcular indicadores y antes de llamar al workflow Python.
 
@@ -95,6 +96,18 @@ Backend llama `trade_execution_guard` antes del RPC `execute_virtual_trade`. Si 
 - `BLOCKED` fuerza `HOLD` con confianza 0.
 - `isOpportunity=true` solo es valido si `signal_status=OK`, `final_action=BUY` y `final_confidence >= 70`.
 - FinBERT positivo no puede convertir mala data o una senal contradictoria en oportunidad.
+- Para `recent_ipo_fallback`, `usable_for_ml=false` es warning, no bloqueo. La confianza queda limitada y la respuesta debe incluir `recent_ipo_fallback`, `indicatorMode` e `historyCandles`.
+
+## Sentimiento de mercado
+
+- `POST /api/quant/sentiment` solo marca `applied: true` si FinBERT/quant-engine procesa noticias nuevas o si existe cache fresco confirmado por el motor.
+- Si el quant-engine falla o no responde, la respuesta debe incluir `applied: false`, `staleCacheIgnored: true`, `refreshedRanking: false` y warning visible: `Error de conexion con el motor`.
+- El frontend no debe presentar cache obsoleto como sentimiento aplicado.
+- Antes de clasificar noticias, el quant-engine compacta cada articulo a `symbol`, `title`, `summary`, `source`, `url` y `published_at`; metadatos grandes de Yahoo/Chart no llegan al modelo.
+- MVP multi-fuente: `POST /api/quant/sentiment` llama `POST /quant/sentiment/update` en FastAPI para procesar hasta 20 simbolos con Finnhub + Marketaux + FinBERT.
+- Persistencia: `news_sentiment` guarda features por `(symbol, as_of, horizon_days)` con horizontes `1`, `5` y `20`.
+- Lectura preparada para screener: `GET /api/quant/sentiment/features?symbols=AAPL,NVDA&horizons=1,5,20` devuelve el ultimo feature por simbolo/horizonte y tag `Bullish`, `Neutral` o `Bearish`.
+- Variables requeridas para fuentes principales: `FINNHUB_API_KEY` y `MARKETAUX_API_KEY`.
 
 ## Robust backtest
 

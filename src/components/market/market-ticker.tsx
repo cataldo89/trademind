@@ -1,12 +1,13 @@
 'use client'
 
 import { useQuery } from '@tanstack/react-query'
+import { useMarketStatus } from '@/hooks/useMarketStatus'
 import { cn, formatPercent } from '@/lib/utils'
 import { ArrowUp, ArrowDown } from 'lucide-react'
 
 // Default symbols to show in the ticker
 const TICKER_SYMBOLS = [
-  'SPY', 'QQQ', 'AAPL', 'MSFT', 'NVDA', 'TSLA', 'AMZN', 'META', 'GOOGL',
+  'SPY', 'QQQ', 'AAPL', 'MSFT', 'NVDA', 'SPCX', 'TSLA', 'AMZN', 'META', 'GOOGL',
   'BTC-USD', 'ETH-USD',
 ]
 
@@ -19,10 +20,7 @@ interface TickerQuote {
 
 async function fetchTickerQuotes(): Promise<TickerQuote[]> {
   try {
-    const symbolString = TICKER_SYMBOLS.join(',')
-    const res = await fetch(`/api/market/quote?symbol=${symbolString}&market=US`, {
-      next: { revalidate: 60 },
-    })
+    const res = await fetch(`/api/market/quote?symbols=${TICKER_SYMBOLS.join(',')}&market=US`)
     
     if (!res.ok) return []
     const data = await res.json()
@@ -34,10 +32,14 @@ async function fetchTickerQuotes(): Promise<TickerQuote[]> {
 }
 
 export function MarketTicker() {
+  const statuses = useMarketStatus()
+  const marketStatus = statuses.US
+  const marketIsLive = marketStatus.isOpen
+
   const { data: quotes = [], isLoading } = useQuery({
     queryKey: ['ticker-quotes'],
     queryFn: fetchTickerQuotes,
-    refetchInterval: 60 * 1000, // Refresh every 60s
+    refetchInterval: marketIsLive ? 60 * 1000 : false,
     staleTime: 30 * 1000,
   })
 
@@ -60,7 +62,10 @@ export function MarketTicker() {
 
   return (
     <div className="h-8 bg-gray-900/60 border-b border-gray-800 overflow-hidden flex items-center">
-      <div className="ticker-track flex items-center gap-0 whitespace-nowrap">
+      <div
+        className="ticker-track flex items-center gap-0 whitespace-nowrap"
+        style={{ animationPlayState: marketIsLive ? 'running' : 'paused' }}
+      >
         {displayQuotes.map((q, i) => (
           <TickerItem key={`${q.symbol}-${i}`} quote={q} />
         ))}
@@ -88,4 +93,4 @@ function TickerItem({ quote }: { quote: TickerQuote }) {
     </div>
   )
 }
-
+

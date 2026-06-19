@@ -1,19 +1,19 @@
 'use client'
 
-import { getAllMarketStatus, getMarketCurrentTime } from '@/lib/market-schedule'
+import { getMarketCurrentTime } from '@/lib/market-schedule'
+import { useMarketStatus } from '@/hooks/useMarketStatus'
 import { cn } from '@/lib/utils'
 import { Calendar, Clock } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 export function MarketCalendarWidget() {
-  const [statuses, setStatuses] = useState(() => getAllMarketStatus())
+  const statuses = useMarketStatus()
   const [currentTime, setCurrentTime] = useState({
     US: getMarketCurrentTime('US'),
   })
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setStatuses(getAllMarketStatus())
       setCurrentTime({
         US: getMarketCurrentTime('US'),
       })

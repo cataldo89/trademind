@@ -43,6 +43,9 @@ function buildScreenerContext(
     macd: params.get('macd') || undefined,
     rsi: parseFiniteNumber(params.get('rsi')),
     changePercent: parseFiniteNumber(params.get('change')),
+    decisionSource: params.get('decisionSource') || undefined,
+    decisionStatus: params.get('decisionStatus') || undefined,
+    decisionReason: params.get('decisionReason') || undefined,
   }
 }
 

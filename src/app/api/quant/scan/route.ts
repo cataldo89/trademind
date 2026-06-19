@@ -10,11 +10,16 @@ import {
   getYahooSymbol,
   getZestySymbolMarket,
 } from '@/lib/market-data'
+import { fetchAlpacaCryptoCandles, fetchAlpacaCryptoQuotes, isUsdCryptoSymbol } from '@/lib/alpaca/market-data'
 import { calculatePreliminaryScore, calculateFinalQuantScore, rankScreenerResults, PreliminaryTechData, QuantResultData } from '@/lib/ranking'
 import { assessMarketDataQuality, type MarketDataQualityResult } from '@/lib/market-data-quality'
 import { normalizeHistoricalData } from '@/lib/historical-data-normalizer'
+import { selectCryptoMlDecision, type CryptoMlDecision } from '@/lib/crypto-ml-policy'
 import type { Candle } from '@/types'
 import { getDurableMarketData, readQuantResultsCache, writeQuantResultsCache } from '@/lib/api/market-data-cache'
+import { isCryptoSymbol, evaluateFinalDecisionGate } from '@/lib/final-decision-gate'
+import { getUSMarketStatus } from '@/lib/market-schedule'
+
 
 const MAX_SYMBOLS = 500
 const YAHOO_CONCURRENCY = 10
@@ -45,7 +50,17 @@ type QuoteLike = {
   longName?: string
 }
 
-type ScanProvider = 'finnhub' | 'alpha-vantage' | 'yahoo'
+function finitePositive(value: unknown): number | null {
+  const numeric = Number(value)
+  return Number.isFinite(numeric) && numeric > 0 ? numeric : null
+}
+
+function finiteNumber(value: unknown): number | null {
+  const numeric = Number(value)
+  return Number.isFinite(numeric) ? numeric : null
+}
+
+type ScanProvider = 'alpaca' | 'finnhub' | 'alpha-vantage' | 'yahoo'
 
 type CandleLike = {
   date?: string | Date
@@ -71,6 +86,7 @@ type PreliminaryWithSentiment = PreliminaryTechData & {
   _sentiment?: SentimentRecord
   marketDataQuality?: MarketDataQualityResult
   providerFallback?: Record<string, unknown>
+  cryptoMlDecision?: CryptoMlDecision
 }
 
 function shouldDeprioritizeForGeneralScan(candidate: PreliminaryTechData, category: string) {
@@ -186,8 +202,30 @@ function classifyPythonResult(data: QuantResultData | null): Pick<PythonResultRe
 async function fetchBatchQuotes(symbols: string[]) {
   const quotes = new Map<string, QuoteLike>()
   const yahooSymbols: string[] = []
+  const cryptoSymbols = symbols.filter(isUsdCryptoSymbol)
+  const alpacaQuotes = cryptoSymbols.length > 0
+    ? await fetchAlpacaCryptoQuotes(cryptoSymbols).catch((error) => {
+      console.warn('[Quant Scan] alpaca crypto quotes failed:', error)
+      return new Map<string, Awaited<ReturnType<typeof fetchAlpacaCryptoQuotes>> extends Map<string, infer T> ? T : never>()
+    })
+    : new Map()
+
+  for (const [symbol, quote] of alpacaQuotes.entries()) {
+    quotes.set(symbol, {
+      symbol: quote.symbol,
+      regularMarketPrice: quote.price,
+      regularMarketPreviousClose: quote.previousClose,
+      regularMarketChangePercent: quote.changePercent,
+      regularMarketVolume: quote.volume,
+      shortName: quote.name,
+      longName: quote.name,
+    })
+  }
 
   await Promise.all(symbols.map(async (symbol) => {
+    if (quotes.has(symbol) || quotes.has(symbol.toUpperCase())) return
+    if (isUsdCryptoSymbol(symbol)) return
+
     const configuredQuote = await fetchConfiguredQuoteLike(symbol)
     if (configuredQuote) {
       quotes.set(symbol, configuredQuote)
@@ -231,6 +269,14 @@ async function fetchBatchQuotes(symbols: string[]) {
 }
 
 async function fetchConfiguredDailyCandles(symbol: string): Promise<{ candles: Candle[]; provider: ScanProvider } | null> {
+  if (isCryptoSymbol(symbol)) {
+    const period1 = new Date()
+    period1.setFullYear(2015, 0, 1)
+    const candles = await fetchAlpacaCryptoCandles(symbol, '1d', period1)
+    if (candles.length > 0) return { candles, provider: 'alpaca' }
+    return null
+  }
+
   const providerSymbol = normalizeProviderSymbol(symbol)
   const to = Math.floor(Date.now() / 1000)
   const from = to - 365 * 24 * 60 * 60
@@ -260,10 +306,11 @@ async function fetchConfiguredDailyCandles(symbol: string): Promise<{ candles: C
 
 async function fetchCandles(symbol: string, market: 'US' | 'CL' = 'US'): Promise<Candle[]> {
   try {
+    const cryptoOnly = isCryptoSymbol(symbol)
     return await getDurableMarketData<Candle[]>({
       symbol,
       market,
-      range: '1y',
+      range: cryptoOnly ? 'alpaca-full-history' : '1y',
       ttlMs: 4 * 60 * 60 * 1000, // 4 hours TTL
       provider: 'configured-market-data',
       loader: async () => {
@@ -273,6 +320,11 @@ async function fetchCandles(symbol: string, market: 'US' | 'CL' = 'US'): Promise
             scanCandleProviders.set(symbol.toUpperCase(), configured.provider)
             return configured.candles
           }
+        }
+
+        if (cryptoOnly) {
+          scanCandleProviders.set(symbol.toUpperCase(), 'alpaca')
+          return []
         }
 
         const period1 = new Date()
@@ -330,6 +382,20 @@ export async function POST(request: NextRequest) {
 
     if (!symbolsInput.length) {
       return NextResponse.json({ error: 'No symbols provided' }, { status: 400 })
+    }
+
+    let fxUsdClp = 900
+    try {
+      const fxQuote = await withTimeout(
+        yahooFinance.quote('CLP=X', {}, { validateResult: false }),
+        YAHOO_QUOTES_TIMEOUT_MS,
+        'Yahoo quote CLP=X'
+      )
+      if (fxQuote && fxQuote.regularMarketPrice) {
+        fxUsdClp = fxQuote.regularMarketPrice
+      }
+    } catch (e) {
+      console.warn('[Quant Scan] Failed to fetch USD/CLP FX rate from Yahoo Finance:', e)
     }
 
     const uniqueSymbols = Array.from(new Set(symbolsInput)).slice(0, MAX_SYMBOLS)
@@ -409,13 +475,17 @@ export async function POST(request: NextRequest) {
     const client = new QuantClient()
     const sentimentRes = await client.getSentimentCache()
     const sentimentCache = sentimentRes.success && sentimentRes.data ? (sentimentRes.data as Record<string, SentimentRecord>) : {}
+    const sentimentCacheStatus = sentimentRes.success ? 'ok' : 'engine_unavailable'
 
     for (const ySym of yahooSymbols) {
       const original = yahooToOriginal.get(ySym.toUpperCase()) || ySym
       const q = quotesMap.get(ySym) || quotesMap.get(ySym.toUpperCase())
       let c = candlesMap.get(ySym) || []
       const originalMarket = symbolMarkets[original] || getZestySymbolMarket(original) || market
-      const selectedProvider = scanCandleProviders.get(ySym.toUpperCase()) || 'configured-market-data'
+      const isCryptoMarketData = isUsdCryptoSymbol(original) || isUsdCryptoSymbol(ySym)
+      const selectedProvider: ScanProvider | 'configured-market-data' = isCryptoMarketData
+        ? 'alpaca'
+        : scanCandleProviders.get(ySym.toUpperCase()) || 'configured-market-data'
       const normalizedLocal = normalizeHistoricalData({
         symbol: original,
         provider: selectedProvider,
@@ -442,30 +512,52 @@ export async function POST(request: NextRequest) {
           adjusted: null,
         },
       })
+      const cryptoMlDecision = selectCryptoMlDecision(original, c, quality)
       let providerFallback: Record<string, unknown> | undefined
       
       const quoteData = {
-        price: Number(q?.regularMarketPrice ?? q?.regularMarketPreviousClose ?? null),
-        changePercent: Number(q?.regularMarketChangePercent ?? null),
-        volume: Number(q?.regularMarketVolume ?? null)
+        price: finitePositive(q?.regularMarketPrice) ?? finitePositive(q?.regularMarketPreviousClose),
+        changePercent: finiteNumber(q?.regularMarketChangePercent),
+        volume: finiteNumber(q?.regularMarketVolume)
       }
       
       const name = symbolMap[original] || q?.shortName || q?.longName || original
 
-      const prelim = calculatePreliminaryScore(original, name, originalMarket, category, quality.usable_for_ta ? c : [], quoteData)
+      const canUseRecentIpoFallback = quality.usable_for_chart && c.length > 0 && c.length < 50 && quoteData.price !== null
+      const prelim = calculatePreliminaryScore(
+        original,
+        name,
+        originalMarket,
+        category,
+        (quality.usable_for_ta || canUseRecentIpoFallback) ? c : [],
+        quoteData
+      )
       prelim.marketDataQuality = quality
+      ;(prelim as PreliminaryWithSentiment).cryptoMlDecision = cryptoMlDecision
       ;(prelim as PreliminaryWithSentiment).providerFallback = providerFallback || {
         selected_provider: selectedProvider,
         fallback_used: false,
       }
+      if (cryptoMlDecision.isCrypto) {
+        prelim.score = Math.max(0, Math.min(100, prelim.score - cryptoMlDecision.scorePenalty))
+        prelim.suggestions.push({
+          type: cryptoMlDecision.lightgbmAllowed ? 'opportunity' : 'warning',
+          label: cryptoMlDecision.lightgbmAllowed ? 'Modelo cripto ML apto' : cryptoMlDecision.engineLabel,
+        })
+      }
       if (!quality.usable_for_ml) {
         prelim.suggestions = prelim.suggestions.filter((suggestion) => suggestion.type !== 'opportunity')
       }
-      if (!quality.usable_for_ta) {
+      if (!quality.usable_for_ta && !prelim.recentIpoFallback) {
         prelim.noData = true
         prelim.suggestions.push({
           type: 'warning',
           label: quality.usable_for_chart ? 'Solo grafico' : 'Datos insuficientes',
+        })
+      } else if (prelim.recentIpoFallback) {
+        prelim.suggestions.push({
+          type: 'neutral',
+          label: `Historia corta (${c.length} velas): sin MA50/MACD`,
         })
       }
       
@@ -476,7 +568,7 @@ export async function POST(request: NextRequest) {
         prelim.score = Math.max(0, Math.min(100, prelim.score))
         // We attach it to prelim or wait for final? 
         // We'll attach it to prelim as suggestions
-        if (quality.usable_for_ml && sent.sentiment === 'POSITIVE') prelim.suggestions.push({ type: 'opportunity', label: 'Noticias Positivas (FinBERT)' })
+        if ((quality.usable_for_ml || prelim.recentIpoFallback) && sent.sentiment === 'POSITIVE') prelim.suggestions.push({ type: 'opportunity', label: 'Noticias Positivas (FinBERT)' })
         if (sent.sentiment === 'NEGATIVE') prelim.suggestions.push({ type: 'warning', label: 'Noticias Negativas (FinBERT)' })
         
         // Also store it for later
@@ -500,7 +592,9 @@ export async function POST(request: NextRequest) {
     if (topCandidates.length > 0) {
       for (const candidate of topCandidates.slice(0, PROVIDER_FALLBACK_MAX_CANDIDATES)) {
         const qualityScore = Number(candidate.marketDataQuality?.quality_score ?? 0)
-        const needsProviderCheck = Boolean(candidate.marketDataQuality) &&
+        const isCryptoCandidate = isUsdCryptoSymbol(candidate.symbol)
+        const needsProviderCheck = !isCryptoCandidate &&
+          Boolean(candidate.marketDataQuality) &&
           (!candidate.marketDataQuality?.usable_for_ml ||
             candidate.marketDataQuality?.usable_for_backtest === false ||
             qualityScore < 80)
@@ -534,7 +628,14 @@ export async function POST(request: NextRequest) {
     }
 
     const pythonResults = new Map<string, PythonResultRecord>()
-    const candidatesToAnalyze = topCandidates.filter(candidate => candidate.marketDataQuality?.usable_for_ml && candidate.marketDataQuality.quality_score >= 60)
+    const baseCandidatesToAnalyze = topCandidates.filter(candidate => candidate.marketDataQuality?.usable_for_ml && candidate.marketDataQuality.quality_score >= 60)
+    const candidatesToAnalyze = baseCandidatesToAnalyze.filter(candidate => {
+      const cryptoDecision = (candidate as PreliminaryWithSentiment).cryptoMlDecision
+      if (cryptoDecision?.isCrypto) {
+        return cryptoDecision.pythonAllowed
+      }
+      return true
+    })
     let quantCacheHits = 0
     let quantLiveRequests = 0
     
@@ -632,7 +733,29 @@ export async function POST(request: NextRequest) {
     const finalResults = preliminaryResults.map(p => {
       const isTopCandidate = topCandidates.some(t => t.symbol === p.symbol)
       const pythonRecord = isTopCandidate ? (pythonResults.get(p.symbol) || null) : null
-      const quantData = pythonRecord?.data || null
+      const cryptoMlDecision = (p as PreliminaryWithSentiment).cryptoMlDecision
+      const quantData = pythonRecord?.data
+        ? { ...pythonRecord.data, crypto_ml_decision: cryptoMlDecision }
+        : p.recentIpoFallback
+          ? {
+              action: p.score >= 62 ? 'BUY' : p.score <= 38 ? 'SELL' : 'HOLD',
+              confidence: Math.max(50, Math.min(69, Math.round(p.score))),
+              engine_status: 'skipped',
+              data_quality: 'partial',
+              engine_reason: 'recent_ipo_fallback: LightGBM long-term indicators disabled; score uses volume, immediate change and sentiment.',
+              quant_symbol: p.symbol,
+              crypto_ml_decision: cryptoMlDecision,
+            } satisfies QuantResultData
+        : cryptoMlDecision?.isCrypto
+          ? {
+              action: 'HOLD',
+              confidence: cryptoMlDecision.confidenceCap,
+              engine_status: cryptoMlDecision.pythonAllowed ? 'skipped' : 'skipped',
+              data_quality: p.marketDataQuality?.usable_for_ml ? 'partial' : 'insufficient',
+              engine_reason: cryptoMlDecision.reasons.join(' ') || cryptoMlDecision.engineLabel,
+              crypto_ml_decision: cryptoMlDecision,
+            } satisfies QuantResultData
+          : null
       const isFallback = isTopCandidate ? (!pythonRecord || !pythonRecord.ok) : true
       
       const finalScore = calculateFinalQuantScore(p, quantData, isFallback)
@@ -646,19 +769,56 @@ export async function POST(request: NextRequest) {
         }
       }
       ;(finalScore as PreliminaryWithSentiment).providerFallback = (p as PreliminaryWithSentiment).providerFallback
+      ;(finalScore as PreliminaryWithSentiment).cryptoMlDecision = cryptoMlDecision
+
+      // Final Decision Gate
+      const usMarketStatus = getUSMarketStatus()
+      const isUSOpen = usMarketStatus.isOpen
+      
+      const priceModelUsd = finalScore.price
+      const priceDisplayClp = priceModelUsd !== null && fxUsdClp !== null ? Math.round(priceModelUsd * fxUsdClp) : null
+      
+      const gateResult = evaluateFinalDecisionGate({
+        symbol: p.symbol,
+        market: p.market as 'US' | 'CL',
+        isMarketOpen: isUSOpen,
+        market_data_quality: p.marketDataQuality,
+        signal_quality: finalScore.signalQuality,
+        robust_backtest: finalScore.robustBacktest,
+        portfolio_risk: finalScore.portfolioRisk,
+        trade_execution_guard: quantData?.trade_execution_guard || null,
+        data_timestamp: p.marketDataQuality?.metadata?.timestamp || new Date().toISOString(),
+        data_source: p.marketDataQuality?.provider,
+        
+        price_model_usd: priceModelUsd,
+        price_display_clp: priceDisplayClp,
+        fx_usd_clp: fxUsdClp,
+        price_source: p.marketDataQuality?.provider || 'unknown',
+        price_timestamp: new Date().toISOString(),
+        broker_symbol: p.symbol,
+        model_symbol: p.symbol,
+        market_data_symbol: p.symbol
+      })
+      
+      finalScore.decisionGate = gateResult
+      finalScore.decision_score = gateResult.decision_confidence
+      finalScore.display_score = gateResult.decision_confidence
+      
       return finalScore
     })
 
     const ranked = rankScreenerResults(finalResults)
     const rawPythonValues = Array.from(pythonResults.values())
-    const finalBuyCount = ranked.filter(result => result.signalQuality?.final_action === 'BUY').length
-    const finalSellCount = ranked.filter(result => result.signalQuality?.final_action === 'SELL').length
-    const finalHoldCount = ranked.filter(result => result.signalQuality?.final_action === 'HOLD').length
+    const finalBuyCount = ranked.filter(result => result.decisionGate?.final_action === 'BUY_CONFIRMED').length
+    const finalSellCount = ranked.filter(result => result.decisionGate?.final_action === 'AVOID').length
+    const finalHoldCount = ranked.filter(result => result.decisionGate?.final_action === 'HOLD' || result.decisionGate?.final_action === 'WATCHLIST').length
     const audit = {
       universe_requested: uniqueSymbols.length,
       quote_found: preliminaryResults.filter(result => result.price !== null).length,
       candles_usable_for_ta: preliminaryResults.filter(result => result.marketDataQuality?.usable_for_ta).length,
       candles_usable_for_ml: preliminaryResults.filter(result => result.marketDataQuality?.usable_for_ml).length,
+      recent_ipo_fallback: preliminaryResults.filter(result => result.recentIpoFallback).length,
+      sentiment_cache_status: sentimentCacheStatus,
       python_candidate_limit: QUANT_MAX_CANDIDATES,
       python_candidates: candidatesToAnalyze.map(candidate => candidate.symbol),
       python_candidates_count: candidatesToAnalyze.length,
@@ -666,6 +826,12 @@ export async function POST(request: NextRequest) {
       quant_cache_hits: quantCacheHits,
       quant_live_requests: quantLiveRequests,
       force_quant_refresh: forceQuantRefresh,
+      crypto_policy_assets: preliminaryResults.filter(result => (result as PreliminaryWithSentiment).cryptoMlDecision?.isCrypto).length,
+      crypto_lightgbm_allowed: preliminaryResults.filter(result => (result as PreliminaryWithSentiment).cryptoMlDecision?.lightgbmAllowed).length,
+      crypto_policy_blocked_from_python: preliminaryResults.filter(result => {
+        const decision = (result as PreliminaryWithSentiment).cryptoMlDecision
+        return decision?.isCrypto && !decision.pythonAllowed
+      }).length,
       raw_python_buy: rawPythonValues.filter(result => result.data?.action === 'BUY').length,
       raw_python_sell: rawPythonValues.filter(result => result.data?.action === 'SELL').length,
       raw_python_hold: rawPythonValues.filter(result => result.data?.action === 'HOLD').length,
@@ -684,6 +850,41 @@ export async function POST(request: NextRequest) {
       quant_partial: Array.from(pythonResults.values()).filter(r => r.status === 'partial').length,
       quant_failed: Array.from(pythonResults.values()).filter(r => r.status === 'failed').length,
       scan_audit: audit,
+      final_decision_audit: Object.fromEntries(
+        ranked.map((result) => [result.symbol, result.decisionGate])
+      ),
+      provider_statuses: Object.fromEntries(
+        ranked.map((result) => [
+          result.symbol,
+          {
+            selected_provider: result.marketDataQuality?.provider,
+            provider_statuses: (result.providerFallback?.provider_statuses as unknown[]) || [],
+            fallback_used: Boolean(result.providerFallback?.fallback_used)
+          }
+        ])
+      ),
+      freshness_status: Object.fromEntries(
+        ranked.map((result) => [
+          result.symbol,
+          {
+            data_timestamp: result.decisionGate?.data_timestamp,
+            age_minutes: result.decisionGate?.data_timestamp
+              ? (Date.now() - Date.parse(result.decisionGate.data_timestamp)) / (60 * 1000)
+              : null,
+            is_stale: result.decisionGate?.blocking_reasons?.some((r: string) => r.includes('stale_')) || false
+          }
+        ])
+      ),
+      execution_guard: Object.fromEntries(
+        ranked.map((result) => [
+          result.symbol,
+          result.quant?.trade_execution_guard || { status: 'ALLOWED', blocking_reasons: [] }
+        ])
+      ),
+      validation_status: {
+        model_status: ranked.length > 0 ? (ranked[0].quant?.model_status || 'unknown') : 'unknown',
+        passed_validation: ranked.length > 0 ? (ranked[0].quant?.model_status !== 'weak_validation') : false
+      },
       quant_diagnostics: Object.fromEntries(
         Array.from(pythonResults.entries()).map(([symbol, result]) => [
           symbol,
@@ -705,6 +906,9 @@ export async function POST(request: NextRequest) {
             provider_statuses: ((result as PreliminaryWithSentiment).providerFallback?.provider_statuses as unknown[]) ?? [],
             usable_for_chart: result.marketDataQuality?.usable_for_chart,
             usable_for_ta: result.marketDataQuality?.usable_for_ta,
+            recent_ipo_fallback: result.recentIpoFallback === true,
+            indicator_mode: result.indicatorMode,
+            history_candles: result.historyCandles,
             usable_for_ml: result.marketDataQuality?.usable_for_ml,
             usable_for_backtest: result.marketDataQuality?.usable_for_backtest,
             quality_score: result.marketDataQuality?.quality_score,
@@ -712,6 +916,7 @@ export async function POST(request: NextRequest) {
             blocking_errors: result.marketDataQuality?.blocking_errors ?? [],
             issues: result.marketDataQuality?.issues ?? [],
             warnings: result.marketDataQuality?.warnings ?? [],
+            crypto_ml_decision: (result as PreliminaryWithSentiment).cryptoMlDecision,
           },
         ])
       ),

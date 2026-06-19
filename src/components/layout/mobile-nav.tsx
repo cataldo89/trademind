@@ -2,14 +2,13 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, LineChart, Briefcase, TrendingUp, Search } from 'lucide-react'
+import { LayoutDashboard, LineChart, PlugZap, TrendingUp, Search } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const items = [
   { href: '/dashboard', label: 'Inicio', icon: LayoutDashboard },
   { href: '/screener', label: 'Screener', icon: Search },
   { href: '/analysis', label: 'Análisis', icon: LineChart },
-  { href: '/portfolio', label: 'Portafolio', icon: Briefcase },
   { href: '/signals', label: 'Señales', icon: TrendingUp },
 ]
 

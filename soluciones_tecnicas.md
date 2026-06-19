@@ -148,7 +148,29 @@ Backend devuelve newBalance y IDs creados
 - Batch de simbolos para quotes.
 - Registrar metricas de ejecucion.
 
-## 5. Mapa de documentos relacionados
+## 5. Problema de Caché Lento en el Escáner (Tabla Inexistente en Producción)
+
+### Síntoma
+
+El escáner Quant (Screener) en Next.js se demoraba minutos en cargar categorías grandes (ej. 152 activos) porque no reutilizaba el caché y recalculaba todo desde Yahoo Finance en cada cambio de menú.
+
+### Causa raíz
+
+1. La tabla `market_data_cache` fue definida en la migración `002_quant_jobs_and_market_cache.sql`, pero esta migración no se aplicó en el entorno de Supabase en producción.
+2. Como resultado, la función `getDurableMarketData` fallaba silenciosamente al intentar escribir en la base de datos y hacía peticiones en vivo para todos los activos cada vez que se escaneaba.
+3. El `memory-cache` de Next.js estaba agrupando las llaves de caché por categoría (ej. `scan:quotes:AAPL,MSFT...`), lo que provocaba "cache misses" completos al cambiar de categoría.
+
+### Solución implementada
+
+- Se identificó y se aplicó el código SQL faltante (migración 002) para crear la tabla `market_data_cache` y sus políticas RLS directamente en el entorno de producción.
+- **Cambio crítico Supabase 2026**: Se identificó que a partir del 30 de Mayo de 2026, Supabase bloquea por defecto la exposición de nuevas tablas a la Data API (PostgREST/supabase-js). Fue necesario ejecutar explícitamente `GRANT ALL PRIVILEGES ON TABLE public.market_data_cache TO service_role, anon, authenticated;` para que Next.js pudiera leer/escribir.
+- **Optimización de Caché de Memoria**: Para evitar el cuello de botella al cambiar de categorías, se reestructuró la lógica en `src/app/api/quant/scan/route.ts` migrando de una caché a nivel de lote completo a una caché granular por símbolo. Ahora:
+  1. Se verifica la memoria caché individualmente para el precio de cada acción (`scan:quote:SYM`). Las que no existen en caché se consultan en lote a Yahoo.
+  2. Las series de velas se recuperan concurrentemente de la caché de memoria individual (`scan:candles:SYM`), y en caso de fallo, se recurre a la base de datos Supabase (`getDurableMarketData`) de forma unitaria.
+  3. Esto solucionó un error crítico donde un "cache hit" del lote completo devolvía `true` pero dejaba el mapa de velas vacío, marcando incorrectamente todos los símbolos como "Datos insuficientes".
+- **Lección para IAs**: Nunca asumir que las migraciones locales están aplicadas en la nube. Validar la existencia de tablas si un flujo que depende de base de datos se vuelve extremadamente lento o falla en silencio. Además, **toda nueva tabla creada** DEBE incluir explícitamente los `GRANT` a los roles correspondientes, de lo contrario será invisible para la aplicación. Y al diseñar cachés en Next.js, preferir siempre un enfoque de granularidad por recurso para evitar invalidaciones por cambios de filtros de lote.
+
+## 6. Mapa de documentos relacionados
 
 | Tema | Documento principal |
 |---|---|

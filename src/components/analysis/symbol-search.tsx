@@ -62,7 +62,7 @@ export function SymbolSearch({ symbol, market, onSelect }: SymbolSearchProps) {
                 autoFocus
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Buscar símbolo... (AAPL, MSFT)"
+                placeholder="Buscar símbolo... (AAPL, SPCX)"
                 className="flex-1 bg-transparent text-sm text-white placeholder-gray-500 outline-none"
               />
               {query && (

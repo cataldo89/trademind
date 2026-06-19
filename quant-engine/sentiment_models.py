@@ -16,7 +16,7 @@ _sentiment_pipeline = None
 
 DEFAULT_MAX_HEADLINES = int(os.getenv("SENTIMENT_MAX_HEADLINES", "25"))
 SOURCE_TIMEOUT_SECONDS = float(os.getenv("SENTIMENT_SOURCE_TIMEOUT_SECONDS", "6"))
-DEFAULT_SOURCES = "google,gdelt,yahoo,finnhub,newsapi,sec,presswire,macro"
+DEFAULT_SOURCES = "alpaca,google,gdelt,finnhub,newsapi,sec,presswire,macro"
 ENABLED_SOURCES = {
     source.strip().lower()
     for source in os.getenv("SENTIMENT_NEWS_SOURCES", DEFAULT_SOURCES).split(",")
@@ -105,6 +105,13 @@ def _company_query(symbol: str) -> str:
     if normalized.endswith(".AX"):
         return f'"{name}" OR "{_base_symbol(normalized)}" ASX shares'
     return f'"{name}" OR "{_base_symbol(normalized)}" stock shares'
+
+
+def _alpaca_news_symbol(symbol: str) -> str:
+    normalized = symbol.strip().upper()
+    if normalized.endswith("-USD"):
+        return normalized.replace("-USD", "/USD")
+    return normalized
 
 
 def _json_get(url: str, headers: Optional[Dict[str, str]] = None, timeout: float = SOURCE_TIMEOUT_SECONDS) -> Dict:
@@ -272,6 +279,40 @@ def fetch_yahoo_news(symbol: str) -> List[dict]:
         return []
 
 
+def fetch_alpaca_news(symbol: str) -> List[dict]:
+    key_id = os.getenv("ALPACA_API_KEY_ID") or os.getenv("APCA_API_KEY_ID")
+    secret_key = os.getenv("ALPACA_API_SECRET_KEY") or os.getenv("APCA_API_SECRET_KEY")
+    if not key_id or not secret_key:
+        return []
+
+    params = urllib.parse.urlencode(
+        {
+            "symbols": _alpaca_news_symbol(symbol),
+            "limit": "10",
+        }
+    )
+    url = f"https://data.alpaca.markets/v1beta1/news?{params}"
+    try:
+        payload = _json_get(
+            url,
+            headers={
+                "APCA-API-KEY-ID": key_id,
+                "APCA-API-SECRET-KEY": secret_key,
+            },
+        )
+        return [
+            {
+                "title": article.get("headline") or article.get("summary") or "",
+                "source": f"Alpaca News/{article.get('source') or 'Benzinga'}",
+            }
+            for article in payload.get("news", [])
+            if article.get("headline") or article.get("summary")
+        ]
+    except Exception as e:
+        logger.error(f"Error fetch_alpaca_news for {symbol}: {e}")
+        return []
+
+
 def fetch_finnhub_news(symbol: str) -> List[dict]:
     token = os.getenv("FINNHUB_API_KEY")
     if not token:
@@ -385,6 +426,7 @@ def fetch_macro_news(symbol: str) -> List[dict]:
 
 
 SOURCE_FETCHERS: Dict[str, Callable[[str], List[dict]]] = {
+    "alpaca": fetch_alpaca_news,
     "google": fetch_google_news,
     "gdelt": fetch_gdelt_news,
     "yahoo": fetch_yahoo_news,
@@ -419,14 +461,32 @@ def fetch_combined_news(symbol: str) -> List[dict]:
     return _dedupe_headlines(headlines)
 
 
+def compact_news_article(article: dict, symbol: str) -> dict:
+    """Keep only FinBERT/Gemini-relevant fields; drop Yahoo/chart metadata."""
+    title = str(article.get("title") or article.get("headline") or "")[:280]
+    summary = str(article.get("summary") or article.get("description") or "")[:500]
+    return {
+        "symbol": symbol,
+        "title": title,
+        "summary": summary,
+        "source": str(article.get("source") or article.get("publisher") or "Unknown")[:80],
+        "url": str(article.get("url") or article.get("link") or "")[:300],
+        "published_at": str(article.get("published_at") or article.get("publishedAt") or article.get("date") or "")[:80],
+    }
+
+
 def analyze_sentiment_batch(symbols: List[str]) -> Dict[str, dict]:
     results = {}
     pipe = get_pipeline()
 
     for sym in symbols:
         try:
-            articles = fetch_combined_news(sym)
-            texts = [article["title"] for article in articles]
+            articles = [compact_news_article(article, sym) for article in fetch_combined_news(sym)]
+            texts = [
+                " - ".join(part for part in [article.get("title", ""), article.get("summary", "")] if part).strip()
+                for article in articles
+            ]
+            texts = [text[:600] for text in texts if text]
             sources = sorted({article.get("source", "Unknown") for article in articles})
 
             if not texts:

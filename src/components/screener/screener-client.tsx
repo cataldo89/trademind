@@ -13,7 +13,7 @@ import {
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import type { FinalQuantScore } from '@/lib/ranking'
-import { getUSMarketStatus } from '@/lib/market-schedule'
+import { useMarketStatus } from '@/hooks/useMarketStatus'
 
 const SENTIMENT_SCAN_SYMBOL_LIMIT = 5
 const TOP_SENTIMENT_FRESHNESS_MS = 60 * 60 * 1000
@@ -33,6 +33,17 @@ type SentimentExecution = {
   finishedAt?: string
 }
 
+interface MlRankingItem {
+  symbol: string
+  rank?: number
+  score?: number
+  signal?: string
+  candidate_rank?: number
+  candidate_score?: number
+  candidate_signal?: string
+  main_reasons?: string[]
+}
+
 function isPythonLightGbmReady(body: any) {
   return body?.model_status === 'loaded'
     && body?.python_execution?.quant_engine_ready === true
@@ -43,7 +54,7 @@ function isPythonLightGbmReady(body: any) {
 function formatQuantEngineWarning(value: unknown) {
   const message = typeof value === 'string' ? value : ''
   if (!message || message === 'Quant engine request failed') {
-    return 'Modo fallback tecnico: el Ranking ML rapido no respondio para esta ejecucion. El ranking visible usa datos tecnicos locales.'
+    return 'Modo fallback tecnico: el Ranking de candidatos no respondio para esta ejecucion. El ranking visible usa datos tecnicos locales.'
   }
   return message
 }
@@ -103,17 +114,10 @@ export function ScreenerClient() {
   const [isQuantScanEnabled, setIsQuantScanEnabled] = useState(false)
   const [forceQuantRefreshNonce, setForceQuantRefreshNonce] = useState(0)
   const [forceQuantRefreshCategory, setForceQuantRefreshCategory] = useState<string | null>(null)
-  const [marketStatus, setMarketStatus] = useState(() => getUSMarketStatus())
+  const statuses = useMarketStatus()
+  const marketStatus = statuses.US
   const [showPipelineInspector, setShowPipelineInspector] = useState(true)
   const queryClient = useQueryClient()
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setMarketStatus(getUSMarketStatus())
-    }, 30000)
-
-    return () => clearInterval(interval)
-  }, [])
 
   const handleSelectSymbol = (symbol: string, market: string, result?: FinalQuantScore) => {
     if (result) {
@@ -207,7 +211,7 @@ export function ScreenerClient() {
       startedAt,
       symbols: scanSymbols.length,
     })
-    toast.info('Entrenando Ranking ML rapido con LightGBM...')
+    toast.info('Entrenando Ranking de candidatos con LightGBM...')
     try {
       const symbols = scanSymbols.map((s) => s.symbol)
       const res = await fetch('/api/quant/asset-rank', {
@@ -244,7 +248,7 @@ export function ScreenerClient() {
             trainOk: Boolean(body.train_result?.ok),
             warning: formatQuantEngineWarning(body.warning || body.error),
           })
-          toast.warning(`Ranking tecnico fallback para ${fallbackRankings.length} activos. El Ranking ML rapido sigue bloqueado hasta que Cloudflare/FastAPI respondan.`)
+          toast.warning(`Ranking tecnico fallback para ${fallbackRankings.length} activos. El Ranking de candidatos sigue bloqueado hasta que Cloudflare/FastAPI respondan.`)
           return
         }
         throw new Error(body?.error || 'Falló el ranking')
@@ -267,7 +271,7 @@ export function ScreenerClient() {
           trainOk: Boolean(body.train_result?.ok),
           warning: formatQuantEngineWarning(body.warning || body.train_result?.error),
         })
-        toast.error('Ranking ML rapido no esta listo: el resultado quedo bloqueado porque el quant-engine esta en fallback.')
+        toast.error('Ranking de candidatos no esta listo: el resultado quedo bloqueado porque el quant-engine esta en fallback.')
         return
       }
 
@@ -287,7 +291,7 @@ export function ScreenerClient() {
         warning: body.warning || body.train_result?.error,
       })
       setIsQuantScanEnabled(true)
-      toast.success(`Ranking ML rapido completado para ${body.count} activos.`)
+      toast.success(`Ranking de candidatos completado para ${body.count} activos.`)
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : String(e)
       setIsQuantScanEnabled(false)
@@ -494,6 +498,17 @@ export function ScreenerClient() {
       !r.isLeveragedOrInverse
   }
 
+  const getWhatIsMissingToBuy = (finalAction: string, blockingReasons: string[]): string => {
+    if (finalAction === 'BUY_CONFIRMED') return 'Nada, listo para comprar.'
+    if (finalAction === 'BLOCKED_DATA') return 'Esperando datos completos, historial del activo o velas frescas de Alpaca.'
+    if (finalAction === 'BLOCKED_RISK') return 'Esperando reducción de volatilidad o mayor cupo en la exposición del portafolio.'
+    if (finalAction === 'BLOCKED_BACKTEST') return 'Esperando métricas históricas de rentabilidad estables y aprobadas en backtest.'
+    if (finalAction === 'BLOCKED_EXECUTION') return 'Esperando apertura de mercado regular o liquidez/spread aceptable.'
+    if (finalAction === 'HOLD' || finalAction === 'WATCHLIST') return 'Esperando señales técnicas y de Machine Learning con mayor confianza (>70%).'
+    if (finalAction === 'AVOID') return 'Señal de venta o evitación quant activa. No se recomienda comprar.'
+    return 'Esperando validación de la auditoría de inversión.'
+  }
+
   const getDisplayDecision = (r: FinalQuantScore): DisplayDecision => {
     const details = [
       `Score tecnico ${r.finalScore.toFixed(0)}`,
@@ -506,6 +521,41 @@ export function ScreenerClient() {
       r.quant?.weekend_sentiment?.sentiment ? `FinBERT ${r.quant.weekend_sentiment.sentiment}` : null,
       getProviderSummary(r) ? `Providers ${getProviderSummary(r)}` : null,
     ].filter(Boolean) as string[]
+
+    if (r.decisionGate) {
+      const dg = r.decisionGate
+      let actionLabel = 'Sólo observar'
+      if (dg.final_action === 'BUY_CONFIRMED') actionLabel = 'Sí, BUY confirmado'
+      else if (dg.final_action === 'AVOID' || dg.final_action === 'BLOCKED_EXECUTION') actionLabel = 'No comprar'
+      else if (dg.final_action === 'BLOCKED_DATA' || dg.final_action === 'ERROR') actionLabel = 'Datos insuficientes'
+      else if (dg.final_action === 'BLOCKED_RISK' || dg.final_action === 'BLOCKED_BACKTEST') actionLabel = 'Riesgo bloqueado'
+      else if (dg.final_action === 'WATCHLIST' || dg.final_action === 'HOLD') actionLabel = 'Sólo observar'
+      
+      const reasonsList = [
+        ...(dg.blocking_reasons || []),
+        ...(dg.contradicting_factors || []),
+        ...(dg.supporting_factors || [])
+      ]
+      
+      const priceTimestampStr = dg.price_timestamp ? new Date(dg.price_timestamp).toLocaleTimeString() : 'n/a'
+      const dataTimestampStr = dg.data_timestamp ? new Date(dg.data_timestamp).toLocaleTimeString() : 'n/a'
+      
+      return {
+        action: actionLabel,
+        source: dg.data_source || 'Final Decision Gate',
+        status: dg.final_action,
+        primaryReason: dg.decision_reason,
+        details: [
+          `Hora actualización: ${priceTimestampStr !== 'n/a' ? priceTimestampStr : dataTimestampStr}`,
+          `Precio modelo: ${dg.price_model_usd ? '$' + dg.price_model_usd.toFixed(2) + ' USD' : 'n/a'}`,
+          `Precio display: ${dg.price_display_clp ? '$' + dg.price_display_clp + ' CLP' : 'n/a'}`,
+          `Tasa cambio (USD/CLP): ${dg.fx_usd_clp ? '$' + dg.fx_usd_clp.toFixed(2) : 'n/a'}`,
+          `Qué falta para comprar: ${getWhatIsMissingToBuy(dg.final_action, dg.blocking_reasons || [])}`,
+          ...reasonsList,
+          ...details
+        ].filter(Boolean)
+      }
+    }
 
     if (isMarketDataBlocked(r)) {
       return {
@@ -593,17 +643,17 @@ export function ScreenerClient() {
 
   const getActionPillClass = (action: string) => {
     const normalized = action.toUpperCase()
-    if (normalized.startsWith('BUY')) return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
-    if (normalized.startsWith('SELL')) return 'bg-red-500/20 text-red-300 border-red-500/30'
-    if (normalized.startsWith('HOLD')) return 'bg-orange-500/20 text-orange-300 border-orange-500/30'
+    if (normalized.includes('CONFIRMADO') || normalized.startsWith('BUY')) return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+    if (normalized.includes('NO COMPRAR') || normalized.includes('EVITAR') || normalized.includes('BLOQUEADO') || normalized.includes('INSUFICIENTES') || normalized.startsWith('SELL')) return 'bg-red-500/20 text-red-300 border-red-500/30'
+    if (normalized.includes('OBSERVAR') || normalized.startsWith('HOLD') || normalized.startsWith('WATCHLIST')) return 'bg-orange-500/20 text-orange-300 border-orange-500/30'
     return 'bg-gray-800 text-gray-300 border-gray-700'
   }
 
   const getActionTextClass = (action: string) => {
     const normalized = action.toUpperCase()
-    if (normalized.startsWith('BUY')) return 'text-emerald-300'
-    if (normalized.startsWith('SELL')) return 'text-red-300'
-    if (normalized.startsWith('HOLD')) return 'text-orange-300'
+    if (normalized.startsWith('BUY') || normalized.startsWith('CANDIDATE')) return 'text-emerald-300'
+    if (normalized.startsWith('SELL') || normalized.startsWith('AVOID')) return 'text-red-300'
+    if (normalized.startsWith('HOLD') || normalized.startsWith('WATCHLIST')) return 'text-orange-300'
     return 'text-gray-300'
   }
 
@@ -670,7 +720,7 @@ export function ScreenerClient() {
     return `/analysis?${params.toString()}`
   }
 
-  const buildAnalysisHrefFromMlRanking = (r: any) => {
+  const buildAnalysisHrefFromMlRanking = (r: MlRankingItem) => {
     const params = new URLSearchParams()
     const market = getZestySymbolMarket(r.symbol)
     
@@ -679,10 +729,13 @@ export function ScreenerClient() {
     params.set('from', 'screener')
     
     // Mapeamos AVOID a SELL para displayAction
-    const action = r.signal === 'AVOID' ? 'SELL' : r.signal
-    params.set('screenerAction', action)
-    params.set('screenerScore', Number(r.score || 0).toFixed(0))
-    params.set('decisionScore', Number(r.score || 0).toFixed(0))
+    const signal = r.candidate_signal || r.signal
+    const action = signal === 'AVOID' ? 'SELL' : signal
+    params.set('screenerAction', action || 'HOLD')
+    
+    const score = r.candidate_score !== undefined ? r.candidate_score : r.score
+    params.set('screenerScore', Number(score || 0).toFixed(0))
+    params.set('decisionScore', Number(score || 0).toFixed(0))
     params.set('decisionSource', 'quant_engine')
     params.set('decisionStatus', 'ML Fast')
     
@@ -691,8 +744,8 @@ export function ScreenerClient() {
       : 'Señal del motor de Machine Learning rápido'
     params.set('decisionReason', reason.slice(0, 220))
     
-    params.set('quantAction', r.signal)
-    params.set('confidence', Number(Math.min(100, Math.max(0, Math.abs(r.score || 0)))).toFixed(0))
+    params.set('quantAction', signal || 'HOLD')
+    params.set('confidence', Number(Math.min(100, Math.max(0, Math.abs(score || 0)))).toFixed(0))
     
     return `/analysis?${params.toString()}`
   }
@@ -1035,7 +1088,7 @@ export function ScreenerClient() {
         <div className="space-y-3">
           <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-2">
             <Zap className={cn('w-3.5 h-3.5', lightgbmUiReady ? 'text-emerald-400' : 'text-amber-300')} />
-            {lightgbmUiReady ? 'Ranking ML rapido' : 'Ranking tecnico rapido (fallback)'}
+            {lightgbmUiReady ? 'Ranking de candidatos' : 'Ranking tecnico rapido (fallback)'}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {mlRankings.slice(0, 9).map((r, i) => {
@@ -1043,6 +1096,9 @@ export function ScreenerClient() {
               const href = matchingResult
                 ? buildAnalysisHref(matchingResult)
                 : buildAnalysisHrefFromMlRanking(r)
+              const rankVal = r.candidate_rank !== undefined ? r.candidate_rank : r.rank
+              const scoreVal = r.candidate_score !== undefined ? r.candidate_score : r.score
+              const signalVal = r.candidate_signal !== undefined ? r.candidate_signal : r.signal
               return (
                 <Link
                   key={i}
@@ -1056,11 +1112,11 @@ export function ScreenerClient() {
                 >
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-bold text-white">{r.symbol}</span>
-                    <span className="text-[10px] text-gray-500">Rank: #{r.rank}</span>
+                    <span className="text-[10px] text-gray-500">Candidato #{rankVal}</span>
                   </div>
                   <div className="text-[10px] text-gray-400 space-y-1">
-                    <p>Score ML: <span className="text-white font-mono">{Number(r.score).toFixed(4)}</span></p>
-                    <p>Action: <span className={cn('font-bold', getActionTextClass(String(r.signal || 'HOLD')))}>{r.signal}</span></p>
+                    <p>Score: <span className="text-white font-mono">{Number(scoreVal).toFixed(4)}</span></p>
+                    <p>Signal: <span className={cn('font-bold', getActionTextClass(String(signalVal || 'HOLD')))}>{signalVal}</span></p>
                     {r.main_reasons?.map((reason: string, idx: number) => (
                       <p key={idx} className="truncate text-gray-500" title={translateReason(reason)}>- {translateReason(reason)}</p>
                     ))}
@@ -1130,14 +1186,14 @@ export function ScreenerClient() {
               className="px-3 py-1.5 text-xs font-semibold bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 text-white rounded-lg transition-all flex items-center gap-1"
             >
               <Zap className="w-3 h-3" />
-              {isRanking ? 'Rankeando...' : 'Ranking ML rapido'}
+              {isRanking ? 'Rankeando...' : 'Ranking de candidatos'}
             </button>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-[11px]">
           <div className="rounded-lg border border-cyan-500/25 bg-cyan-500/10 p-3">
-            <p className="font-semibold text-cyan-200">Ranking ML rapido</p>
+            <p className="font-semibold text-cyan-200">Ranking de candidatos</p>
             <p className="mt-1 text-gray-300">Ordena todo el universo en batch. Sirve para descubrir candidatos y es el flujo rapido.</p>
           </div>
           <div className="rounded-lg border border-emerald-500/25 bg-emerald-500/10 p-3">
@@ -1188,9 +1244,9 @@ export function ScreenerClient() {
             <div className="space-y-3 border-t border-gray-800/70 p-3 text-[11px]">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
                 <div className="rounded-lg border border-cyan-500/20 bg-cyan-500/10 p-3">
-                  <p className="font-semibold text-cyan-200">1. Ranking ML rapido</p>
+                  <p className="font-semibold text-cyan-200">1. Ranking de candidatos</p>
                   <p className="mt-1 font-mono text-gray-300">POST /api/quant/asset-rank</p>
-                  <p className="mt-1 text-gray-400">Boton: Ranking ML rapido. Resultado visible: tarjetas superiores.</p>
+                  <p className="mt-1 text-gray-400">Boton: Ranking de candidatos. Resultado visible: tarjetas superiores.</p>
                   <p className="mt-1 text-gray-400">Estado: <span className="font-mono text-white">{mlExecution?.status ?? 'idle'}</span></p>
                   <p className="text-gray-400">Enviados: <span className="font-mono text-white">{scanSymbols.length}</span> / entrenados: <span className="font-mono text-white">{mlExecution?.trainingSymbols ?? '-'}</span></p>
                 </div>

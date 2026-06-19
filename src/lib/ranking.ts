@@ -4,6 +4,7 @@ import type { MarketDataQualityResult } from './market-data-quality'
 import type { PortfolioRiskResult } from './portfolio-risk-manager'
 import type { RobustBacktestResult } from './robust-backtest'
 import { assessSignalQuality, type SignalQualityResult } from './signal-quality'
+import type { CryptoMlDecision } from './crypto-ml-policy'
 
 export interface PreliminaryTechData {
   symbol: string
@@ -17,7 +18,11 @@ export interface PreliminaryTechData {
   macdSignal: string
   priceVsMA20: 'above' | 'below' | null
   priceVsMA50: 'above' | 'below' | null
+  priceVsMA100: 'above' | 'below' | null
   noData: boolean
+  recentIpoFallback?: boolean
+  indicatorMode?: 'full' | 'recent_ipo_short_history'
+  historyCandles?: number
   isLeveragedOrInverse: boolean
   suggestions: { type: string, label: string }[]
   score: number // Preliminary score
@@ -33,6 +38,7 @@ export interface QuantResultData {
   var_95?: number
   ml_prediction?: number
   graham_passed?: boolean
+  graham_reason?: string
   error_reason?: string
   xai_explanation?: string
   engine_status?: 'ok' | 'partial' | 'failed' | 'skipped'
@@ -47,20 +53,30 @@ export interface QuantResultData {
   signal_quality?: SignalQualityResult
   robust_backtest?: RobustBacktestResult
   portfolio_risk?: PortfolioRiskResult
+  crypto_ml_decision?: CryptoMlDecision
+  trade_execution_guard?: unknown
+  model_status?: string
 }
 
 export interface FinalQuantScore extends PreliminaryTechData {
   quant?: QuantResultData
   isFallback: boolean
   finalScore: number
+  ranking_score: number
+  decision_score: number
+  display_score: number
+  decisionGate?: unknown
   marketDataQuality?: MarketDataQualityResult
   signalQuality?: SignalQualityResult
   robustBacktest?: RobustBacktestResult
   portfolioRisk?: PortfolioRiskResult
+  cryptoMlDecision?: CryptoMlDecision
 }
+
 
 function isMarketDataQualityBlocked(preliminary: PreliminaryTechData): boolean {
   const quality = preliminary.marketDataQuality
+  if (preliminary.recentIpoFallback) return preliminary.noData || quality?.status === 'FAILED'
   return preliminary.noData || quality?.status === 'FAILED' || quality?.usable_for_ml === false
 }
 
@@ -85,26 +101,57 @@ export function calculatePreliminaryScore(
   let macdSignal = 'Sin datos'
   let priceVsMA20: 'above' | 'below' | null = null
   let priceVsMA50: 'above' | 'below' | null = null
+  let priceVsMA100: 'above' | 'below' | null = null
   let noData = false
+  let recentIpoFallback = false
+  let indicatorMode: 'full' | 'recent_ipo_short_history' = 'full'
   const suggestions: { type: string, label: string }[] = []
   
   const price = quote.price
   let score = 50 // Base score
+  const historyCandles = candles?.length || 0
+  const hasUsableQuote = price !== null && Number.isFinite(price) && price > 0
+  const hasImmediateChange = quote.changePercent !== null && Number.isFinite(quote.changePercent)
 
-  if (!candles || candles.length < 10) {
+  if ((!candles || candles.length < 10) && !hasUsableQuote) {
     noData = true
     score -= 30 // Heavy penalty for incomplete data
   } else {
+    recentIpoFallback = historyCandles < 50 && hasUsableQuote
+    if (recentIpoFallback) {
+      indicatorMode = 'recent_ipo_short_history'
+      rsiSignal = historyCandles >= 15 ? 'Historia corta' : 'Desactivado (<15 velas)'
+      macdSignal = 'Desactivado (<50 velas)'
+      suggestions.push({ type: 'neutral', label: 'IPO reciente: MA50/MACD desactivados' })
+
+      const latest = candles?.[candles.length - 1]
+      const previous = candles?.[candles.length - 2]
+      const immediateChange = hasImmediateChange
+        ? Number(quote.changePercent)
+        : latest && previous && previous.close > 0
+          ? ((latest.close - previous.close) / previous.close) * 100
+          : 0
+      const effectiveVolume = Number(quote.volume ?? latest?.volume ?? 0)
+
+      score += Math.max(-25, Math.min(25, immediateChange * 1.25))
+      if (effectiveVolume > 0) score += Math.min(12, Math.log10(effectiveVolume))
+      if (immediateChange > 2) suggestions.push({ type: 'opportunity', label: 'Momentum inmediato positivo' })
+      if (immediateChange < -2) suggestions.push({ type: 'warning', label: 'Momentum inmediato negativo' })
+      if (effectiveVolume > 100000) suggestions.push({ type: 'opportunity', label: 'Volumen del dia valido' })
+    }
+
     const rsiCalc = calculateRSI(candles, 14)
-    const macdCalc = calculateMACD(candles)
+    const macdCalc = recentIpoFallback ? [] : calculateMACD(candles)
     const ma20Calc = calculateSMA(candles, 20)
-    const ma50Calc = calculateSMA(candles, 50)
+    const ma50Calc = recentIpoFallback ? [] : calculateSMA(candles, 50)
+    const ma100Calc = (recentIpoFallback || historyCandles < 100) ? [] : calculateSMA(candles, 100)
 
     rsi = rsiCalc[rsiCalc.length - 1]?.value ?? null
     const lastMACD = macdCalc[macdCalc.length - 1]
     const prevMACD = macdCalc[macdCalc.length - 2]
     const ma20 = ma20Calc[ma20Calc.length - 1]?.value ?? null
     const ma50 = ma50Calc[ma50Calc.length - 1]?.value ?? null
+    const ma100 = ma100Calc[ma100Calc.length - 1]?.value ?? null
 
     if (rsi !== null) {
       rsiSignal = interpretRSI(rsi).signal
@@ -114,7 +161,7 @@ export function calculatePreliminaryScore(
       else score -= 5
     }
 
-    if (lastMACD && prevMACD) {
+    if (!recentIpoFallback && lastMACD && prevMACD) {
       if (lastMACD.histogram > 0 && prevMACD.histogram <= 0) {
         macdSignal = 'Cruce alcista'; score += 20; suggestions.push({ type: 'opportunity', label: 'Cruce MACD alcista' })
       } else if (lastMACD.histogram < 0 && prevMACD.histogram >= 0) {
@@ -134,10 +181,15 @@ export function calculatePreliminaryScore(
     if (price !== null && ma50 !== null) {
       priceVsMA50 = price > ma50 ? 'above' : 'below'
     }
+    if (price !== null && ma100 !== null) {
+      priceVsMA100 = price > ma100 ? 'above' : 'below'
+      if (priceVsMA100 === 'above') score += 5
+      else score -= 5
+    }
 
-    if (priceVsMA50 === 'above' && priceVsMA20 === 'below') {
+    if (!recentIpoFallback && priceVsMA50 === 'above' && priceVsMA20 === 'below') {
       score += 15; suggestions.push({ type: 'opportunity', label: 'Cruce MA20→MA50' })
-    } else if (priceVsMA50 === 'below' && priceVsMA20 === 'above') {
+    } else if (!recentIpoFallback && priceVsMA50 === 'below' && priceVsMA20 === 'above') {
       score -= 15; suggestions.push({ type: 'warning', label: 'Ruptura MA50' })
     }
   }
@@ -169,7 +221,11 @@ export function calculatePreliminaryScore(
     macdSignal,
     priceVsMA20,
     priceVsMA50,
+    priceVsMA100,
     noData,
+    recentIpoFallback,
+    indicatorMode,
+    historyCandles,
     isLeveragedOrInverse: leveraged,
     suggestions,
     score
@@ -190,13 +246,18 @@ export function calculateFinalQuantScore(
       workflow_action: quantData?.action || 'HOLD',
       workflow_confidence: Number(quantData?.confidence ?? 0),
       sentiment_result: { sentiment: quantData?.weekend_sentiment?.sentiment || quantData?.news_sentiment },
+      allow_recent_ipo_fallback: preliminary.recentIpoFallback === true,
     })
     return {
       ...preliminary,
       quant: quantData ? { ...quantData, signal_quality: blockedSignal } : undefined,
       isFallback,
       finalScore: 0,
+      ranking_score: 0,
+      decision_score: 0,
+      display_score: 0,
       signalQuality: blockedSignal,
+      cryptoMlDecision: quantData?.crypto_ml_decision,
     }
   }
 
@@ -240,7 +301,7 @@ export function calculateFinalQuantScore(
   // Penalty for no data
   if (preliminary.noData) {
     finalScore = 0
-  } else if (preliminary.marketDataQuality?.usable_for_ml === false) {
+  } else if (preliminary.marketDataQuality?.usable_for_ml === false && !preliminary.recentIpoFallback) {
     finalScore = Math.min(finalScore, 20)
   }
 
@@ -254,14 +315,20 @@ export function calculateFinalQuantScore(
       macd_signal: preliminary.macdSignal,
       price_vs_ma20: preliminary.priceVsMA20,
       price_vs_ma50: preliminary.priceVsMA50,
+      price_vs_ma100: preliminary.priceVsMA100,
     },
     ml_prediction: quantData?.ml_prediction,
     risk_metrics: { var_95: quantData?.var_95 },
-    graham_result: { passed: quantData?.graham_passed },
+    graham_result: { passed: quantData?.graham_passed, reason: quantData?.graham_reason },
     sentiment_result: { sentiment: quantData?.weekend_sentiment?.sentiment || quantData?.news_sentiment },
     workflow_action: quantData?.action || 'HOLD',
     workflow_confidence: Number(quantData?.confidence ?? 0),
-    reasons: [quantData?.engine_reason, quantData?.xai_explanation].filter(Boolean) as string[],
+    reasons: [
+      preliminary.recentIpoFallback ? 'recent_ipo_fallback' : null,
+      quantData?.engine_reason,
+      quantData?.xai_explanation,
+    ].filter(Boolean) as string[],
+    allow_recent_ipo_fallback: preliminary.recentIpoFallback === true,
   })
 
   const robustBacktest = quantData?.robust_backtest
@@ -277,17 +344,33 @@ export function calculateFinalQuantScore(
   if (portfolioRisk?.portfolio_risk_status === 'BLOCKED' || portfolioRisk?.action_allowed === false) finalScore = 0
   else if (portfolioRisk?.portfolio_risk_status === 'WARNING') finalScore = Math.min(finalScore, 60)
 
+  const cryptoMlDecision = quantData?.crypto_ml_decision
+  if (cryptoMlDecision?.isCrypto) {
+    finalScore -= cryptoMlDecision.scorePenalty
+    finalScore = Math.min(finalScore, cryptoMlDecision.confidenceCap)
+    if (cryptoMlDecision.isStablecoin) {
+      finalScore = Math.min(finalScore, 45)
+    }
+  }
+
   // Clamp 0-100
   finalScore = Math.max(0, Math.min(100, finalScore))
 
+  const ranking_score = finalScore
+  const decision_score = signalQuality ? Number(signalQuality.final_confidence ?? 0) : finalScore
+  const display_score = decision_score
   return {
     ...preliminary,
     quant: quantData ? { ...quantData, signal_quality: signalQuality } : undefined,
     isFallback,
     finalScore,
+    ranking_score,
+    decision_score,
+    display_score,
     signalQuality,
     robustBacktest,
     portfolioRisk,
+    cryptoMlDecision,
   }
 }
 
@@ -299,16 +382,25 @@ export function rankScreenerResults(results: FinalQuantScore[]): FinalQuantScore
       return blockedA ? 1 : -1
     }
 
-    // 1. Principal: finalScore
-    if (b.finalScore !== a.finalScore) {
-      return b.finalScore - a.finalScore
+    // 1. Principal: ranking_score (or finalScore)
+    const scoreA = a.ranking_score ?? a.finalScore
+    const scoreB = b.ranking_score ?? b.finalScore
+    if (scoreB !== scoreA) {
+      return scoreB - scoreA
     }
-    // 2. Desempate: Momentum diario (changePercent)
-    const changeA = a.changePercent || 0
-    const changeB = b.changePercent || 0
-    if (changeB !== changeA) {
-      return changeB - changeA
+    
+    // 2. Desempate: Momentum diario (changePercent), pero solo si no está sobreextendido y tiene validación de riesgo
+    const isOverextendedA = (a.changePercent || 0) > 6 || (a.rsi || 50) > 70 || a.portfolioRisk?.portfolio_risk_status === 'BLOCKED'
+    const isOverextendedB = (b.changePercent || 0) > 6 || (b.rsi || 50) > 70 || b.portfolioRisk?.portfolio_risk_status === 'BLOCKED'
+    
+    if (!isOverextendedA && !isOverextendedB) {
+      const changeA = a.changePercent || 0
+      const changeB = b.changePercent || 0
+      if (changeB !== changeA) {
+        return changeB - changeA
+      }
     }
+    
     // 3. Desempate: Volumen
     const volA = a.volume || 0
     const volB = b.volume || 0

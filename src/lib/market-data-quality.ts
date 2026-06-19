@@ -33,6 +33,7 @@ export interface MarketDataQualityResult {
   blocking_errors: MarketDataQualityIssue[]
   recommendation: string
   raw_diagnostics: Record<string, unknown>
+  metadata?: Record<string, any>
 }
 
 const REQUIRED_PRICE_COLUMNS = ['open', 'high', 'low', 'close'] as const
@@ -417,5 +418,6 @@ export function assessMarketDataQuality(input: MarketDataQualityInput): MarketDa
       start_date: input.start_date,
       end_date: input.end_date,
     },
+    metadata: input.metadata,
   }
 }

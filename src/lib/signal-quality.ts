@@ -42,6 +42,7 @@ export function assessSignalQuality(input: {
   workflow_action?: string
   workflow_confidence?: number
   reasons?: string[]
+  allow_recent_ipo_fallback?: boolean
 }): SignalQualityResult {
   const quality = input.market_data_quality
   const technical = input.technical_indicators ?? {}
@@ -52,11 +53,16 @@ export function assessSignalQuality(input: {
   const contradicting: string[] = []
   const blocking: string[] = []
   const warnings: string[] = []
+  const allowRecentIpoFallback = input.allow_recent_ipo_fallback === true
 
   const qualityScore = Number(quality?.quality_score ?? 0)
-  if (!quality?.usable_for_ml) blocking.push('market_data_quality.usable_for_ml=false')
-  if (qualityScore < 60) blocking.push(`market_data_quality.quality_score=${qualityScore} < 60`)
-  if (quality?.usable_for_chart && !quality?.usable_for_ml) warnings.push('Datos aptos solo para grafico; BUY/SELL prohibido.')
+  if (!quality?.usable_for_ml && !allowRecentIpoFallback) blocking.push('market_data_quality.usable_for_ml=false')
+  if (qualityScore < 60 && !allowRecentIpoFallback) blocking.push(`market_data_quality.quality_score=${qualityScore} < 60`)
+  if (quality?.usable_for_chart && !quality?.usable_for_ml) {
+    warnings.push(allowRecentIpoFallback
+      ? 'IPO reciente: se permite fallback por volumen, cambio inmediato y sentimiento; MA50/MACD desactivados.'
+      : 'Datos aptos solo para grafico; BUY/SELL prohibido.')
+  }
 
   const action = String(input.workflow_action || 'HOLD').toUpperCase()
   const confidence = clamp(Number(input.workflow_confidence ?? 0))
@@ -67,13 +73,22 @@ export function assessSignalQuality(input: {
   const var95 = Number(risk.var_95 ?? risk.var_1d_95 ?? risk.var ?? 0) || 0
   const highRisk = var95 >= 0.05 || risk.high_risk === true
   const grahamPassed = graham.passed ?? graham.graham_passed
+  const grahamReason = String(graham.reason ?? graham.graham_reason ?? '')
+  const grahamInconclusive = /error|invalid|missing|could not retrieve|no evaluado|insuficient/i.test(grahamReason)
   const sentimentLabel = String(sentiment.sentiment ?? sentiment.label ?? 'NEUTRAL').toUpperCase()
+  const reasons = input.reasons ?? []
+
+  if (allowRecentIpoFallback || reasons.includes('recent_ipo_fallback')) {
+    supporting.push('Fallback IPO reciente')
+    score += 5
+  }
 
   if (mlValue > 0.01) { supporting.push('ML positivo'); score += 10 }
   if (mlValue < -0.01) { contradicting.push('ML negativo'); score -= 10 }
   if (highRisk) { contradicting.push(`Riesgo alto VaR=${var95}`); score -= 25 }
   else if (var95 > 0) { supporting.push(`Riesgo controlado VaR=${var95}`); score += 5 }
-  if (grahamPassed === false) { contradicting.push('Graham negativo'); score -= 15 }
+  if (grahamPassed === false && !grahamInconclusive) { contradicting.push('Graham negativo'); score -= 15 }
+  if (grahamPassed === false && grahamInconclusive) warnings.push(`Graham no concluyente: ${grahamReason || 'sin metricas fundamentales confiables'}`)
   if (grahamPassed === true) { supporting.push('Graham positivo'); score += 5 }
 
   if (sentimentLabel === 'POSITIVE') {
@@ -86,7 +101,7 @@ export function assessSignalQuality(input: {
   if (technical.macd_signal === 'Cruce alcista' || technical.macd_signal === 'Positivo') supporting.push('Tecnico alcista')
   if (technical.macd_signal === 'Cruce bajista') contradicting.push('Tecnico bajista')
   if (action === 'BUY' && highRisk) contradicting.push('Workflow BUY contradicho por riesgo alto')
-  if (action === 'BUY' && grahamPassed === false) contradicting.push('Workflow BUY contradicho por Graham negativo')
+  if (action === 'BUY' && grahamPassed === false && !grahamInconclusive) contradicting.push('Workflow BUY contradicho por Graham negativo')
 
   let final_action: FinalAction = 'HOLD'
   let final_confidence = 0
@@ -97,7 +112,7 @@ export function assessSignalQuality(input: {
     score = 0
   } else {
     score = clamp(score)
-    if (action === 'BUY' && (highRisk || grahamPassed === false || contradicting.length >= 2)) {
+    if (action === 'BUY' && (highRisk || (grahamPassed === false && !grahamInconclusive) || contradicting.length >= 2)) {
       signal_status = 'CONFLICTED'
       final_confidence = Math.min(confidence, 49)
     } else if ((action === 'BUY' || action === 'SELL') && confidence >= 70 && supporting.length) {
@@ -139,6 +154,7 @@ export function assessSignalQuality(input: {
       var_95: var95,
       sentiment: sentimentLabel,
       reasons: input.reasons ?? [],
+      allow_recent_ipo_fallback: allowRecentIpoFallback,
     },
   }
 }

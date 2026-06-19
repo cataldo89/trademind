@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Activity, Briefcase, Loader2, TrendingDown, TrendingUp } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { useMarketStatus } from '@/hooks/useMarketStatus'
 import { cn, formatCurrency, formatPercent } from '@/lib/utils'
 
 type PositionRow = {
@@ -322,14 +323,17 @@ export function LivePortfolioSimulation() {
   const [history, setHistory] = useState<HistoryPoint[]>([])
   const [recoveredKey, setRecoveredKey] = useState<string | null>(null)
   const [isRecovering, setIsRecovering] = useState(false)
+  const statuses = useMarketStatus()
+  const marketStatus = statuses.US
+  const marketIsLive = marketStatus.isOpen
 
   const { data, isLoading, isFetching } = useQuery({
     queryKey: ['live-portfolio-simulation'],
     queryFn: fetchLivePortfolio,
-    refetchInterval: 5_000,
-    refetchIntervalInBackground: true,
-    refetchOnWindowFocus: true,
-    staleTime: 0,
+    refetchInterval: marketIsLive ? 5_000 : false,
+    refetchIntervalInBackground: marketIsLive,
+    refetchOnWindowFocus: marketIsLive,
+    staleTime: marketIsLive ? 0 : 60_000,
   })
 
   const historyKey = useMemo(() => {
@@ -337,6 +341,8 @@ export function LivePortfolioSimulation() {
     return getPortfolioHistoryKey(data.userId, data.positions)
   }, [data])
   const recoverablePositions = useMemo(() => data?.positions ?? [], [data?.positions])
+
+
 
   useEffect(() => {
     if (!historyKey) {
@@ -374,7 +380,7 @@ export function LivePortfolioSimulation() {
   }, [historyKey, recoveredKey, recoverablePositions])
 
   useEffect(() => {
-    if (!data || data.positions.length === 0) return
+    if (!marketIsLive || !data || data.positions.length === 0) return
 
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setHistory((current) => mergeHistoryPoints(current, [{
@@ -382,7 +388,7 @@ export function LivePortfolioSimulation() {
       value: data.totalValue,
       pnl: data.totalPnL,
     }]))
-  }, [data])
+  }, [data, marketIsLive])
 
   useEffect(() => {
     if (!historyKey || history.length === 0) return
@@ -391,6 +397,15 @@ export function LivePortfolioSimulation() {
 
   const isPositive = (data?.totalPnL ?? 0) >= 0
   const positionsCount = data?.positions.length ?? 0
+  const sessionText = marketStatus.session === 'after'
+    ? 'Post-market: simulacion pausada'
+    : marketStatus.session === 'pre'
+      ? 'Pre-market: simulacion pausada'
+      : marketStatus.session === 'closed'
+        ? 'Mercado cerrado'
+        : isFetching
+          ? 'Actualizando precio'
+          : 'Esperando siguiente tick'
 
   return (
     <div className="glass rounded-xl overflow-hidden">
@@ -401,12 +416,14 @@ export function LivePortfolioSimulation() {
             Simulacion en vivo
           </h2>
           <p className="mt-1 text-xs text-gray-500">
-            P&L total no realizado de tus posiciones abiertas con capital ficticio. Actualiza cada 5s.
+            P&L total no realizado de tus posiciones abiertas con capital ficticio.
+            {' '}
+            {marketIsLive ? 'Actualiza cada 5s durante mercado regular.' : 'Queda congelado fuera de mercado regular.'}
           </p>
         </div>
         <div className="flex items-center gap-2 text-xs text-gray-400">
-          <span className={cn('h-2 w-2 rounded-full', isFetching || isRecovering ? 'bg-emerald-400 animate-pulse' : 'bg-gray-600')} />
-          {isRecovering ? 'Recuperando apertura' : isFetching ? 'Actualizando precio' : 'Esperando siguiente tick'}
+          <span className={cn('h-2 w-2 rounded-full', isRecovering || (marketIsLive && isFetching) ? 'bg-emerald-400 animate-pulse' : 'bg-gray-600')} />
+          {isRecovering ? 'Recuperando apertura' : sessionText}
         </div>
       </div>
 

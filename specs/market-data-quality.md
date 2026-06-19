@@ -86,6 +86,7 @@ No incluye las otras skills recomendadas en el documento externo.
 Reglas:
 
 - Si `usable_for_ml=false`, el workflow devuelve `HOLD` con `confidence=0`, `data_status=insufficient` y razon de calidad de datos.
+- Excepcion de screener para IPO/listing reciente: con `usable_for_chart=true`, quote valido y menos de 50 velas, no se emite `HOLD` generico. El BFF marca `recent_ipo_fallback`, desactiva MA50/MACD y calcula score defensivo con volumen del dia, cambio inmediato y sentimiento.
 - Si `quality_score < 60`, el workflow tambien bloquea ML aunque `usable_for_ml` no sea falso.
 - Si `usable_for_backtest=false`, no se debe ejecutar backtesting robusto.
 - Si el screener recibe datos no aptos para TA, no calcula indicadores.
@@ -116,6 +117,7 @@ La skill no escribe en base de datos. Expone diagnostico por:
 - Dataset correcto produce `OK` y permite chart/TA/ML/backtest.
 - Dataset vacio produce `FAILED`.
 - Dataset visual corto produce `usable_for_chart=true` y `usable_for_ml=false`.
+- Dataset visual corto de IPO reciente produce `recent_ipo_fallback` en `/api/quant/scan`, no `noData=true`, si hay quote valido.
 - Datasets con columnas faltantes, precios no positivos o fallo de proveedor quedan bloqueados.
 - El workflow no ejecuta modelos si la skill bloquea ML.
 - El screener no llama Python para candidatos no aptos para ML.

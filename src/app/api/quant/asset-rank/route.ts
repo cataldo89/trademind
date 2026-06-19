@@ -3,8 +3,12 @@ import { yahooFinance } from '@/lib/yahoo-finance'
 import { QuantClient } from '@/lib/ai/quant-client'
 import { fetchAlphaVantageIntraday, fetchFinnhubCandles, getYahooSymbol, getZestySymbolMarket } from '@/lib/market-data'
 import { getDurableMarketData } from '@/lib/api/market-data-cache'
+import { fetchAlpacaCryptoCandles, isUsdCryptoSymbol } from '@/lib/alpaca/market-data'
+import { isCryptoSymbol } from '@/lib/final-decision-gate'
+import { selectCryptoMlDecision } from '@/lib/crypto-ml-policy'
 import { createClient } from '@supabase/supabase-js'
 import type { Candle } from '@/types'
+
 
 const YAHOO_CANDLES_TIMEOUT_MS = Number.parseInt(process.env.YAHOO_CANDLES_TIMEOUT_MS || '10000', 10)
 const ML_PREFILTER_LIMIT = Number.parseInt(process.env.ML_PREFILTER_LIMIT || '180', 10)
@@ -19,7 +23,63 @@ type AssetRanking = {
   risk: number
   main_reasons: string[]
   model_version: string
+  history_candles?: number
   generated_at: string
+}
+
+function applyCryptoPolicyToRankings(rankings: AssetRanking[], historicalData?: Record<string, Record<string, unknown>[]>) {
+  if (rankings.length === 0) return []
+
+  const scores = rankings.map(r => Number(r.score) || 0)
+  const minScore = Math.min(...scores)
+  const maxScore = Math.max(...scores)
+  const range = maxScore - minScore
+
+  return rankings
+    .map((ranking) => {
+      const rawCandles = historicalData?.[ranking.symbol] || []
+      const candles = rawCandles.map((c: any) => ({
+        time: Number(c.time || 0),
+        open: Number(c.open || 0),
+        high: Number(c.high || 0),
+        low: Number(c.low || 0),
+        close: Number(c.close || 0),
+        volume: Number(c.volume || 0)
+      }))
+      const decision = selectCryptoMlDecision(ranking.symbol, candles)
+      if (!decision.isCrypto) return ranking
+
+      if (decision.isStablecoin) {
+        return {
+          ...ranking,
+          score: -1,
+          signal: 'AVOID' as const,
+          confidence: 0.1,
+          main_reasons: Array.from(new Set([...(ranking.main_reasons || []), ...decision.reasons])),
+          model_version: `${ranking.model_version}_crypto_policy`,
+        }
+      }
+
+      const rawScore = Number(ranking.score) || 0
+      const scaledScore = range === 0 ? 50 : ((rawScore - minScore) / range) * 100
+      const penalizedScore = Math.max(0, Math.min(decision.confidenceCap, scaledScore - decision.scorePenalty))
+      
+      const stableOrBlockedReasons = [
+        ...(!decision.lightgbmAllowed ? ['crypto_policy_blocks_lightgbm', decision.engineLabel] : []),
+        ...decision.reasons,
+      ]
+
+      return {
+        ...ranking,
+        score: Number(penalizedScore.toFixed(4)),
+        signal: decision.lightgbmAllowed ? ranking.signal : 'HOLD' as const,
+        confidence: Math.min(Number(ranking.confidence) || 0, decision.confidenceCap / 100),
+        main_reasons: Array.from(new Set([...(ranking.main_reasons || []), ...stableOrBlockedReasons])),
+        model_version: `${ranking.model_version}_crypto_policy`,
+      }
+    })
+    .sort((a, b) => b.score - a.score)
+    .map((ranking, index) => ({ ...ranking, rank: index + 1 }))
 }
 
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
@@ -63,7 +123,7 @@ function cleanCandles(candles: Candle[], from: number) {
 }
 
 async function fetchConfiguredDailyCandles(symbol: string, market: 'US' | 'CL') {
-  if (market !== 'US' || /-USD$/i.test(symbol)) return null
+  if (market !== 'US' || isCryptoSymbol(symbol)) return null
 
   const providerSymbol = normalizeProviderSymbol(symbol)
   const to = Math.floor(Date.now() / 1000)
@@ -91,13 +151,20 @@ async function fetchConfiguredDailyCandles(symbol: string, market: 'US' | 'CL') 
 
 async function fetchCandles(symbol: string, market: 'US' | 'CL' = 'US'): Promise<Candle[]> {
   try {
+    const cryptoOnly = isCryptoSymbol(symbol)
     return await getDurableMarketData<Candle[]>({
       symbol,
       market,
-      range: '1y',
+      range: cryptoOnly ? 'alpaca-full-history' : '1y',
       ttlMs: 4 * 60 * 60 * 1000, // 4 hours TTL
       provider: 'configured-market-data',
       loader: async () => {
+        if (cryptoOnly) {
+          const period1 = new Date()
+          period1.setFullYear(2015, 0, 1)
+          return fetchAlpacaCryptoCandles(symbol, '1d', period1)
+        }
+
         const configuredCandles = await fetchConfiguredDailyCandles(symbol, market)
         if (configuredCandles) return configuredCandles
 
@@ -136,12 +203,51 @@ function pctChange(current: number, previous: number) {
     : 0
 }
 
+function scoreRecentIpoShortHistory(symbol: string, candles: Record<string, unknown>[]) {
+  const closes = candles.map((candle) => Number(candle.close)).filter((value) => Number.isFinite(value) && value > 0)
+  const volumes = candles.map((candle) => Number(candle.volume)).filter((value) => Number.isFinite(value) && value >= 0)
+  const last = closes.at(-1) || 0
+  const previous = closes.at(-2) || last
+  const return1d = pctChange(last, previous)
+  const todayVolume = volumes.at(-1) || 0
+  const liquidityScore = todayVolume > 0 ? Math.min(12, Math.log10(todayVolume)) : 0
+  const score = Math.max(1, Math.min(85, 50 + (return1d * 125) + liquidityScore + Math.min(8, closes.length)))
+
+  return {
+    symbol,
+    eligible: closes.length >= 2,
+    score: Number(score.toFixed(4)),
+    history_candles: closes.length,
+    reasons: [
+      'recent_ipo_short_history',
+      'long_term_indicators_disabled',
+      return1d > 0 ? 'positive_immediate_change' : null,
+      todayVolume > 100000 ? 'valid_day_volume' : null,
+    ].filter(Boolean) as string[],
+  }
+}
+
 function rankAssetsLocally(symbols: string[], historicalDataBySymbol: Record<string, Record<string, unknown>[]>): AssetRanking[] {
   const generatedAt = new Date().toISOString()
   const scored = symbols.map((symbol) => {
     const candles = historicalDataBySymbol[symbol] || []
     const closes = candles.map((candle) => Number(candle.close)).filter((value) => Number.isFinite(value) && value > 0)
     if (closes.length < 21) {
+      const recentIpo = scoreRecentIpoShortHistory(symbol, candles)
+      if (recentIpo.eligible) {
+        return {
+          symbol,
+          rank: 0,
+          score: recentIpo.score,
+          signal: recentIpo.score >= 62 ? 'BUY' as const : recentIpo.score <= 38 ? 'AVOID' as const : 'HOLD' as const,
+          confidence: Number(Math.max(0.45, Math.min(0.69, recentIpo.score / 100)).toFixed(2)),
+          risk: 0.6,
+          main_reasons: recentIpo.reasons,
+          model_version: 'local_recent_ipo_fallback',
+          history_candles: recentIpo.history_candles,
+          generated_at: generatedAt,
+        }
+      }
       return {
         symbol,
         rank: 9999,
@@ -184,20 +290,64 @@ function rankAssetsLocally(symbols: string[], historicalDataBySymbol: Record<str
     }
   })
 
-  return scored
-    .sort((a, b) => b.score - a.score)
-    .map((item, index, array) => ({
-      ...item,
-      rank: item.rank === 9999 ? 9999 : index + 1,
-      signal: item.rank === 9999 ? 'HOLD' : index <= Math.max(0, Math.floor(array.length * 0.1) - 1) ? 'BUY' : index >= Math.floor(array.length * 0.7) ? 'AVOID' : 'HOLD',
-    }))
+  const eligible = scored.filter(item => item.rank !== 9999)
+  const blocked = scored.filter(item => item.rank === 9999)
+
+  // Sort eligible temporarily by score descending to assign normal asset signals
+  eligible.sort((a, b) => b.score - a.score)
+  eligible.forEach((item, index, array) => {
+    // Only map signal if it's not a recent IPO fallback (which already has its signal computed)
+    if (item.model_version !== 'local_recent_ipo_fallback') {
+      const pct = index / Math.max(1, array.length - 1)
+      item.signal = pct <= 0.10 ? ('BUY' as const) : pct >= 0.70 ? ('AVOID' as const) : ('HOLD' as const)
+    }
+  })
+
+  // Define signal priority: BUY = 2, HOLD = 1, AVOID = 0
+  const getSignalPriority = (item: typeof eligible[0]) => {
+    const sig = (item.signal || 'HOLD').toUpperCase()
+    if (sig === 'BUY') return 2
+    if (sig === 'HOLD') return 1
+    return 0
+  }
+
+  // Now sort all eligible assets by signal priority first, then by score descending
+  eligible.sort((a, b) => {
+    const prioA = getSignalPriority(a)
+    const prioB = getSignalPriority(b)
+    if (prioB !== prioA) return prioB - prioA
+    return b.score - a.score
+  })
+
+  // Assign final ranks
+  eligible.forEach((item, index) => {
+    item.rank = index + 1
+  })
+
+  return [...eligible, ...blocked]
 }
 
 function scorePrefilterCandidate(symbol: string, candles: Record<string, unknown>[]) {
+  const cryptoDecision = selectCryptoMlDecision(symbol, candles as unknown as Candle[])
   const closes = candles.map((candle) => Number(candle.close)).filter((value) => Number.isFinite(value) && value > 0)
   const volumes = candles.map((candle) => Number(candle.volume)).filter((value) => Number.isFinite(value) && value >= 0)
 
+  if (cryptoDecision.isCrypto && !cryptoDecision.lightgbmAllowed) {
+    return {
+      symbol,
+      eligible: false,
+      score: -Infinity,
+      reasons: [
+        'crypto_policy_blocks_lightgbm',
+        cryptoDecision.engineLabel,
+        ...cryptoDecision.reasons,
+      ],
+    }
+  }
+
   if (closes.length < 60) {
+    const recentIpo = scoreRecentIpoShortHistory(symbol, candles)
+    if (recentIpo.eligible) return recentIpo
     return { symbol, eligible: false, score: -Infinity, reasons: ['insufficient_history'] }
   }
 
@@ -336,7 +486,17 @@ export async function POST(request: NextRequest) {
     })
 
     if (!res.success || !res.data || res.data.ok === false) {
-        const rankings = rankAssetsLocally(uniqueSymbols, historical_data_by_symbol)
+        const fallbackRankings = rankAssetsLocally(uniqueSymbols, historical_data_by_symbol)
+        const mappings = applyCryptoPolicyToRankings(fallbackRankings, historical_data_by_symbol)
+        const mappedRankings = mappings.map(r => ({
+            symbol: r.symbol,
+            candidate_rank: r.rank,
+            candidate_score: r.score,
+            candidate_signal: r.signal === 'BUY' ? 'CANDIDATE' : r.signal === 'AVOID' ? 'AVOID' : 'WATCHLIST' as const,
+            main_reasons: r.main_reasons || [],
+            model_version: r.model_version,
+            generated_at: r.generated_at
+        }))
         const fallbackReason = res.error || res.data?.error || 'Quant engine rank_assets returned no usable data.'
         const fallbackMessage = `Quant engine unavailable: ${fallbackReason}`
         return NextResponse.json({
@@ -345,8 +505,8 @@ export async function POST(request: NextRequest) {
             model: 'lightgbm_asset_ranker',
             model_status: 'local_fallback_quant_unavailable',
             generated_at: new Date().toISOString(),
-            count: rankings.length,
-            rankings,
+            count: mappedRankings.length,
+            rankings: mappedRankings,
             warning: fallbackMessage,
             train_result: trainResult,
             python_execution: {
@@ -366,17 +526,26 @@ export async function POST(request: NextRequest) {
         }, { status: 503 })
     }
 
-    const rankings = res.data.rankings || []
+    const rankings = applyCryptoPolicyToRankings((res.data.rankings || []) as AssetRanking[], historical_data_by_symbol)
     const lightgbmReady = res.data?.model_status === 'loaded'
 
     if (!lightgbmReady) {
-        const fallbackRankings = Array.isArray(res.data.rankings) ? res.data.rankings : []
+        const fallbackRankings = Array.isArray(res.data.rankings) ? applyCryptoPolicyToRankings(res.data.rankings as AssetRanking[], historical_data_by_symbol) : []
+        const mappedFallback = fallbackRankings.map(r => ({
+            symbol: r.symbol,
+            candidate_rank: r.rank,
+            candidate_score: r.score,
+            candidate_signal: r.signal === 'BUY' ? 'CANDIDATE' : r.signal === 'AVOID' ? 'AVOID' : 'WATCHLIST' as const,
+            main_reasons: r.main_reasons || [],
+            model_version: r.model_version,
+            generated_at: r.generated_at
+        }))
         return NextResponse.json({
             ...res.data,
             ok: false,
             error: `LightGBM model is not ready. Current model_status: ${res.data?.model_status || 'unknown'}`,
-            count: fallbackRankings.length,
-            rankings: fallbackRankings,
+            count: mappedFallback.length,
+            rankings: mappedFallback,
             train_result: trainResult,
             python_execution: {
                 requested: true,
@@ -391,6 +560,9 @@ export async function POST(request: NextRequest) {
             },
         }, { status: 424 })
     }
+
+    res.data.rankings = rankings
+    res.data.count = rankings.length
 
     if (saveToSupabase && rankings.length > 0) {
         const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -426,8 +598,20 @@ export async function POST(request: NextRequest) {
         }
     }
 
+    const mappedRankings = rankings.map(r => ({
+        symbol: r.symbol,
+        candidate_rank: r.rank,
+        candidate_score: r.score,
+        candidate_signal: r.signal === 'BUY' ? 'CANDIDATE' : r.signal === 'AVOID' ? 'AVOID' : 'WATCHLIST' as const,
+        main_reasons: r.main_reasons || [],
+        model_version: r.model_version,
+        generated_at: r.generated_at
+    }))
+
     return NextResponse.json({
         ...res.data,
+        count: mappedRankings.length,
+        rankings: mappedRankings,
         train_result: trainResult,
         python_execution: {
             requested: true,

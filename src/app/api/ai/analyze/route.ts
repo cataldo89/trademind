@@ -402,8 +402,7 @@ function isIncompleteSuggestion(text: string) {
 function buildAlignedScreenerSuggestion(
   symbol: string,
   market: string,
-  quote: YahooQuote,
-  context: AdvisorScreenerContext
+  quote: YahooQuote
 ) {
   return `**COMPRAR CON CAUTELA**
 
@@ -423,7 +422,7 @@ function alignSuggestionWithScreener(
   if (!context) return suggestion
   if (!hasBullishScreenerContext(context, technicalSignal)) return suggestion
   if (!startsWithHoldRecommendation(suggestion) && !isIncompleteSuggestion(suggestion)) return suggestion
-  return buildAlignedScreenerSuggestion(symbol, market, quote, context)
+  return buildAlignedScreenerSuggestion(symbol, market, quote)
 }
 
 function normalizeSuggestion(

@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import type { User } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { AlpacaConnectCard } from '@/components/settings/alpaca-connect-card'
 
 export const metadata: Metadata = { title: 'Configuración' }
 
@@ -49,6 +50,8 @@ export default async function SettingsPage() {
           </div>
         </div>
       </div>
+
+      <AlpacaConnectCard />
 
       {/* API Keys info */}
       <div className="glass rounded-xl p-6 space-y-3">
@@ -108,4 +111,4 @@ export default async function SettingsPage() {
     </div>
   )
 }
-
+

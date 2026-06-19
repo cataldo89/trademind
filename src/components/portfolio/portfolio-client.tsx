@@ -445,7 +445,7 @@ export function PortfolioClient() {
       }
 
       queryClient.setQueryData(['profile', user.id], { virtual_balance: nextBalance })
-      toast.success(nextBalance === 0 ? 'Capital virtual eliminado' : `Capital virtual actualizado a ${formatCurrency(nextBalance)}`)
+      toast.success(nextBalance === 0 ? 'Efectivo virtual dejado en cero' : `Efectivo virtual actualizado a ${formatCurrency(nextBalance)}`)
       setShowBalanceForm(false)
       queryClient.invalidateQueries({ queryKey: ['profile'] })
       queryClient.invalidateQueries({ queryKey: ['portfolio-summary'] })
@@ -477,7 +477,7 @@ export function PortfolioClient() {
             onClick={() => setShowBalanceForm((current) => !current)}
             className="flex items-center gap-2 px-3 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm font-semibold rounded-lg transition-colors border border-gray-700"
           >
-            Ajustar capital
+            Ajustar efectivo
           </button>
           <button
             onClick={() => setShowAddForm(!showAddForm)}
@@ -493,8 +493,8 @@ export function PortfolioClient() {
         <div className="glass rounded-xl p-5 border border-emerald-500/20">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <h3 className="text-sm font-semibold text-white">Capital virtual del simulador</h3>
-              <p className="text-xs text-gray-400 mt-1">Define el capital total disponible. Puedes bajarlo o dejarlo en cero sin afectar tus posiciones.</p>
+              <h3 className="text-sm font-semibold text-white">Efectivo virtual del simulador</h3>
+              <p className="text-xs text-gray-400 mt-1">Define la caja disponible. Si cierras una posicion, el valor vendido vuelve a este efectivo.</p>
             </div>
             <form
               onSubmit={(event) => {
@@ -504,7 +504,7 @@ export function PortfolioClient() {
               }}
               className="flex flex-col gap-3 sm:flex-row sm:items-end"
             >
-              <FormField label="Capital total">
+              <FormField label="Efectivo disponible">
                 <input
                   type="number"
                   min="0"
@@ -541,7 +541,7 @@ export function PortfolioClient() {
                 onClick={() => updateVirtualBalance(0)}
                 className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-300 text-sm font-semibold rounded-lg transition-colors border border-red-500/30 disabled:opacity-50"
               >
-                Eliminar capital
+                Dejar en cero
               </button>
             </form>
           </div>
@@ -550,7 +550,7 @@ export function PortfolioClient() {
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        <SummaryCard label="Capital Virtual" value={formatCurrency(virtualBalance)} color="emerald" />
+        <SummaryCard label="Efectivo virtual" value={formatCurrency(virtualBalance)} color="emerald" />
         <SummaryCard label="Valor total" value={formatCurrency(totalValue)} />
         <SummaryCard label="Costo total" value={formatCurrency(totalCost)} />
         <SummaryCard

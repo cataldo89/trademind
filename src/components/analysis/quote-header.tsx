@@ -3,7 +3,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { Market } from '@/types'
 import { ArrowUp, ArrowDown, Loader2 } from 'lucide-react'
-import { cn, formatCurrency, formatPercent, formatLargeNumber } from '@/lib/utils'
+import { cn, formatCurrency, formatPercent, formatLargeNumber, formatPriceRaw } from '@/lib/utils'
 
 interface QuoteHeaderProps {
   symbol: string
@@ -81,16 +81,16 @@ export function QuoteHeader({ symbol, market }: QuoteHeaderProps) {
         <div className={cn('flex items-center gap-1', isPositive ? 'text-emerald-400' : 'text-red-400')}>
           {isPositive ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />}
           <span className="text-sm font-semibold font-mono">
-            {isPositive ? '+' : ''}{quote.change.toFixed(2)} ({formatPercent(quote.changePercent)})
+            {isPositive ? '+' : ''}{formatPriceRaw(quote.change)} ({formatPercent(quote.changePercent)})
           </span>
         </div>
       </div>
 
       {/* Stats */}
       <div className="flex items-center gap-4 text-xs text-gray-500">
-        <Stat label="Apertura" value={quote.open.toFixed(2)} />
-        <Stat label="Máx" value={quote.high.toFixed(2)} className="text-emerald-400" />
-        <Stat label="Mín" value={quote.low.toFixed(2)} className="text-red-400" />
+        <Stat label="Apertura" value={formatPriceRaw(quote.open)} />
+        <Stat label="Máx" value={formatPriceRaw(quote.high)} className="text-emerald-400" />
+        <Stat label="Mín" value={formatPriceRaw(quote.low)} className="text-red-400" />
         <Stat label="Volumen" value={formatLargeNumber(quote.volume)} />
         {quote.marketCap && (
           <Stat label="Cap. Mercado" value={formatLargeNumber(quote.marketCap)} />

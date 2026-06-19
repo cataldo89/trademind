@@ -95,3 +95,16 @@ La categorizacion de simbolos ocurre principalmente en `src/lib/market-data.ts`,
 - No copiar una URL concreta de `trycloudflare.com` a archivos de memoria; solo usar `QUANT_ENGINE_URL` como variable canonica.
 - El motor Python no debe depender solo de `yfinance`; usa Yahoo Chart API para velas en modelos HMM/GARCH/ARIMA.
 - El proyecto esta parcialmente alineado con SDD, pero necesita carpeta formal `specs/` para completar la disciplina.
+
+## 9. Memoria operativa 2026-06-02 (Caché en Supabase y Nueva Política GRANT)
+
+- **Falla Crítica Descubierta y Resuelta:** El escáner (Screener) en Producción sufría tiempos de carga inaceptables (varios minutos) al cambiar de menú porque la tabla `market_data_cache` no existía en Supabase (la migración 002 no había sido aplicada). Esto forzaba a Next.js a recalcular el 100% de los activos desde Yahoo Finance y fallar silenciosamente en los writes a la BD en cada recarga de pantalla. Al aplicar el SQL de creación de tabla manualmente en producción, el rendimiento volvió a ser óptimo.
+- **Cambio de Arquitectura Supabase (Mayo 2026):** Se comprobó en Producción que las nuevas tablas creadas en el esquema `public` ya no están expuestas por defecto a la Data API (PostgREST/supabase-js). Toda nueva tabla creada REQUIERE ejecutar explícitamente `GRANT ALL PRIVILEGES ON TABLE public.<nombre> TO service_role, anon, authenticated;`. Si se omite, la aplicación (incluyendo Next.js) sufrirá fallos silenciosos por permisos denegados.
+- **Optimización de Caché de Memoria (Junio 2026):** Se refactorizó la lógica en `src/app/api/quant/scan/route.ts` para usar llaves de caché de memoria individuales (por símbolo) en lugar de una única llave por lote de categoría (`scan:quotes:...` y `scan:candles:...`). Esto previene que al cambiar de categoría se invalide todo el caché, reutilizando instantáneamente los datos de símbolos comunes ya consultados y solucionando un bug donde `candlesMap` quedaba vacío tras un hit de caché de lote.
+
+## 10. Memoria operativa 2026-06-16 (Asesor Financiero y Navegación del Screener)
+
+- **Mejora de UX en Screener (ML Cards):** Las tarjetas del ranking rápido (Machine Learning/LightGBM) ahora son completamente clicables (`Link` de Next.js) y enlazan al `/analysis` preservando el estado transaccional (símbolo, score, acción sugerida y justificaciones traducidas de la señal). Esto soluciona la desconexión entre el screening predictivo y la visualización detallada del activo.
+- **Simplificación del Lenguaje de la IA:** El Asesor Financiero (Gemini/OpenAI) se reconfiguró para no abrumar al inversor retail con siglas técnicas como 'RSI', 'MACD', 'FinBERT' o scores abstractos ('decisión 35'). El prompt ahora exige traducir los hallazgos a español natural ('mercado estable', 'sentimiento de noticias positivo', 'acumulación progresiva').
+- **Robustez de Fallback en Análisis de IA:** Si un activo no posee historial suficiente de velas (por ejemplo, IPOs recientes), el Asesor de IA ya no asume un HOLD estático por error técnico, sino que utiliza el workflow del quant-engine como fuente principal de verdad de la señal técnica.
+

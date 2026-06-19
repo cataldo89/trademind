@@ -35,7 +35,7 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Public routes that don't require auth
-  const publicRoutes = ['/login', '/register', '/forgot-password', '/reset-password', '/api/market', '/api/ai', '/api/quant/status', '/live']
+  const publicRoutes = ['/login', '/register', '/forgot-password', '/reset-password', '/api/market', '/api/ai', '/api/quant/status', '/api/alpaca', '/live', '/alpaca-connect', '/terms', '/privacy']
   const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route))
 
   // Define user variable outside try block

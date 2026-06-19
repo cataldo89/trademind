@@ -1,9 +1,11 @@
-﻿'use client'
+'use client'
 
+import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
-import { formatCurrency, formatPercent, getPnLColor } from '@/lib/utils'
-import { Briefcase, TrendingUp, TrendingDown, Loader2 } from 'lucide-react'
+import { useMarketStatus } from '@/hooks/useMarketStatus'
+import { formatCurrency, formatPercent } from '@/lib/utils'
+import { Briefcase, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { DEFAULT_VIRTUAL_BALANCE, fetchVirtualBalanceProfile } from '@/lib/virtual-balance'
@@ -113,13 +115,19 @@ async function fetchPortfolioStats(): Promise<PortfolioStats | null> {
 }
 
 export function PortfolioSummaryWidget() {
+  const statuses = useMarketStatus()
+  const marketStatus = statuses.US
+  const marketIsLive = marketStatus.isOpen
+
+
+
   const { data: stats, isLoading } = useQuery({
     queryKey: ['portfolio-summary'],
     queryFn: fetchPortfolioStats,
-    refetchInterval: 2 * 60 * 1000,
+    refetchInterval: marketIsLive ? 2 * 60 * 1000 : false,
     refetchOnMount: 'always',
-    refetchOnWindowFocus: true,
-    staleTime: 0,
+    refetchOnWindowFocus: marketIsLive,
+    staleTime: marketIsLive ? 0 : 60 * 1000,
   })
 
   if (isLoading) {
@@ -146,7 +154,7 @@ export function PortfolioSummaryWidget() {
           <p className="text-sm text-gray-500 mb-3">No tienes posiciones abiertas</p>
           <div className="flex items-center justify-center gap-4">
              <div className="text-left">
-                <p className="text-[10px] text-gray-500 uppercase tracking-wider">Capital Virtual</p>
+                 <p className="text-[10px] text-gray-500 uppercase tracking-wider">Efectivo virtual</p>
                 <p className="text-lg font-bold text-white font-mono">{formatCurrency(stats?.virtualBalance ?? 10000)}</p>
              </div>
              <Link
@@ -173,7 +181,7 @@ export function PortfolioSummaryWidget() {
         </h2>
         <div className="flex items-center gap-4">
            <div className="text-right">
-              <p className="text-[10px] text-gray-500 uppercase tracking-wider">Capital Virtual</p>
+               <p className="text-[10px] text-gray-500 uppercase tracking-wider">Efectivo virtual</p>
               <p className="text-sm font-bold text-emerald-400 font-mono">{formatCurrency(stats.virtualBalance ?? 10000)}</p>
            </div>
            <Link href="/portfolio" className="text-xs text-emerald-400 hover:text-emerald-300">

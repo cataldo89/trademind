@@ -21,6 +21,13 @@ Normalizacion aplicada el 2026-05-31:
 - Se creo `specs/market-data-cache.md` para cache durable de Yahoo/series temporales.
 - Se creo `specs/bff-frontend-contracts.md` para blindar React contra fallas de backend.
 
+Actualizacion aplicada el 2026-06-15:
+
+- `docs/contracts.md` documenta `recent_ipo_fallback`, error explicito de sentimiento y contrato BFF de senales.
+- `specs/market-data-quality.md` registra que un IPO reciente con quote valido no debe caer en `HOLD` generico por menos de 50 velas.
+- `specs/bff-frontend-contracts.md` exige `Error de conexion con el motor` cuando falla FinBERT/quant-engine y centraliza senales via `/api/signals`.
+- `docs/runbooks/problemas-escalamiento-errores-frontend-backend.md` registra el incidente `SPCX` para futuras LLM.
+
 Brecha SDD vigente:
 
 - Faltan specs por dominio para `virtual-trading`, `alerts-cron`, `screener-ranking` y `lean-backtests`.

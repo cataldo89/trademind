@@ -44,6 +44,26 @@ El cliente solo puede depender de:
 
 El BFF no debe exponer stack traces, errores de libreria, URLs efimeras de Cloudflare ni detalles de credenciales.
 
+### Sentimiento FinBERT
+
+`POST /api/quant/sentiment` distingue tres estados:
+
+- `applied: true`: sentimiento nuevo aplicado o cache fresco confirmado por quant-engine.
+- `applied: false` + `staleCacheIgnored: true`: `Error de conexion con el motor`; el frontend muestra error y no recalcula como si hubiera sentimiento vigente.
+- `degraded: true` con `processed > 0`: lote parcial; el frontend muestra warning.
+
+La UI no debe convertir `Quant engine request failed` en un estado exitoso ni usar cache obsoleto para tranquilizar al asesor.
+
+El MVP de sentimiento multi-fuente usa `POST /quant/sentiment/update` en FastAPI. El BFF no expone claves de Finnhub/Marketaux; solo devuelve estado de actualizacion y lee features desde `news_sentiment` mediante `/api/quant/sentiment/features`.
+
+### Screener IPO reciente
+
+Cuando `/api/quant/scan` retorna `recent_ipo_fallback=true`, el frontend debe renderizarlo como analisis parcial valido, no como `PENDIENTE` ni `HOLD` por falta de datos. Los campos esperados son `indicatorMode='recent_ipo_short_history'` y `historyCandles`.
+
+### Senales
+
+Las pantallas de senales consumen `/api/signals`. La ruta BFF consulta `public.signals` por `user_id`, ordena por `created_at` y no aplica filtros ocultos de `expires_at` ni status. El frontend puede agrupar o mostrar `status === 'active'`, pero no debe reemplazar el contrato con queries Supabase paralelas.
+
 ## Estrategia de actualizacion UI
 
 Fase 0:

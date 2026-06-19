@@ -15,6 +15,7 @@ import {
 } from '@/lib/chart-ranges'
 import { yahooFinance } from '@/lib/yahoo-finance'
 import { fetchAlphaVantageIntraday, fetchFinnhubCandles, getYahooSymbol } from '@/lib/market-data'
+import { fetchAlpacaCryptoCandles, isUsdCryptoSymbol } from '@/lib/alpaca/market-data'
 import { normalizeSymbol, parseMarketOrLegacy } from '@/lib/domain/market'
 import { checkRateLimit, getClientIp } from '@/lib/api/rate-limit'
 import { getCached } from '@/lib/api/memory-cache'
@@ -25,7 +26,7 @@ const VALID_TIMEFRAMES = new Set<Timeframe>(['1m', '5m', '15m', '30m', '1h', '4h
 const RATE_LIMIT = 90
 const RATE_WINDOW_MS = 60_000
 const CANDLES_TTL_MS = 60_000
-type CandleProvider = 'alpha-vantage' | 'finnhub' | 'yahoo'
+type CandleProvider = 'alpaca' | 'alpha-vantage' | 'finnhub' | 'yahoo'
 
 const ONE_DAY_LOOKBACK_DAYS = 5
 const US_MARKET_TIMEZONE = 'America/New_York'
@@ -58,12 +59,8 @@ function getEasternSessionInfo(time: number) {
   }
 }
 
-function isCryptoSymbol(symbol: string) {
-  return /-USD$/i.test(symbol)
-}
-
 function configuredProvidersSupported(symbol: string, market: Market) {
-  return market === 'US' && !isCryptoSymbol(symbol)
+  return market === 'US' && !isUsdCryptoSymbol(symbol)
 }
 
 function candleProviderOrder(): CandleProvider[] {
@@ -252,6 +249,17 @@ async function fetchYahooCandles(symbol: string, interval: YahooChartInterval, p
 }
 
 async function fetchConfiguredCandles(symbol: string, market: Market, timeframe: Timeframe, period1: Date): Promise<{ data: Candle[]; provider: CandleProvider }> {
+  if (market === 'US' && isUsdCryptoSymbol(symbol)) {
+    try {
+      const alpacaCandles = await fetchAlpacaCryptoCandles(symbol, timeframe, period1)
+      if (alpacaCandles.length > 0) return { data: alpacaCandles, provider: 'alpaca' }
+    } catch (error) {
+      console.warn(`[Market Candles] alpaca crypto failed for ${symbol}:`, error)
+    }
+
+    return { data: [], provider: 'alpaca' }
+  }
+
   if (configuredProvidersSupported(symbol, market)) {
     const from = Math.floor(period1.getTime() / 1000)
     const to = Math.floor(Date.now() / 1000)
@@ -285,34 +293,43 @@ async function fetchCandlesForRange(symbol: string, market: Market, requestedRan
   for (const range of fallbackRanges) {
     const config = getChartRangeConfig(range)
     const period1 = range === '1D' ? subtractDays(new Date(), ONE_DAY_LOOKBACK_DAYS) : config.period1
-    const response = await fetchConfiguredCandles(symbol, market, yahooIntervalToTimeframe(config.interval), period1)
-    const rawCandles = response.data
-    const candles = isCryptoSymbol(symbol)
-      ? rawCandles
-      : range === '1D'
-        ? trimToLatestRegularSession(rawCandles)
-        : range === '5D'
-          ? trimToLatestRegularSessions(rawCandles, 5)
-          : rawCandles
+    try {
+      const response = await fetchConfiguredCandles(symbol, market, yahooIntervalToTimeframe(config.interval), period1)
+      const rawCandles = response.data
+      let candles = isUsdCryptoSymbol(symbol)
+        ? rawCandles
+        : range === '1D'
+          ? trimToLatestRegularSession(rawCandles)
+          : range === '5D'
+            ? trimToLatestRegularSessions(rawCandles, 5)
+            : rawCandles
 
-    if (candles.length > 0) {
-      if (!isCryptoSymbol(symbol) && (range === '1D' || range === '5D') && !hasEnoughIntradayCandles(range, candles)) {
-        continue
+      if (isUsdCryptoSymbol(symbol) && range === '1D') {
+        const twentyFourHoursAgo = Math.floor((Date.now() - 24 * 60 * 60 * 1000) / 1000)
+        candles = candles.filter((c) => c.time >= twentyFourHoursAgo)
       }
 
-      const fallback = range !== requestedRange
+      if (candles.length > 0) {
+        if (!isUsdCryptoSymbol(symbol) && (range === '1D' || range === '5D') && !hasEnoughIntradayCandles(range, candles)) {
+          continue
+        }
 
-      return {
-        data: candles,
-        provider: response.provider,
-        range,
-        requestedRange,
-        interval: config.interval,
-        fallback,
-        fallbackReason: fallback
-          ? `Sin datos para el rango solicitado; se usó ${config.label}`
-          : undefined,
+        const fallback = range !== requestedRange
+
+        return {
+          data: candles,
+          provider: response.provider,
+          range,
+          requestedRange,
+          interval: config.interval,
+          fallback,
+          fallbackReason: fallback
+            ? `Sin datos para el rango solicitado; se usó ${config.label}`
+            : undefined,
+        }
       }
+    } catch (error) {
+      console.warn(`[Market Candles] Failed fetching candles for range ${range} of ${symbol}:`, error)
     }
   }
 

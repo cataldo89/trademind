@@ -1,18 +1,18 @@
 # Reporte de Cobertura y Salud de Activos (Screener)
 
-Generado el: 24/5/2026, 3:09:11 (Eastern Time)
+Generado el: 15/6/2026, 19:56:44 (Eastern Time)
 Fuente: Yahoo Finance (Llamadas en vivo a API)
 
 ## Resumen Ejecutivo
 
 | Métrica | Valor | Descripción |
 |---|---|---|
-| **Total Activos Declarados** | 452 | Cantidad total en el arreglo `ZESTY_SYMBOLS` |
-| **Total Activos Únicos** | 452 | Excluyendo duplicados |
-| **Total Activos Válidos** | 430 | Tienen Quote y Candles de 1M suficientes (>=10) |
+| **Total Activos Declarados** | 473 | Cantidad total en el arreglo `ZESTY_SYMBOLS` |
+| **Total Activos Únicos** | 473 | Excluyendo duplicados |
+| **Total Activos Válidos** | 433 | Tienen Quote y Candles de 1M suficientes (>=10) |
 | **Total Activos Normalizados** | 1 | Requieren sustitución de punto por guión (ej. `BRK.B` -> `BRK-B`) |
-| **Total Activos Sin Quote** | 7 | Yahoo no los reconoce o no tienen cotización |
-| **Total Activos Sin Velas Suficientes** | 15 | Tienen Quote pero no historial de velas (>10) |
+| **Total Activos Sin Quote** | 24 | Yahoo no los reconoce o no tienen cotización |
+| **Total Activos Sin Velas Suficientes** | 16 | Tienen Quote pero no historial de velas (>10) |
 | **Total Activos Duplicados** | 0 | Declarados múltiples veces |
 
 ---
@@ -33,7 +33,24 @@ Estos símbolos causarán fallas o se saltarán en el motor cuántico, por lo qu
 
 | Símbolo | Nombre | Categoría | Tipo | Subtipo | Razón de Falla |
 |---|---|---|---|---|---|
-| `AMOMX` | AQR Momentum Fund | `otros` | ETF | Estándar | Velas insuficientes (Contadas: 6) |
+| `AMOMX` | AQR Momentum Fund | `otros` | ETF | Estándar | Velas insuficientes (Contadas: 0) |
+| `CHILE` | Banco de Chile | `chile` | Acción | Ordinaria | Sin Quote (Error: Desconocido) |
+| `BSANTANDER` | Banco Santander-Chile | `chile` | Acción | Ordinaria | Sin Quote (Error: Desconocido) |
+| `CAMPOS` | Sociedad de Inversiones Campos Chilenos S.A. | `chile` | Acción | Ordinaria | Sin Quote (Error: Desconocido) |
+| `CFIBPDCCHA` | BTG Deuda Corporativa Chile | `chile` | Acción | Ordinaria | Sin Quote (Error: Desconocido) |
+| `CFIBTETFMP` | BTG ETF Renta Fija Chile Mediano Plazo | `chile` | ETF | Estándar | Sin Quote (Error: Desconocido) |
+| `CFIETFCC` | Singular Chile Corporativo | `chile` | Acción | Ordinaria | Sin Quote (Error: Desconocido) |
+| `CFIETFCD` | Singular Chile Corta Duracion | `chile` | Acción | Ordinaria | Sin Quote (Error: Desconocido) |
+| `CFIETFLP` | Singular Chile Largo Plazo | `chile` | Acción | Ordinaria | Sin Quote (Error: Desconocido) |
+| `CFIETFRFLP` | BTG ETF Renta Fija Chile Largo Plazo | `chile` | ETF | Estándar | Sin Quote (Error: Desconocido) |
+| `CFIFALCDCG` | Falcom Deuda Corporativa Chile | `chile` | Acción | Ordinaria | Sin Quote (Error: Desconocido) |
+| `CFIFALCDCW` | Falcom Deuda Corporativa Chile - Serie W | `chile` | Acción | Ordinaria | Sin Quote (Error: Desconocido) |
+| `CFIFALCFIW` | Falcom Chilean Fixed Income | `chile` | Acción | Ordinaria | Sin Quote (Error: Desconocido) |
+| `CFIFALCTAC` | Falcom Tactical Chilean Equities | `chile` | Acción | Ordinaria | Sin Quote (Error: Desconocido) |
+| `CFIFYNSADB` | Fynsa Deuda Chile | `chile` | Acción | Ordinaria | Sin Quote (Error: Desconocido) |
+| `CFIMDCHA` | Moneda deuda Chile, FI | `chile` | Acción | Ordinaria | Sin Quote (Error: Desconocido) |
+| `CFMTOEEQUB` | Toesca Chile Equities FM | `chile` | Acción | Ordinaria | Sin Quote (Error: Desconocido) |
+| `CHWAF` | Chilwa Minerals Ltd Ordinary Fully Paid | `chile` | Acción | Ordinaria | Sin Quote (Error: Desconocido) |
 | `DAY` | Ceridian HCM Holding | `otros` | Acción | Ordinaria | Sin Quote (Error: Desconocido) |
 | `CMA` | Comerica | `otros` | Acción | Ordinaria | Sin Quote (Error: Desconocido) |
 | `CLDL` | Direxion Daily Cloud Computing Bull 2X Shares | `otros` | ETF | Apalancado | Velas insuficientes (Contadas: 0) |
@@ -52,6 +69,7 @@ Estos símbolos causarán fallas o se saltarán en el motor cuántico, por lo qu
 | `AFTY` | Pacer CSOP FTSE China A50 ETF | `otros` | ETF | Estándar | Velas insuficientes (Contadas: 0) |
 | `PARA` | Paramount Global-Class B | `otros` | Acción | Ordinaria | Sin Quote (Error: Desconocido) |
 | `SWRXX` | Schwab Total Stock Market Index | `otros` | ETF | Estándar | Velas insuficientes (Contadas: 0) |
+| `SPCX` | Space Exploration Technologies Corp. Class A | `acciones-pop` | Acción | Ordinaria | Velas insuficientes (Contadas: 2) |
 | `TWOK` | SPDR Russell 2000 | `otros` | Acción | Ordinaria | Velas insuficientes (Contadas: 0) |
 | `VDAIX` | Vanguard Dividend Appreciation Index Fund | `otros` | ETF | Estándar | Velas insuficientes (Contadas: 0) |
 | `VTWSX` | Vanguard Total World Stock Index | `otros` | ETF | Estándar | Velas insuficientes (Contadas: 0) |
