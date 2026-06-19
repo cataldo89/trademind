@@ -5,6 +5,7 @@ import type { PortfolioRiskResult } from './portfolio-risk-manager'
 import type { RobustBacktestResult } from './robust-backtest'
 import { assessSignalQuality, type SignalQualityResult } from './signal-quality'
 import type { CryptoMlDecision } from './crypto-ml-policy'
+import type { FinalDecisionGateResult } from './final-decision-gate'
 
 export interface PreliminaryTechData {
   symbol: string
@@ -65,7 +66,7 @@ export interface FinalQuantScore extends PreliminaryTechData {
   ranking_score: number
   decision_score: number
   display_score: number
-  decisionGate?: unknown
+  decisionGate?: FinalDecisionGateResult
   marketDataQuality?: MarketDataQualityResult
   signalQuality?: SignalQualityResult
   robustBacktest?: RobustBacktestResult
