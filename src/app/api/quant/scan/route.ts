@@ -199,10 +199,31 @@ function classifyPythonResult(data: QuantResultData | null): Pick<PythonResultRe
   return { ok: true, status: 'ok', reason: 'Python workflow completed with usable quant data' }
 }
 
-async function fetchBatchQuotes(symbols: string[]) {
+async function fetchBatchQuotes(symbols: string[], yahooToOriginal?: Map<string, string>) {
   const quotes = new Map<string, QuoteLike>()
   const yahooSymbols: string[] = []
-  const cryptoSymbols = symbols.filter(isUsdCryptoSymbol)
+  
+  // Create reverse mapping (original -> yahoo)
+  const originalToYahoo = new Map<string, string>()
+  if (yahooToOriginal) {
+    for (const [ySym, orig] of yahooToOriginal.entries()) {
+      originalToYahoo.set(orig.toUpperCase(), ySym)
+    }
+  }
+
+  // Filter and map to original symbols for Alpaca
+  const cryptoSymbols: string[] = []
+  if (yahooToOriginal) {
+    for (const s of symbols) {
+      if (isUsdCryptoSymbol(s)) {
+        const orig = yahooToOriginal.get(s.toUpperCase()) || s
+        cryptoSymbols.push(orig)
+      }
+    }
+  } else {
+    cryptoSymbols.push(...symbols.filter(isUsdCryptoSymbol))
+  }
+
   const alpacaQuotes = cryptoSymbols.length > 0
     ? await fetchAlpacaCryptoQuotes(cryptoSymbols).catch((error) => {
       console.warn('[Quant Scan] alpaca crypto quotes failed:', error)
@@ -211,7 +232,7 @@ async function fetchBatchQuotes(symbols: string[]) {
     : new Map()
 
   for (const [symbol, quote] of alpacaQuotes.entries()) {
-    quotes.set(symbol, {
+    const qData = {
       symbol: quote.symbol,
       regularMarketPrice: quote.price,
       regularMarketPreviousClose: quote.previousClose,
@@ -219,12 +240,25 @@ async function fetchBatchQuotes(symbols: string[]) {
       regularMarketVolume: quote.volume,
       shortName: quote.name,
       longName: quote.name,
-    })
+    }
+    quotes.set(symbol, qData)
+    quotes.set(symbol.toUpperCase(), qData)
+
+    const ySym = originalToYahoo.get(symbol.toUpperCase())
+    if (ySym) {
+      quotes.set(ySym, qData)
+      quotes.set(ySym.toUpperCase(), qData)
+    }
   }
 
   await Promise.all(symbols.map(async (symbol) => {
     if (quotes.has(symbol) || quotes.has(symbol.toUpperCase())) return
-    if (isUsdCryptoSymbol(symbol)) return
+    
+    // If it's a crypto symbol but Alpaca failed or didn't return it, we let it fall through to Yahoo
+    if (isUsdCryptoSymbol(symbol)) {
+      yahooSymbols.push(symbol)
+      return
+    }
 
     const configuredQuote = await fetchConfiguredQuoteLike(symbol)
     if (configuredQuote) {
@@ -304,9 +338,10 @@ async function fetchConfiguredDailyCandles(symbol: string): Promise<{ candles: C
   return null
 }
 
-async function fetchCandles(symbol: string, market: 'US' | 'CL' = 'US'): Promise<Candle[]> {
+async function fetchCandles(symbol: string, market: 'US' | 'CL' = 'US', original?: string): Promise<Candle[]> {
   try {
-    const cryptoOnly = isCryptoSymbol(symbol)
+    const origSymbol = original || symbol
+    const cryptoOnly = isCryptoSymbol(origSymbol)
     return await getDurableMarketData<Candle[]>({
       symbol,
       market,
@@ -315,7 +350,7 @@ async function fetchCandles(symbol: string, market: 'US' | 'CL' = 'US'): Promise
       provider: 'configured-market-data',
       loader: async () => {
         if (market === 'US') {
-          const configured = await fetchConfiguredDailyCandles(symbol)
+          const configured = await fetchConfiguredDailyCandles(origSymbol)
           if (configured) {
             scanCandleProviders.set(symbol.toUpperCase(), configured.provider)
             return configured.candles
@@ -427,7 +462,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (symbolsToFetchQuote.length > 0) {
-      const fetchedQuotes = await fetchBatchQuotes(symbolsToFetchQuote)
+      const fetchedQuotes = await fetchBatchQuotes(symbolsToFetchQuote, yahooToOriginal)
       for (const ySym of symbolsToFetchQuote) {
         const q = fetchedQuotes.get(ySym) || fetchedQuotes.get(ySym.toUpperCase()) || fetchedQuotes.get(ySym.toLowerCase())
         if (q) {
@@ -457,7 +492,7 @@ export async function POST(request: NextRequest) {
         const cacheKey = `scan:candles:${sym.toUpperCase()}`
         let candles = getCacheValue<Candle[]>(cacheKey)
         if (!candles) {
-          candles = await fetchCandles(sym, safeMarket)
+          candles = await fetchCandles(sym, safeMarket, original)
           setCacheValue(cacheKey, candles, CACHE_TTL_MS)
         }
 

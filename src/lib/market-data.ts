@@ -233,6 +233,7 @@ export const ZESTY_SYMBOL_METADATA: Record<string, ZestySymbolMetadata> = {
   CFMTOEEQUB: { market: 'CL', yahooSymbol: 'CFMTOEEQUB.SN' },
   CHWAF: { market: 'US', yahooSymbol: 'CHW.AX' },
   CHYM: { market: 'US' },
+  'UNI-USD': { market: 'US', yahooSymbol: 'UNI7083-USD' },
 }
 
 function normalizeYahooClassSymbol(symbol: string) {

@@ -284,7 +284,7 @@ async function fetchConfiguredCandles(symbol: string, market: Market, timeframe:
     }
   }
 
-  return { data: await fetchYahooCandles(symbol, getYahooInterval(timeframe), period1), provider: 'yahoo' }
+  return { data: await fetchYahooCandles(getYahooSymbol(symbol, market), getYahooInterval(timeframe), period1), provider: 'yahoo' }
 }
 
 async function fetchCandlesForRange(symbol: string, market: Market, requestedRange: ChartRange) {
@@ -379,7 +379,7 @@ export async function GET(request: NextRequest) {
           range: `range:${requestedRange}`,
           ttlMs: CANDLES_TTL_MS,
           provider: 'configured-market-data',
-          loader: () => fetchCandlesForRange(symbol, market, requestedRange),
+          loader: () => fetchCandlesForRange(rawSymbol, market, requestedRange),
         })
       )
 
@@ -405,7 +405,7 @@ export async function GET(request: NextRequest) {
         range: `timeframe:${timeframe}`,
         ttlMs: CANDLES_TTL_MS,
         provider: 'configured-market-data',
-        loader: () => fetchConfiguredCandles(symbol, market, timeframe, period1).then((response) => response.data),
+        loader: () => fetchConfiguredCandles(rawSymbol, market, timeframe, period1).then((response) => response.data),
       })
     )
 
